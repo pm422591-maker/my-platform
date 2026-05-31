@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  www:
+    build: .          # ВАЖЛИВО: Кажемо використовувати твій Dockerfile
+    container_name: my-gamer-site
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+  # --- БАЗА ДАНИХ (MySQL) ---
+  db:
+    image: mysql:8.0         # !!! Тут має бути image, а не build
+    container_name: my-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mywebsite
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # --- phpMyAdmin (Інтерфейс) ---
+  pma:
+    image: phpmyadmin/phpmyadmin  # !!! Обов'язково цей образ!
+    container_name: my-pma
+    environment:
+      PMA_HOST: db                # Підключаємося до контейнера "db"
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8888:80"                 # !!! Змінив порт на 8888, щоб не було конфліктів
+    depends_on:
+      - db
+
+volumes:
+  db_data:

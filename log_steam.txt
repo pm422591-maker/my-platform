@@ -1,0 +1,221 @@
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T11:34:02ZRNc+O7d2R1gneL7QDMtI2lZBQUg=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => o82l5Khp1m3ITFnZHZ0WU7hHJEc=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:14:41Z3KmuYapINEIZK4IhDsiHRZv9Jc4=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => fWQOZLuL5ZUTL4CF/3qTAi7RogQ=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:15:35Z5iRI7KkwV6N41SBoGA5yud7ggU0=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => genjOwlxrUJMyOT6WcwWiPVq2fg=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:19:25ZmQl9GcNw14i3shQQj6BUKGGHvpY=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => OacizdppolDum9k9/+wneCaTz/M=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:20:25ZTHodLtZRrvHv3qnsAmvLaYEnIk0=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => 6xT++Ec1u+OkjZEd1fRlbdEybNM=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198960409705
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:21:22ZBmV+Lvikr5Sw2kcKUtBWRNQjhNA=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => UDphnAgZ69NQS2eOA2jkQwXxSPU=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:24:40ZLLjh48rZ38dPmWoItgorhlbvXio=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => OsPq0nWrEgGazZZs3OL4L1Oanww=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:29:44Z3Nfx8LKximl7JpzOd2kZ4s/0b3Q=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => 021iHX3N910qYqYFUaHW3io9fpY=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:33:35ZsDUaSadmbq7JJhn/o9PPpB4cb2U=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => pt/Bqaj0hh0VI83WzYq1Otz4x1s=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T12:37:33ZoD/hKn8zMp++w79EFZMdMV9eepY=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => dy2L3jkQjq6SPB64Kzt0/bUnFn4=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T15:29:56Zzhwxg1OzKg/IQHhdzaLbU9vL1+0=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => ya/ARL2NL34S5xhTA/RbQsc16Po=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T15:33:14ZpUmyiti8f5ua8vKbHd6KqXNAO0s=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => insF0yENncFONEIrgtakF/gp0U8=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-04T15:37:01ZtP93tC96G0axJnUNUEDWPlr8Nt4=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => oXRrgjT4+uOOL7GMUHbfg6gNQSQ=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-06T09:19:32ZZt1aaIj3LqyS29pXpcw/d/vOU1w=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => Cy0NX39V2W9VSO3/Y6FYWtYgJt4=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-06T09:30:31ZslTosHaAJMqasP0gK2u0fzKKFjE=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => c8Gls1MKvw+qUgqipUp+rC0yznQ=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-03-09T09:46:02Zyb5ry5QRIw+WUMj4l44tHHJY/cc=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => n4BQBy2SGUA5PDLQODQU6s5qmP8=
+)
+Array
+(
+    [openid_ns] => http://specs.openid.net/auth/2.0
+    [openid_mode] => id_res
+    [openid_op_endpoint] => https://steamcommunity.com/openid/login
+    [openid_claimed_id] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_identity] => https://steamcommunity.com/openid/id/76561198767524796
+    [openid_return_to] => https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html
+    [openid_response_nonce] => 2026-04-02T15:50:09ZJ1WRBPts7UYHjQuNQaOhiThtJ4s=
+    [openid_assoc_handle] => 1234567890
+    [openid_signed] => signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle
+    [openid_sig] => RsKmrBrZHa7m37JlUII0Nly2V3w=
+)

@@ -1,0 +1,176 @@
+"use strict";(function(){try{var record=function(name,detail){aps.get(accountId).queue.push(new CustomEvent(name,{detail}))};const accountId="d2c1d4de-7c69-49c2-8aec-7ee14abe5ed5";window._aps=window._aps||new Map;const aps=window._aps;aps.has(accountId)||aps.set(accountId,{queue:[],store:new Map}),record("_config/requestViewerCountry/define",{"code":"UA"});record("analytics/sampling/set",{"rates":{"error":0.001,"status":0.0001}});record("a3pes/banner/activate",{"restrictions":{"allow":{"accountTypes":["ssw"]}}});record("idVendors/enabled/set",{"bidParameterKeys":["liveintent","merkle","intimateMerger","pair","amx","33across","fTrack","captify","publink","anonymised","quantcast","idPlus","unifiedid","ddb_key_638","fabrick","uid","criteo","yahoo","liveRamp","id5","pubcommon","audigent","lightPublisherAudiences","lotame"]});record("idVendors/integration/execute",{"accountId":"d2c1d4de-7c69-49c2-8aec-7ee14abe5ed5","sourceId":"600","countryCode":"UA","vendorId":"33across","allowedRegions":["JP","US","AU","CA"],"blockedRegions":undefined,"vendorLoadedSampleRate":5,"domainPrecedence":[],"defaultScript":function anonymous(
+) {
+["JP","US","AU","CA"]?["JP","US","AU","CA"].includes("UA")&&(function anonymous(
+) {
+var lexiconPropertyId = '0015a00003IkCTDAA3';
+if (lexiconPropertyId && lexiconPropertyId.charAt(0) !== '%') {
+  if (!window._33AcrossIdMappingsProvider) {
+    createlexiconScript(lexiconPropertyId);
+  }
+}
+
+function createlexiconScript(id) {
+  var lexiconScript = document.createElement('script');
+  lexiconScript.src = 'https://cdn-ima.33across.com/ima.js';
+  lexiconScript['onload'] = function (e) {
+    const my33AcrossIdProvider = new _33AcrossIdMappingsProvider({
+      pid: id,
+      refreshInSeconds: 60 * 60 * 8,
+      expires: 90,
+      src: 'aps'
+    });
+
+    my33AcrossIdProvider.fetch();
+  };
+  document.head.appendChild(lexiconScript);
+}
+})():(!undefined||undefined&&!undefined.includes("UA"))&&(function anonymous(
+) {
+var lexiconPropertyId = '0015a00003IkCTDAA3';
+if (lexiconPropertyId && lexiconPropertyId.charAt(0) !== '%') {
+  if (!window._33AcrossIdMappingsProvider) {
+    createlexiconScript(lexiconPropertyId);
+  }
+}
+
+function createlexiconScript(id) {
+  var lexiconScript = document.createElement('script');
+  lexiconScript.src = 'https://cdn-ima.33across.com/ima.js';
+  lexiconScript['onload'] = function (e) {
+    const my33AcrossIdProvider = new _33AcrossIdMappingsProvider({
+      pid: id,
+      refreshInSeconds: 60 * 60 * 8,
+      expires: 90,
+      src: 'aps'
+    });
+
+    my33AcrossIdProvider.fetch();
+  };
+  document.head.appendChild(lexiconScript);
+}
+})()
+},"defaultPropertyId":"0015a00003IkCTDAA3"});record("idVendors/integration/execute",{"accountId":"d2c1d4de-7c69-49c2-8aec-7ee14abe5ed5","sourceId":"600","countryCode":"UA","vendorId":"audigent","allowedRegions":undefined,"blockedRegions":["BR"],"vendorLoadedSampleRate":5,"domainPrecedence":[],"defaultScript":function anonymous(
+) {
+undefined?undefined.includes("UA")&&(function anonymous(
+) {
+var audigentPropertyId = '716';
+if (audigentPropertyId && audigentPropertyId.charAt(0) !== '%') {
+  (function (H, A, D, R, O, N, i, d) {
+    H[N] = H[N] || function () { (H[N].q = H[N].q || []).push(arguments) };
+    i = A.createElement(D); A.async = true;
+    i.src = R + "?url=" + encodeURIComponent(H.location.href) + "&ref=" + encodeURIComponent(A.referrer) +
+      "&_it=amazon&partner_id=" + O; d = A.getElementsByTagName(D)[0]; d.parentNode.insertBefore(i, d);
+  })(window, document, 'script', 'https://cdn.hadronid.net/hadron.js', audigentPropertyId, 'ha');
+}
+})():(!["BR"]||["BR"]&&!["BR"].includes("UA"))&&(function anonymous(
+) {
+var audigentPropertyId = '716';
+if (audigentPropertyId && audigentPropertyId.charAt(0) !== '%') {
+  (function (H, A, D, R, O, N, i, d) {
+    H[N] = H[N] || function () { (H[N].q = H[N].q || []).push(arguments) };
+    i = A.createElement(D); A.async = true;
+    i.src = R + "?url=" + encodeURIComponent(H.location.href) + "&ref=" + encodeURIComponent(A.referrer) +
+      "&_it=amazon&partner_id=" + O; d = A.getElementsByTagName(D)[0]; d.parentNode.insertBefore(i, d);
+  })(window, document, 'script', 'https://cdn.hadronid.net/hadron.js', audigentPropertyId, 'ha');
+}
+})()
+},"defaultPropertyId":"716"});record("idVendors/integration/execute",{"accountId":"d2c1d4de-7c69-49c2-8aec-7ee14abe5ed5","sourceId":"600","countryCode":"UA","vendorId":"id5","allowedRegions":undefined,"blockedRegions":["BR"],"vendorLoadedSampleRate":5,"domainPrecedence":[],"defaultScript":function anonymous(
+) {
+undefined?undefined.includes("UA")&&(function anonymous(
+) {
+var id5PropertyId = '492';
+if (id5PropertyId && id5PropertyId.charAt(0) !== '%') {
+    var id5Script = document.createElement('script');
+    id5Script.src = '//cdn.id5-sync.com/api/1.0/id5-api.js';
+    id5Script['onload'] = function(e) { 
+        ID5.init({ partnerId: Number(id5PropertyId) , provider: 'aps' })
+    };
+    document.head.appendChild(id5Script);
+}
+})():(!["BR"]||["BR"]&&!["BR"].includes("UA"))&&(function anonymous(
+) {
+var id5PropertyId = '492';
+if (id5PropertyId && id5PropertyId.charAt(0) !== '%') {
+    var id5Script = document.createElement('script');
+    id5Script.src = '//cdn.id5-sync.com/api/1.0/id5-api.js';
+    id5Script['onload'] = function(e) { 
+        ID5.init({ partnerId: Number(id5PropertyId) , provider: 'aps' })
+    };
+    document.head.appendChild(id5Script);
+}
+})()
+},"defaultPropertyId":"492"});record("idVendors/integration/execute",{"accountId":"d2c1d4de-7c69-49c2-8aec-7ee14abe5ed5","sourceId":"600","countryCode":"UA","vendorId":"lotame","allowedRegions":undefined,"blockedRegions":["AR","BZ","BO","BR","CL","CO","CR","CU","DO","EC","SV","GT","GY","HT","HN","MX","NI","PA","PY","PE","SR","UY","VE","AW","GF","PR"],"vendorLoadedSampleRate":5,"domainPrecedence":[],"defaultScript":function anonymous(
+) {
+undefined?undefined.includes("UA")&&(function anonymous(
+) {
+if (!window['lotame_sync_16576']) {
+  var lotameClientId = '16576';
+
+  initLotame(lotameClientId);
+  createLotameScript(lotameClientId);
+
+  function initLotame(propertyId) {
+    var lotameConfig = {};
+    var namespace = window['lotame_sync_' + propertyId] = {};
+    namespace.config = lotameConfig;
+    namespace.data = {};
+    namespace.cmd = namespace.cmd || [];
+
+    namespace.cmd.push(function () {
+      namespace.sync();
+    });
+  };
+
+  function createLotameScript(propertyId) {
+    var lotameSyncUrl = "https://tags.crwdcntrl.net/lt/c/" + propertyId + "/sync.min.js";
+    var lotameScriptTag = document.createElement('script');
+    lotameScriptTag.src = lotameSyncUrl;
+    document.head.appendChild(lotameScriptTag);
+  };
+}
+})():(!["AR","BZ","BO","BR","CL","CO","CR","CU","DO","EC","SV","GT","GY","HT","HN","MX","NI","PA","PY","PE","SR","UY","VE","AW","GF","PR"]||["AR","BZ","BO","BR","CL","CO","CR","CU","DO","EC","SV","GT","GY","HT","HN","MX","NI","PA","PY","PE","SR","UY","VE","AW","GF","PR"]&&!["AR","BZ","BO","BR","CL","CO","CR","CU","DO","EC","SV","GT","GY","HT","HN","MX","NI","PA","PY","PE","SR","UY","VE","AW","GF","PR"].includes("UA"))&&(function anonymous(
+) {
+if (!window['lotame_sync_16576']) {
+  var lotameClientId = '16576';
+
+  initLotame(lotameClientId);
+  createLotameScript(lotameClientId);
+
+  function initLotame(propertyId) {
+    var lotameConfig = {};
+    var namespace = window['lotame_sync_' + propertyId] = {};
+    namespace.config = lotameConfig;
+    namespace.data = {};
+    namespace.cmd = namespace.cmd || [];
+
+    namespace.cmd.push(function () {
+      namespace.sync();
+    });
+  };
+
+  function createLotameScript(propertyId) {
+    var lotameSyncUrl = "https://tags.crwdcntrl.net/lt/c/" + propertyId + "/sync.min.js";
+    var lotameScriptTag = document.createElement('script');
+    lotameScriptTag.src = lotameSyncUrl;
+    document.head.appendChild(lotameScriptTag);
+  };
+}
+})()
+},"defaultPropertyId":undefined});record("idVendors/integration/execute",{"accountId":"d2c1d4de-7c69-49c2-8aec-7ee14abe5ed5","sourceId":"600","countryCode":"UA","vendorId":"pubcommon","allowedRegions":undefined,"blockedRegions":["BR"],"vendorLoadedSampleRate":5,"domainPrecedence":[],"defaultScript":function anonymous(
+) {
+undefined?undefined.includes("UA")&&(function anonymous(
+) {
+if (!window.PublisherCommonId) {
+    var pubcommonScript = document.createElement('script');
+    pubcommonScript.src = '//secure.cdn.fastclick.net/js/pubcid/latest/pubcid.min.js';
+    document.head.appendChild(pubcommonScript);
+}
+})():(!["BR"]||["BR"]&&!["BR"].includes("UA"))&&(function anonymous(
+) {
+if (!window.PublisherCommonId) {
+    var pubcommonScript = document.createElement('script');
+    pubcommonScript.src = '//secure.cdn.fastclick.net/js/pubcid/latest/pubcid.min.js';
+    document.head.appendChild(pubcommonScript);
+}
+})()
+},"defaultPropertyId":undefined});record("_config/config/didLoad",undefined)}catch(e){console.error(e)}})();

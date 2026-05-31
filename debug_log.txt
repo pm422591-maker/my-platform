@@ -1,0 +1,37 @@
+2026-01-19 18:00:52 - Received: {"uid":"aNviqTlx5WhxFgX2DhkTDHirH5f2","email":"p43919053@gmail.com","name":"Поліна","provider":"google"}
+SUCCESS: Пользователь aNviqTlx5WhxFgX2DhkTDHirH5f2 записан
+2026-01-19 18:01:07 - Received: {"uid":"aNviqTlx5WhxFgX2DhkTDHirH5f2","email":"p43919053@gmail.com","name":"Поліна","provider":"google"}
+INFO: Пользователь aNviqTlx5WhxFgX2DhkTDHirH5f2 уже есть в базе
+2026-01-20 02:03:29 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+ERROR: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'password' in 'field list'
+2026-01-20 02:06:47 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+ERROR: SQLSTATE[HY000]: General error: 1364 Field 'id' doesn't have a default value
+2026-01-20 02:07:26 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+ERROR: SQLSTATE[HY000]: General error: 1364 Field 'id' doesn't have a default value
+2026-01-20 02:21:24 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+ERROR: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'password' in 'field list'
+2026-01-20 02:25:12 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+2026-01-20 02:26:21 - Input: {"email":"p43919053@gmail.com","name":"Поліна","uid":"aNviqTlx5WhxFgX2DhkTDHirH5f2","provider":"google"}
+2026-01-20 21:20:40 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+2026-01-20 21:45:48 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-20 22:10:57 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-20 22:16:07 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-20 23:05:53 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-20 23:12:14 - Input: {"email":"p43919053@gmail.com","name":"Поліна","uid":"aNviqTlx5WhxFgX2DhkTDHirH5f2","provider":"google"}
+2026-01-20 23:37:01 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-20 23:48:24 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+2026-01-21 00:02:42 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 00:09:00 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+2026-01-21 00:12:30 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 00:13:29 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+2026-01-21 00:17:48 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 00:22:53 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 00:29:39 - Input: {"email":"p43919053@gmail.com","name":"Поліна","uid":"aNviqTlx5WhxFgX2DhkTDHirH5f2","provider":"google"}
+2026-01-21 00:34:50 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 00:41:35 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 00:45:13 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 00:56:36 - Input: {"email":"polinamoiseeva793@gmail.com","name":"Поліна Моісеєва","uid":"wE2hORHMRKT6GAgW0Yg9AZEqxGz2","provider":"google"}
+2026-01-21 01:48:51 - Input: {"email":"p43919053@gmail.com","name":"Поліна","uid":"aNviqTlx5WhxFgX2DhkTDHirH5f2","provider":"google"}
+2026-01-21 01:53:24 - Input: {"email":"p43919053@gmail.com","name":"Поліна","uid":"aNviqTlx5WhxFgX2DhkTDHirH5f2","provider":"google"}
+2026-01-21 01:58:04 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}
+2026-01-25 22:29:26 - Input: {"email":"pm422591@gmail.com","name":"Полина Моисеева","uid":"9LX1AbpUncUTaDmM9igd4NJ4sky2","provider":"google"}

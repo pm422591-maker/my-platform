@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamer Profile</title>
+    <link rel="stylesheet" href="css/home.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  
+  
+  
+
+  // ТВОЯ НОВА КОНФІГУРАЦІЯ (має бути 1 в 1 як в index.html)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnc1n52-LVhZ72vYSmvWv97enqqrqBBi4",
+    authDomain: "mneploho-7ff8b.firebaseapp.com",
+    projectId: "mneploho-7ff8b",
+    storageBucket: "mneploho-7ff8b.firebasestorage.app",
+    messagingSenderId: "554377149418",
+    appId: "1:554377149418:web:44f345329d803c674c9093",
+    measurementId: "G-LM2032YE2W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window.db = db; 
+
+  // 1. СНАЧАЛА ПРОВЕРЯЕМ, ЗАШЕЛ ЛИ ЧЕЛОВЕК ЧЕРЕЗ PHP (Email)
+  const savedName = localStorage.getItem('user_name');
+  
+  if (savedName) {
+      console.log("✅ Успешный вход через PHP:", savedName);
+      
+      // Ждем загрузки страницы и вставляем данные
+      document.addEventListener('DOMContentLoaded', () => {
+          const userNickSpans = document.querySelectorAll('.user-nick');
+          const topAvatar = document.getElementById('top-bar-avatar');
+          const savedAvatar = localStorage.getItem('user_avatar') || 'img/default_avatar.png';
+
+          userNickSpans.forEach(span => span.textContent = savedName);
+          if (topAvatar) topAvatar.src = savedAvatar;
+      });
+
+  } else {
+      // 2. ЕСЛИ В ПАМЯТИ ПУСТО, ПРОВЕРЯЕМ FIREBASE (Google)
+      onAuthStateChanged(auth, (user) => {
+          if (user) {
+              console.log("✅ Успешный вход через Google:", user.email);
+              
+              const userNickSpans = document.querySelectorAll('.user-nick');
+              const topAvatar = document.getElementById('top-bar-avatar');
+              const displayName = user.displayName || user.email.split('@')[0];
+              const displayAvatar = user.photoURL || 'img/default_avatar.png';
+
+              userNickSpans.forEach(span => span.textContent = displayName);
+              if (topAvatar) topAvatar.src = displayAvatar;
+
+          } else {
+              // 3. НИ PHP, НИ GOOGLE -> ТОГДА ТОЧНО ВЫКИДЫВАЕМ
+              console.warn("❌ Доступа нет, возвращаем на логин.");
+              window.location.replace("index.html"); 
+          }
+      });
+  }
+  // Ждем загрузки документа
+document.addEventListener('DOMContentLoaded', () => {
+    const profileBtn = document.getElementById('user-profile-btn');
+    
+    if (profileBtn) {
+        profileBtn.onclick = () => {
+            // Переход на страницу профиля
+            window.location.href = "profile.html";
+        };
+    }
+});
+
+
+  // 2. ФУНКЦИЯ ВЫХОДА (привяжем к кнопке в контекстном меню)
+  window.logoutUser = function() {
+    // Очищаємо дані PHP
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_avatar');
+    localStorage.removeItem('user_banner');
+
+    // Виходимо з Firebase і йдемо на головну
+    signOut(auth).then(() => {
+      window.location.href = "index.html";
+    }).catch((error) => {
+      console.error("Ошибка при выходе:", error);
+      window.location.href = "index.html"; // Все одно йдемо, навіть якщо помилка
+    });
+  };
+  
+</script>
+</head>
+<body>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;600&display=swap" rel="stylesheet">
+    <audio id="spotify-audio-engine" crossorigin="anonymous" preload="auto"></audio>
+    <div id="alert-top" class="custom-alert">
+       Більше 500 символів ввести не можна!
+    </div>
+
+    <div class="top-bar">
+    <div class="top-bar-left">
+        <div class="lang-switcher">
+            <button class="lang-btn active" onclick="setLanguage('uk')">Укр</button>
+            <button class="lang-btn" onclick="setLanguage('en')">Eng</button>
+        </div>
+
+        <div class="theme-switcher">
+            <button id="theme-dark" class="theme-btn active" onclick="setTheme('dark')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <button id="theme-light" class="theme-btn" onclick="setTheme('light')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="top-bar-center">
+    <img src="img/logo.png" alt="Syncora" class="header-logo" style="height: 40px !important; max-height: 40px !important; width: auto !important; max-width: 150px !important; object-fit: contain !important; filter: drop-shadow(0 0 6px rgba(240, 4, 127, 0.5));">
+</div>
+
+    <div class="top-bar-right">
+        <button id="user-profile-btn" class="profile-avatar-btn">
+            <img id="top-bar-avatar" class="current-user-avatar" src="img/default_avatar.png" alt="Profile">
+        </button>
+    </div>
+</div>
+   </div>
+
+   <div class="side-panel-top" id="main-sidebar">
+    
+   <div class="nav-container-vertical"> 
+    <button id="btn-feed" class="nav-button active-tab" onclick="setLudoraPage('feed');">СТРІЧКА</button>
+    
+    <button id="btn-requests" class="nav-button" onclick="setLudoraPage('requests');">ЗАЯВКИ</button>
+    
+    <button id="btn-blog" class="nav-button" onclick="setLudoraPage('blog');">БЛОГ</button>
+    
+    <button id="btn-streams" class="nav-button" onclick="setLudoraPage('streams');">СТРІМИ</button>
+</div>
+</div>
+</div>
+
+<div class="side-panel-post-btn">
+  <button type="button" class="custom-button-action" id="add-post-btn" onclick="togglePostEditor();">
+    <div class="icon-circle"></div> 
+    <span id="txt-add-post" class="text-wrapper">Додати пост</span>
+</button>
+</div>
+<div class="side-panel-bottom">
+   <div class="sidebar-sections-container">
+        
+    <div id="txt-header-channels" class="section-header">КАНАЛИ</div>
+    <div class="chat-list" id="channels-list">
+        
+        <div id="btn-create-channel" class="chat-item create-chat-btn" onclick="openCreateFlow('channel')">
+            <div class="avatar-wrapper">
+                <div class="create-icon-placeholder">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </div>
+            </div>
+            <div class="chat-info">
+                <span class="chat-name-placeholder" style="color: #f0047f; font-weight: 700;">Створити канал</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="txt-header-personal" class="section-header">ОСОБИСТІ ЧАТИ</div>
+    <div id="personal-chats" class="chat-list">
+        <div class="chat-item">
+            <div class="chat-info"><span class="chat-name-placeholder inactive">Немає взаємних підписок</span></div>
+        </div>
+    </div>
+
+    <div id="txt-header-groups" class="section-header">ГРУПИ</div>
+    <div class="chat-list" id="groups-list">
+        
+        <div id="btn-create-group" class="chat-item create-chat-btn" onclick="openCreateFlow('group')">
+            <div class="avatar-wrapper">
+                <div class="create-icon-placeholder">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </div>
+            </div>
+            <div class="chat-info">
+                <span class="chat-name-placeholder" style="color: #f0047f; font-weight: 700;">Створити групу</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+    <div id="custom-context-menu" class="context-menu">
+        <div id="mute-toggle-text" class="context-menu-item" onclick="mutePhoto()">Заглушити</div>
+        <div class="context-menu-item" onclick="removePhoto()">Вийти</div>
+    </div>
+
+    <div class="overlay-header"></div> 
+    
+    <div class="main-content-block">
+        
+        <div id="stream-studio-overlay" class="tab-content chat-overlay-container" style="display: none; background: #0a0008 !important; z-index: 9999; border-radius: 20px !important; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px); position: absolute; overflow: hidden; flex-direction: column;">
+            
+            <div class="stream-controls" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(240, 4, 127, 0.3);">
+                <button onclick="startScreenShare()" class="studio-btn neon-blue">💻 Захопити гру (Екран)</button>
+                <button onclick="startCamera()" class="studio-btn neon-pink">📷 Увімкнути камеру</button>
+                <button onclick="toggleBackgroundRemoval()" class="studio-btn neon-green">✂️ Вирізати фон</button>
+                <button onclick="toggleCameraSize()" class="studio-btn neon-purple">🔲 Камера в кут / На весь екран</button>
+                <button onclick="closeStreamStudio()" class="studio-btn neon-red">❌ Завершити стрім</button>
+            
+            </div>
+
+            <div id="stream-video-container" style="position: relative; width: 100%; height: 100%; overflow: hidden;">
+                <video id="screen-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
+                <video id="camera-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+            </div>
+            
+        </div>
+        <div id="top-game-filter" style="position: relative; z-index: 10; margin-top: -30px; padding: 8px 20px; border-radius: 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+        
+        <div style="display: flex; align-items: center; gap: 15px; flex: 1; overflow: hidden;">
+        
+            
+            <div id="media-upload-container" style="display: flex; gap: 15px; overflow-x: auto; align-items: center; padding: 15px 5px; scrollbar-width: none;">
+                </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; flex: 1;">
+          <div class="filter-center-section">
+            <div class="search-container-premium">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="game-search-input" class="premium-search-input" placeholder="Шукати користувачів..." autocomplete="off">
+                <div id="search-results-dropdown" class="premium-search-dropdown"></div>
+            </div>
+        </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: 1;">
+           <div class="filter-right-section" style="display: flex !important; align-items: center !important; gap: 10px;">
+            <div id="active-filter-icons" style="display: flex; gap: 6px; align-items: center;"></div>
+            <div style="position: relative; display: flex; align-items: center; flex-shrink: 0;">
+            <button onclick="openExtraFilters()" class="mini-filter-btn" onmousedown="event.preventDefault()" 
+        style="width: 45px; height: 45px; margin-top: -10px; display: flex; align-items: center; justify-content: center; padding: 0; background: linear-gradient(90deg, rgba(29, 0, 22, 0.6) 0%, rgba(26, 26, 29, 0) 80%) !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: 0.2s;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="color: #ccc;">
+        <path d="M3 6H21M6 12H18M10 18H14"/>
+    </svg>
+</button>
+
+        <div id="filter-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #f0047f; color: white; font-size: 10px; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; align-items: center; justify-content: center; border: 2px solid #1d0016; z-index: 20; box-shadow: 0 0 8px #f0047f;">0</div>
+        </div>
+
+    <div id="extraFiltersModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;     background: rgba(10, 0, 8, 0.85); backdrop-filter: blur(12px); z-index: 70000; justify-content: center; align-items: center; font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
+    
+    <div class="modal-filters-content">
+        
+        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
+            <h3 style="color: #fff; margin: 0; font-weight: 800; letter-spacing: 1px; font-size: 18px; text-transform: uppercase; font-family: 'Geologica', sans-serif; text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);">
+                ФІЛЬТРИ ПОШУКУ
+            </h3>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Вік тімейта</label>
+            <div class="filter-chips-container" id="chips-age" style="font-family: 'Geologica', sans-serif;">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="12-16" data-active-src="img\free-icon-font-child-head.png" style="font-weight: 600;">
+                    <img src="img\free-icon-font-child-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 12-16
+                </div>
+                <div class="filter-chip" data-value="16-18" data-active-src="img\free-icon-font-man-head.png" style="font-weight: 600;">
+                    <img src="img\free-icon-font-man-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 16-18
+                </div>
+                <div class="filter-chip" data-value="18+" data-active-src="img\free-icon-font-woman-head.png" style="font-weight: 600;">
+                    <img src="img\free-icon-font-woman-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 18+
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Тип зв'язку</label>
+            <div class="filter-chips-container" id="chips-style" style="font-family: 'Geologica', sans-serif;">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="micro" data-active-src="img\microphone-black-shape.png" style="font-weight: 600;">
+                    <img src="img\microphone.png" style="width: 16px; height: 16px; margin-right: 5px;"> Мікро
+                </div>
+                <div class="filter-chip" data-value="microoff" data-active-src="img\microphone-off (1).png" style="font-weight: 600;">
+                    <img src="img\microphone-off.png" style="width: 16px; height: 16px; margin-right: 5px;"> Без мікро
+                </div>
+                <div class="filter-chip" data-value="discord" data-active-src="img\discord.png" style="font-weight: 600;">
+                    <img src="img/free-icon-font-discord.png" style="width: 16px; height: 16px; margin-right: 5px;"> Discord
+                </div>
+                <div class="filter-chip" data-value="telegram" data-active-src="img\telegram.png" style="font-weight: 600;">
+                    <img src="img\telegram (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Telegram
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Рівень скіла</label>
+            <div class="filter-chips-container" id="chips-genre" style="font-family: 'Geologica', sans-serif;">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="shooter" data-active-src="img\free-icon-font-bolt.png" style="font-weight: 600;">
+                    <img src="img\free-icon-font-bolt (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Новачок
+                </div>
+                <div class="filter-chip" data-value="moba" data-active-src="img\free-icon-font-flame.png" style="font-weight: 600;">
+                    <img src="img\free-icon-font-flame (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Середній
+                </div>
+                <div class="filter-chip" data-value="profi" data-active-src="img\free-icon-font-trophy.png" style="font-weight: 600;">
+                    <img src="img\free-icon-font-trophy (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Профі
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Мова спілкування</label>
+            <div class="filter-chips-container" id="chips-voice" style="font-family: 'Geologica', sans-serif;">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="yes" data-active-src="img\ukraine (1).png" style="font-weight: 600;">
+                    <img src="img\ukraine.png" style="width: 16px; height: 16px; margin-right: 5px;"> UA
+                </div>
+                <div class="filter-chip" data-value="no" data-active-src="img\usa-flag.png" style="font-weight: 600;">
+                    <img src="img\usa-flag (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> EN
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px; font-family: 'Geologica', sans-serif;">
+            <button onclick="closeExtraFilters()" style="flex: 1; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 14px; transition: 0.2s;">Скасувати</button>
+            <button onclick="applyExtraFilters()" style="flex: 2; background: #f0047f; color: white; border: none; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 800; font-size: 14px; box-shadow: 0 4px 20px rgba(240, 4, 127, 0.5); transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;">Застосувати</button>
+        </div>
+        
+    </div>
+</div>
+        </div>
+        </div>
+
+    </div>
+
+       <div id="create-post-panel" class="create-post-wrapper" data-selected-color="pink" style="font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
+    <div class="ludora-pro-card">
+        
+        <div class="user-profile-mini">
+            <div class="user-avatar-box">
+                <img class="current-user-avatar" src="img/default_avatar.png" onerror="this.src='img/default_avatar.png'" alt="User" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="user-name-text" style="font-weight: 700;">polinamoiseeva22</div>
+        </div>
+
+        <div class="post-settings-row">
+            
+            <button id="btn-toggle-group" class="filter-toggle-btn" onclick="togglePostPanel('group')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Група: <span id="current-group-label" style="color: #f0047f; margin-left: 4px; font-weight: 700;">Усі групи</span>
+            </button>
+
+            <input type="file" id="post-file-input" style="display: none;" accept="image/*,video/*" onchange="handlePostFileSelect(this)">
+
+            <button id="btn-toggle-extra" class="filter-toggle-btn" onclick="togglePostPanel('extra')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Додатково
+            </button>
+            
+            <button id="btn-toggle-requests-filters" class="filter-toggle-btn" onclick="toggleRequestPanel('anketa')" style="display: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
+                </svg>
+                Параметри тімейта
+            </button>
+
+            <button id="btn-req-mode-group" class="filter-toggle-btn" onclick="toggleRequestPanel('group')" style="display: none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Для групи
+            </button>
+
+            <div id="req-mode-toggle-wrapper" style="display: none; margin-left: auto; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); align-items: center; gap: 5px;">
+                <button type="button" id="req-mode-anketa" class="filter-toggle-btn active" onclick="switchRequestPublishMode('anketa')" style="margin: 0; padding: 6px 12px; background: #f0047f; color: white; border-radius: 8px;">Анкета</button>
+                <button type="button" id="req-mode-group" class="filter-toggle-btn" onclick="switchRequestPublishMode('group')" style="margin: 0; padding: 6px 12px; background: transparent; color: #ccc; border-radius: 8px;">Для групи</button>
+            </div>
+        </div>
+        
+        <div id="post-filters-area" class="hidden-panel-area" style="display: none;"></div>
+
+        <div id="requests-filters-area" class="hidden-panel-area" style="display: none; margin-top: 10px;">
+    <div id="req-anketa-fields-block">
+        <div style="margin-bottom: 15px;">
+            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Вік тімейта</label>
+            <div class="filter-chips-container" id="chips-age">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="12-16" data-active-src="img\free-icon-font-child-head.png" style="font-weight: 600;"> 
+                    <img src="img\free-icon-font-child-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 12-16
+                </div>
+                <div class="filter-chip" data-value="16-18" data-active-src="img\free-icon-font-man-head.png" style="font-weight: 600;"> 
+                    <img src="img\free-icon-font-man-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 16-18
+                </div>
+                <div class="filter-chip" data-value="18+" data-active-src="img\free-icon-font-woman-head.png" style="font-weight: 600;"> 
+                    <img src="img\free-icon-font-woman-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 18+
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Тип зв'язку</label>
+            <div class="filter-chips-container" id="chips-comm">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="micro" data-active-src="img\microphone-black-shape.png" style="font-weight: 600;"> 
+                    <img src="img\microphone.png" style="width: 16px; height: 16px; margin-right: 5px;"> Мікро
+                </div>
+                <div class="filter-chip" data-value="microoff" data-active-src="img\microphone-off (1).png" style="font-weight: 600;"> 
+                    <img src="img\microphone-off.png" style="width: 16px; height: 16px; margin-right: 5px;"> Без мікро
+                </div>
+                <div class="filter-chip" data-value="discord" data-active-src="img\discord.png" style="font-weight: 600;"> 
+                    <img src="img/free-icon-font-discord.png" style="width: 16px; height: 16px; margin-right: 5px;"> Discord
+                </div>
+                <div class="filter-chip" data-value="telegram" data-active-src="img\telegram.png" style="font-weight: 600;"> 
+                    <img src="img\telegram (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Telegram
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Рівень скіла</label>
+            <div class="filter-chips-container" id="chips-level">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="shooter" data-active-src="img\free-icon-font-bolt.png" style="font-weight: 600;"> 
+                    <img src="img\free-icon-font-bolt (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Новачок
+                </div>
+                <div class="filter-chip" data-value="moba" data-active-src="img\free-icon-font-flame.png" style="font-weight: 600;"> 
+                    <img src="img\free-icon-font-flame (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Середній
+                </div>
+                <div class="filter-chip" data-value="profi" data-active-src="img\free-icon-font-trophy.png" style="font-weight: 600;"> 
+                    <img src="img\free-icon-font-trophy (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Профі
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Мова спілкування</label>
+            <div class="filter-chips-container" id="chips-lang">
+                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
+                <div class="filter-chip" data-value="yes" data-active-src="img\ukraine (1).png" style="font-weight: 600;"> 
+                    <img src="img\ukraine.png" style="width: 16px; height: 16px; margin-right: 5px;"> UA
+                </div>
+                <div class="filter-chip" data-value="no" data-active-src="img\usa-flag.png" style="font-weight: 600;"> 
+                    <img src="img\usa-flag (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> EN
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="requests-group-list-area" class="hidden-panel-area" style="display: none; margin-top: 10px;">
+            <div id="req-simple-group-list-block" style="margin-bottom: 15px;">
+                <label class="premium-label" style="font-weight: 700; font-size: 11px; text-transform: uppercase;">Список груп</label>
+                <div id="future-group-list-container" class="filter-chips-container" style="margin-top: 5px;">
+                    <span style="color: rgba(255,255,255,0.4); font-size: 12px;">Тут буде список...</span>
+                </div>
+            </div>
+        </div>
+</div>
+
+        <div id="group-settings-area" class="hidden-panel-area">
+            <div style="margin-bottom: 5px;">
+                <label class="premium-label" style="font-weight: 700; font-size: 11px;">Оберіть групу для публікації</label>
+                <div class="filter-chips-container" id="custom-group-list"></div>
+                <select id="post-target-group" style="display: none;">
+                    <option value="all">Усі групи</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="extra-settings-area" class="hidden-panel-area">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="music-search-wrapper">
+                    <label class="premium-label" style="display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 11px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg> 
+                        Знайти трек
+                    </label>
+                    <input type="text" id="music-search-input" class="premium-input-sm" placeholder="Назва пісні або виконавець..." oninput="searchMockMusic()" autocomplete="off">
+                    <div id="music-search-dropdown" class="music-search-dropdown"></div>
+                </div>
+
+                <div class="mention-search-wrapper" style="position: relative;">
+                    <label class="premium-label" style="display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 11px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Відмітити друга
+                    </label>
+                    <input type="text" id="mention-search-input" class="premium-input-sm" placeholder="@нікнейм" autocomplete="off">
+                    <div id="mention-dropdown" class="mention-dropdown-menu" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <textarea id="new-post-body" class="clean-textarea-separated" maxlength="501" placeholder="Про що думаєте?" autocomplete="off" style="font-size: 15px; font-weight: 400; line-height: 1.5;"></textarea>
+
+        <div id="active-music-player" style="margin-bottom: 20px; display: none;"></div>
+
+        <div class="photo-center-wrapper">
+            <div id="post-image-preview-large" class="square-photo-upload" onclick="document.getElementById('post-file-input').click()">
+                <img id="preview-img-tag" class="preview-img-tag" src="">
+                <div id="upload-icon-content" style="text-align: center;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    <br>
+                    <span style="font-size: 12px; font-weight: 600;">Додати фото</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="post-bottom-row">
+            <div class="color-picker-mini">
+                <span class="premium-label" style="margin:0; font-weight: 700; font-size: 11px;">КОЛІР:</span>
+                <div class="color-swatch-sm active" style="background: #f0047f; color: #f0047f;" onclick="selectPostColor(this, 'pink')"></div>
+                <div class="color-swatch-sm" style="background: #ffffff; color: #ffffff; border: 1px solid rgba(0,0,0,0.2);" onclick="selectPostColor(this, 'white')"></div>
+                <div class="color-swatch-sm" style="background: #000000; color: #000000; border: 1px solid rgba(255,255,255,0.2);" onclick="selectPostColor(this, 'black')"></div>
+                <div class="color-swatch-sm" style="background: #ff0000; color: #ff0000;" onclick="selectPostColor(this, 'red')"></div>
+            </div>
+            
+            <div class="post-footer-actions">
+                <button id="btn-cancel-post" class="btn-cancel-sm" onclick="togglePostEditor()" style="font-weight: 600;">Скасувати</button>
+                <button id="submit-post-btn" class="btn-publish-sm" onclick="window.publishPost(event)" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Опублікувати</button>
+            </div>
+        </div>
+        
+    </div>
+</div>
+<div id="search-results-container" style="display: none; padding: 20px;">
+    <div id="search-people-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+    </div>
+</div>
+
+<div id="search-dashboard" class="gaming-dashboard" style="display: none;">
+    <div class="dashboard-grid">
+        
+        <div class="dashboard-column left-dash">
+            
+            <div class="dash-block wide-block popular-games">
+                <div class="block-header">
+                    <h4>Популярні ігри</h4>
+                </div>
+                <div class="games-mini-list">
+                    <div class="game-item-card neon-square-pink" style="background-image: url('img/valorant.jpg')">
+                        <div class="game-overlay"><span class="game-title">Valorant</span></div>
+                    </div>
+                    <div class="game-item-card neon-square-cyan" style="background-image: url('img/Dead by Daylight.jpg')">
+                        <div class="game-overlay"><span class="game-title">Dead by Daylight</span></div>
+                    </div>
+                    <div class="game-item-card neon-square-purple" style="background-image: url('img/silent hill.jpg')">
+                        <div class="game-overlay"><span class="game-title">Silent hill</span></div>
+                    </div>
+                    <div class="game-item-card neon-square-purple" style="background-image: url('img/Resident Evil.jpg')">
+                        <div class="game-overlay"><span class="game-title">Resident Evil</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="middle-row">
+                
+                <div class="dash-block groups-block neon-border-pink">
+                    <div class="block-header">
+                        <h4>Топ групи</h4>
+                    </div>
+                    <div class="mini-list thick-cards">
+                        <div class="mini-item item-glow-pink with-blurred-image">
+                            <div class="item-content-left">
+                                <span class="item-main-title">#Dota2_UA</span>
+                                <span class="item-subtitle">15.4K учасників</span>
+                            </div>
+                            <div class="item-blurred-bg" style="background-image: url('https://picsum.photos/seed/dota2_ua/400/300');"></div>
+                        </div>
+                        <div class="mini-item item-glow-pink with-blurred-image">
+                            <div class="item-content-left">
+                                <span class="item-main-title">#CyberSport</span>
+                                <span class="item-subtitle">9.1K учасників</span>
+                            </div>
+                            <div class="item-blurred-bg" style="background-image: url('https://picsum.photos/seed/cybersport_ua/400/300');"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dash-block channels-block neon-border-cyan">
+                    <div class="block-header">
+                        <h4>Канали</h4>
+                    </div>
+                    <div class="mini-list thick-cards">
+                        <div class="mini-item item-glow-cyan with-blurred-image">
+                            <div class="item-content-left">
+                                <span class="item-main-title">Streamer_X</span>
+                                <span class="item-subtitle">Online: 1.2K</span>
+                            </div>
+                            <div class="item-blurred-bg" style="background-image: url('img/streamer_ava.jpg')"></div>
+                        </div>
+                        <div class="mini-item item-glow-cyan with-blurred-image">
+                            <div class="item-content-left">
+                                <span class="item-main-title">Ludora_News</span>
+                                <span class="item-subtitle">Новини геймдеву</span>
+                            </div>
+                            <div class="item-blurred-bg" style="background-image: url('img/ludora_logo.jpg')"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> 
+            
+        </div> 
+
+        <div class="dashboard-column right-dash">
+            <div class="dash-block history-block">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0;"> Ви переглядали</h4>
+                    <span onclick="window.clearSearchHistory()" title="Очистити історію" style="cursor: pointer; color: #555; font-size: 14px; transition: 0.2s;" onmouseover="this.style.color='#f0047f'" onmouseout="this.style.color='#555'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </span>
+                </div>
+                <div id="real-history-list" class="history-list"></div>
+            </div>
+
+            <div class="dash-block recs-block">
+    <h4>Рекомендовані для вас</h4>
+    
+    <!-- Залишаємо ТОЛЬКИ контейнер. Сюди JavaScript вставить реальні картки! -->
+    <div class="recs-list">
+        
+        <!-- Опціонально: можна додати текст завантаження, який буде видно, поки сервер шукає людей -->
+        <span style="color: rgba(255,255,255,0.5); font-size: 12px; padding: 10px; font-family: 'Geologica', sans-serif;">
+            Шукаємо ідеальних тімейтів...
+        </span>
+        
+    </div>
+</div>
+        </div> 
+
+    </div>
+</div>
+
+        <div id="feed-content" class="tab-content active">
+        </div>
+
+        <div id="requests-content" class="tab-content">
+        </div>
+
+        <div id="streams-content" class="tab-content" style="display: none;">
+    
+    <div id="streams-header" class="streams-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="color: white; margin: 0; font-family: 'Geologica', sans-serif;">🔴 Активні трансляції</h2>
+        <div class="streams-filter" style="display: flex; gap: 10px; overflow-x: auto;">
+            <button class="stream-cat-btn active" style="background: #f0047f; color: white; border: none; padding: 6px 15px; border-radius: 20px;">Всі</button>
+            <button class="stream-cat-btn" style="background: rgba(255,255,255,0.1); color: #ccc; border: none; padding: 6px 15px; border-radius: 20px;">Dota 2</button>
+        </div>
+    </div>
+    
+    <div id="streams-grid" class="streams-grid"></div>
+
+    <div id="stream-studio-container" style="display: none; position: relative; width: 100%; height: 75vh; background: #050004; border-radius: 16px; overflow: hidden; border: 1px solid rgba(240, 4, 127, 0.3); flex-direction: column;">
+            
+            <div id="stream-info-overlay" style="position: absolute; top: 15px; left: 20px; z-index: 40; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 12px; backdrop-filter: blur(10px); border: none;">
+                <div style="display: flex; flex-direction: column; gap: 0px; min-width: 200px;">
+                    <h3 id="stream-main-title" style="margin: 0; color: white; font-family: 'Geologica', sans-serif; font-size: 18px; font-weight: 800; text-shadow: 0 2px 5px rgba(0,0,0,0.8); outline: none; padding: 2px 4px; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; line-height: 1.2;">Мій перший стрім</h3>
+                    <span id="stream-sub-title" style="margin: 0; color: rgba(255,255,255,0.7); font-family: 'Geologica', sans-serif; font-size: 13px; outline: none; padding: 2px 4px; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; line-height: 1.2;">Спілкуємося та граємо разом!</span>
+                </div>
+                
+                <button id="btn-edit-stream-info" onclick="toggleStreamInfoEdit()" style="background: rgba(240, 4, 127, 0.1); border: 1px solid rgba(240, 4, 127, 0.3); color: #f0047f; cursor: pointer; padding: 6px 8px; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-left: auto;" onmouseover="this.style.filter='brightness(1.5)'" onmouseout="this.style.filter='none'">
+                    <svg id="icon-edit-pencil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    <svg id="icon-save-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: none;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </button>
+            </div>
+
+            <div class="stream-controls" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 40; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(240, 4, 127, 0.3);">
+                <button onclick="startScreenShare()" class="studio-btn neon-blue">💻 Захопити гру (Екран)</button>
+                <button onclick="startCamera()" class="studio-btn neon-pink">📷 Увімкнути камеру</button>
+                <button onclick="toggleBackgroundRemoval()" class="studio-btn neon-green">✂️ Вирізати фон</button>
+                <button onclick="toggleCameraSize()" class="studio-btn neon-purple">🔲 Камера в кут / На весь екран</button>
+                <button onclick="closeStreamStudio()" class="studio-btn neon-red">❌ Завершити стрім</button>
+            </div>
+
+            <div id="stream-video-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1;">
+                <video id="screen-video" autoplay playsinline muted style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: #000; z-index: 2;"></video>
+                <video id="camera-video" autoplay playsinline muted class="camera-full" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5;"></video>
+            </div>
+            
+        </div>
+</div>
+
+        <div id="blog-content" class="tab-content" style="display: none;">
+            
+   <div id="blog-setup-view" style="display: none; position: fixed; top: 0px; left: 0px; width: 100%; height: 100%; background: rgba(10, 0, 8, 0.85); backdrop-filter: blur(12px); z-index: 70000; justify-content: center; align-items: center;">
+    
+    <div class="blog-setup-content">
+        
+        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
+            <h2 id="setup-blog-header" style="color: #fff; margin: 0; font-weight: 800; letter-spacing: 1px; font-size: 18px; text-transform: uppercase; text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);">
+                Редагувати блог ✏️
+            </h2>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label class="neon-blog-label">Назва блогу</label>
+            <input type="text" id="setup-blog-title" class="neon-blog-input" placeholder="Мій крутий геймерський блог" autocomplete="off">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="neon-blog-label">Опис блогу</label>
+            <textarea id="setup-blog-desc" class="neon-blog-input" placeholder="Про що будете писати?" rows="2" style="resize: none;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <div style="flex: 1;">
+                <label class="neon-blog-label">Приватність</label>
+                <select id="setup-blog-privacy" class="neon-blog-input" style="cursor: pointer; appearance: none;">
+                    <option value="public" style="background: #1d0016;">Публічний</option>
+                    <option value="private" style="background: #1d0016;">Приватний</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label class="neon-blog-label">Колір фону</label>
+                <input type="color" id="setup-blog-bg" value="#f0047f" class="neon-blog-input" style="height: 41px; padding: 2px; cursor: pointer;">
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="neon-blog-label">Фон (поверх кольору)</label>
+            <div class="blog-image-upload-box" onclick="document.getElementById('setup-blog-image').click()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span id="blog-image-filename" style="font-size: 12px; font-weight: 600;">Вибрати картинку</span>
+            </div>
+            <input type="file" id="setup-blog-image" accept="image/*" style="display: none;" onchange="updateBlogFileName(this)">
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label class="neon-blog-label">Власне посилання (URL)</label>
+            <div style="display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; overflow: hidden; transition: 0.3s;">
+                <span style="padding: 12px 8px 12px 15px; color: rgba(255,255,255,0.4); background: rgba(0,0,0,0.5); font-size: 13px;">ludora.com/</span>
+                <input type="text" id="setup-blog-slug" placeholder="my-blog" style="flex: 1; padding: 12px 15px 12px 4px; background: transparent; border: none; color: white; outline: none; font-family: 'Geologica', sans-serif; font-size: 13px;">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px;">
+            <button id="cancel-edit-btn" onclick="cancelBlogEdit()" style="flex: 1; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 14px; transition: 0.2s;">Скасувати</button>
+            <button id="submit-blog-btn" onclick="createNewBlog()" style="flex: 2; background: #f0047f; color: white; border: none; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 800; font-size: 14px; box-shadow: 0 4px 20px rgba(240, 4, 127, 0.5); transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;">Зберегти</button>
+        </div>
+        
+    </div>
+</div>
+
+    <div id="blog-active-view" style="display: none; border-radius: 16px; min-height: 100vh; margin: -20px; padding: 20px;">
+    <div id="active-blog-banner" style="background: transparent; ; padding: 40px 20px; margin-bottom: 20px; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 20px; font-family: 'Geologica', sans-serif;">
+    
+    <div>
+        <h2 id="display-blog-title" style="margin: 0; font-size: 32px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">dvsdvsdv</h2>
+        <p id="display-blog-desc" style="margin: 10px 0 0 0; color: rgba(255,255,255,0.7); font-size: 15px; max-width: 600px; line-height: 1.5;"></p>
+    </div>
+    
+    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+        
+        
+        
+        <button id="txt-edit-label" onclick="editBlogSettings()" style="background: rgba(240, 4, 127, 0.05); border: 1px solid #f0047f; color: #fff; padding: 10px 24px; border-radius: 50px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 0 12px rgba(240, 4, 127, 0.4), inset 0 0 8px rgba(240, 4, 127, 0.2); display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px); font-family: 'Geologica', sans-serif; text-transform: uppercase; letter-spacing: 1px;" onmouseover="this.style.boxShadow='0 0 20px rgba(240, 4, 127, 0.8), inset 0 0 15px rgba(240, 4, 127, 0.4)'; this.style.background='rgba(240, 4, 127, 0.15)'" onmouseout="this.style.boxShadow='0 0 12px rgba(240, 4, 127, 0.4), inset 0 0 8px rgba(240, 4, 127, 0.2)'; this.style.background='rgba(240, 4, 127, 0.05)'">
+            ✏️ Редагувати
+        </button>
+        
+    </div>
+</div>
+    <div id="blog-posts-feed" style="padding: 0 30px;">
+        <p style="color: #888;">Пока записей нет...</p>
+    </div>
+</div>
+
+</div>
+
+<div id="msg-context-menu" class="chat-context-menu">
+    <div id="btn-ctx-edit" class="ctx-menu-item" onclick="window.startEditMessage()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <span id="txt-ctx-edit">Редагувати</span> 
+    </div>
+    <div id="btn-ctx-delete" class="ctx-menu-item item-delete" onclick="window.confirmDeleteMessage()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        <span id="txt-ctx-delete">Видалити</span> 
+    </div>
+</div>
+<div id="chat-creation-screen" class="tab-content chat-overlay-container" style="display: none; background: #0a0008 !important; z-index: 9999; border-radius: 20px !important; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px);">
+    
+    <div class="chat-header">
+        <span id="creation-screen-header" style="color: rgba(255,255,255,0.6); font-weight: 700; font-size: 14px; text-transform: uppercase;">Створення...</span>
+        
+        <button onclick="closeChatCreation()" class="close-chat-x" style="margin-left: auto;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+    
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+        <div style="width: 100%; max-width: 400px; text-align: center;">
+            
+            <div style="width: 80px; height: 80px; border-radius: 50%; border: 2px dashed #f0047f; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #f0047f; background: rgba(240, 4, 127, 0.05);">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </div>
+            
+            <h2 id="creation-screen-title" style="color: #fff; margin-top: 0; margin-bottom: 30px; font-weight: 700; font-size: 22px;">Новий...</h2>
+            
+            <input type="text" id="creation-name-input" class="premium-input-sm" placeholder="Назва..." autocomplete="off" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(240, 4, 127, 0.3); color: #fff; padding: 15px; border-radius: 12px; font-size: 15px; margin-bottom: 20px; text-align: center; outline: none;">
+            
+            <div style="display: flex; justify-content: center; gap: 10px;">
+                <button class="btn-cancel-sm" onclick="closeChatCreation()" style="padding: 12px 25px; font-size: 14px; font-weight: 600;">Скасувати</button>
+                <button class="btn-publish-sm" onclick="submitChatCreation()" style="padding: 12px 30px; font-size: 14px; font-weight: 700; text-transform: uppercase;">Створити</button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<div id="chat-window" class="tab-content chat-overlay-container">
+    
+    <div class="chat-header">
+        <img src="" id="chat-target-avatar" class="chat-head-img" onerror="this.src='img/default_avatar.png'; this.style.backgroundColor='#E6AEC9';">
+        <span id="chat-target-name" class="chat-title">Піпіпі</span>
+        
+        <div class="chat-header-icons">
+    <svg id="btn-start-call" onclick="startTelegramCall()" style="cursor: pointer; transition: 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" onmouseover="this.style.color='#f0047f'" onmouseout="this.style.color='currentColor'">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+</div>
+
+        <button onclick="closeChat()" class="close-chat-x">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+    
+    <div class="messages-container" id="chat-messages">
+    </div>
+
+    <div id="edit-msg-panel" class="edit-msg-panel">
+        <div class="edit-msg-info">
+            <div class="edit-msg-label">Редагування</div>
+            <div id="edit-msg-preview" class="edit-msg-preview-text">Текст повідомлення...</div>
+        </div>
+        <button onclick="window.cancelEditMessage()" class="cancel-edit-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+
+    <div class="chat-input-area">
+        <div class="chat-input-icons">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        </div>
+
+        <input type="text" id="msg-input" placeholder="Напишіть повідомлення...">
+        <button id="send-btn" class="chat-send-btn">Надіслати</button>
+    </div>
+</div>
+
+<div id="telegram-call-screen" class="tg-call-overlay">
+    <div class="tg-call-content">
+        <div class="tg-call-header">
+            <h2 id="call-username">Співрозмовник</h2>
+            <p id="call-status">Телефонуємо...</p>
+        </div>
+
+       <div id="video-call-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;">
+    <video id="remote-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+    <video id="local-video" autoplay muted playsinline style="position: absolute; bottom: 120px; right: 20px; width: 100px; height: 140px; object-fit: cover; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2);"></video>
+</div>
+        <div class="tg-call-avatar-wrapper">
+            <div class="tg-pulse-ring"></div>
+            <div class="tg-pulse-ring delay"></div>
+            <img id="call-avatar-img" src="img/default_avatar.png" alt="Avatar">
+        </div>
+
+        <div class="tg-call-actions-container" style="width: 100%; display: flex; justify-content: center; margin-bottom: 50px;">
+            
+            <div id="call-outgoing-actions" style="display: flex; justify-content: center; width: 100%;">
+                <button class="tg-end-call-btn" onclick="endTelegramCall()">
+                    <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none" style="transform: rotate(135deg);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </button>
+            </div>
+
+            <div id="call-incoming-actions" style="display: none; gap: 40px; justify-content: center; width: 100%;">
+                <button class="tg-accept-call-btn" onclick="acceptTelegramCall()">
+                    <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </button>
+                <button class="tg-end-call-btn" onclick="endTelegramCall()">
+                    <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none" style="transform: rotate(135deg);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </button>
+            </div>
+
+           <div id="call-active-actions" style="display: none; gap: 30px; justify-content: center; width: 100%; align-items: center;">
+    <button id="btn-speaker" class="tg-action-btn" onclick="toggleSpeaker()">
+        <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="1.5" fill="none">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+    </button>
+
+    <button class="tg-end-call-btn" onclick="endTelegramCall()">
+        <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none" style="transform: rotate(135deg);">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+    </button>
+
+    <button id="btn-mic" class="tg-action-btn" onclick="toggleMic()">
+        <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="1.5" fill="none">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+    </button>
+</div>
+            
+        </div>
+    </div>
+</div>
+</div>
+    </div>
+
+    <button id="back-to-top" class="back-to-top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+</body>
+
+   <div id="games-modal" class="modal-games-overlay" style="display: none;">
+    <div class="modal-games-content">
+        <div class="modal-games-header">
+            <h3 id="modal-games-main-title">ВИБЕРІТЬ ГРУ</h3>
+            <button class="close-games" onclick="closeGamesModal()">&times;</button>
+        </div>
+        <div class="search-row">
+            <div id="modal-back-button" onclick="goBackToList()" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </div>
+            
+            <div class="modal-input-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="modal-search" placeholder="Пошук гри..." autocomplete="off" oninput="filterMedia()">
+            </div>
+        </div>
+        <div id="media-grid" class="media-grid"></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="js/home.js"></script>
+
+</body>
+</html>

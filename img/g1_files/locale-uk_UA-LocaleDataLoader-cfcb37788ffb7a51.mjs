@@ -1,0 +1,2 @@
+(self.modernJsonp=self.modernJsonp||[]).push([["29824"],{997599(n,r,e){e.r(r),e.d(r,{default:()=>t});var o=e(72594),s=e.n(o);function t({children:n}){return n(s())}},72594(n,r,e){n.exports={locale:"uk-UA",i18nStrings:void 0,plural:e(356504)}},356504(n){n.exports=function(n){return n%10==1&&n%100!=11?0:n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?1:2}}}]);
+//# sourceMappingURL=https://sm.pinimg.com/webapp/locale-uk_UA-LocaleDataLoader-cfcb37788ffb7a51.mjs.map

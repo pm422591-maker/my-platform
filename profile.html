@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Назва вашого сайту</title>
+    <link rel="stylesheet" href="css/profile.css">
+    <style>
+        /* Запобігає стрибкам контенту при завантаженні */
+        .user-name-wrapper, .user-bio-display { min-height: 20px; }
+        .profile-container { position: relative; } /* Важливо для позиціонування */
+    </style>
+</head>
+
+<body>
+
+    <div class="top-bar">
+    <div class="top-bar-left">
+        <a href="home.html?v=1" class="back-home-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
+        <div class="lang-switcher">
+            <button class="lang-btn active" onclick="setLanguage('uk')">Укр</button>
+            <button class="lang-btn" onclick="setLanguage('en')">Eng</button>
+        </div>
+
+        <div class="theme-switcher">
+            <button id="theme-dark" class="theme-btn active" onclick="setTheme('dark')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <button id="theme-light" class="theme-btn" onclick="setTheme('light')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="top-bar-right">
+        <div class="notifications-wrapper">
+            <button class="notif-btn" onclick="toggleNotifDropdown(event)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notif-badge" id="notif-count" style="display: none;">0</span>
+            </button>
+
+            <div class="notif-dropdown" id="notif-dropdown" >
+                <div class="notif-header">Сповіщення</div>
+                <div class="notif-list" id="notif-list">
+                    <div class="notif-empty">Немає нових сповіщень</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="profile-container">
+
+        <div class="right-sidebar-container" style="z-index: 10;">
+    <div class="user-stats-plate">
+    <div class="stat-group">
+        <span class="stat-value" id="reputation-val">0</span>
+        <span class="stat-label">репутація</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-group">
+        <span class="stat-value" id="followers-count">0</span> <span class="stat-label">підписники</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-group">
+        <span class="stat-value" id="following-count">0</span> <span class="stat-label">підписки</span>
+    </div>
+</div>
+</div>
+
+        <div class="time-picker-panel" id="timePicker">
+            <div class="panel-header">Виберіть час (проведіть мишкою)</div>
+            <div class="time-grid" id="timeGrid"></div>
+            <button class="close-panel" id="closePicker">Зберегти</button>
+        </div>
+
+        <div class="black-block main-gradient-bg"></div>
+        <div class="light-card" id="profile-banner-bg"></div>
+
+        <div id="avatar-container">
+    <img src="" id="top-nav-avatar" alt="">
+    
+    <div class="transparent-square" style="display: block;">
+        <video src="img/avatarka1.mp4" autoplay loop muted playsinline disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback" style="width:100%; height:100%; object-fit:cover; mix-blend-mode:screen; pointer-events:none;">
+        </video>
+    </div>
+    <div id="status-dot" class="status-offline"></div>
+</div>
+
+       <div class="blog-btn-wrapper discord-channel" onclick="window.location.href = 'home.html?tab=blog'" 
+     style="
+        cursor: pointer; 
+        display: flex; 
+        align-items: center; 
+        gap: 10px; /* Відступ між фото і назвою */
+        padding: 6px 8px; /* Компактні відступи як у Дискорді */
+        border-radius: 8px;
+        transition: all 0.2s ease; /* Плавна анімація */
+     ">
+    
+    <img src="img/blog-avatar.jpg" class="blog-avatar-img" onerror="this.src='https://placehold.co/32'" 
+         style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
+    
+    <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="color: #8e9297; font-size: 20px; line-height: 1; font-weight: 300;">#</span>
+        
+        <span id="profile-blog-name" class="blog-name" style="color: #8e9297; font-weight: 500; font-size: 15px;">Завантаження...</span>
+    </div>
+</div>
+
+        <div class="micro-level-container" style="top: -50px;">
+            <div class="micro-level-circle">
+                <span id="currentLevel">1</span>
+            </div>
+            <div class="micro-level-track">
+                <div class="micro-level-fill" id="userProgressBar" style="width: 45%;">
+                    <div class="micro-shine"></div>
+                </div>
+                <div class="micro-xp-text">
+                    <span id="currentXP">450</span> / <span id="maxXP">1000</span> XP
+                </div>
+            </div>
+        </div>
+
+        <div id="games-main-wrapper" style="display: none; position: relative; width: 100%;">
+            <div class="games-integration-panel" style="position: relative; width: 100%; min-height: 50px;">
+                <div id="no-games-placeholder" class="placeholder-text">Вибраних ігор немає</div>
+                <div id="selected-games-container" class="games-grid" style="display: none !important;"></div>
+                <div class="edit-overlay owner-only" onclick="openAuthModal()" style="display: none; cursor: pointer;">
+                    <span>Налаштувати авторизацію (Steam, Roblox...)</span>
+                </div>
+            </div>
+        </div>
+
+       
+    <div class="user-name-wrapper" style="display: flex; align-items: center; gap: 8px; min-height: 24px;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;       /* Оптимальний розмір для перемикача */ font-weight: 700;      /* Жирний шрифт для кращої читабельності */ text-transform: uppercase;">
+        <span id="userName">Завантаження...</span>
+    </div>
+
+    <div id="userHandle" class="user-handle-text" style="font-size: 13px; color: #666; margin-top: -2px; margin-bottom: 4px;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">@username</div>
+
+    <div style="display: flex; align-items: center; gap: 10px; pointer-events: none;">
+    
+     <div id="userRegistrationDate" style="min-height: 15px; margin-left: -20px; pointer-events: auto;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">Загрузка даты...</div>
+    
+     <div id="userFlags" class="flags-container" style="position: absolute; top: 708px; left: 280px; display: flex; align-items: center; gap: 5px; pointer-events: auto; width: max-content;"></div>
+     
+</div>
+
+        <div id="userBioDisplay" class="user-bio-display" style="min-height: 20px; gap: 20px;">
+            гшрврашруа...
+        </div>
+        <div style="height: 20px; min-height: 20px;"></div>
+
+        <div class="user-description-wrapper">
+            <span id="userDescription"></span>
+        </div>
+
+        <div class="profile-sidebar-card">
+            
+            <div class="activity-block inactive-now" id="activityTrigger">
+                <div class="activity-content">
+                    <span id="activityText">Додати час активності</span>
+                </div>
+                <div class="activity-status-icon" id="statusIcon">🕒</div>
+            </div>
+
+            <div class="empty-wide-block" id="badges-display-area">
+                <span style="font-size: 12px; color: #444;">Немає бейджів</span>
+            </div>
+        </div>
+
+        <div class="gifts-wide-block">
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+</div>
+
+      <div class="profile-actions-container">
+   <button id="edit-profile-btn" class="settings-btn" onclick="openSettings()" style="display: none;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">
+    <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+    <span>Редагувати профіль</span>
+</button>
+
+    <div id="visitor-actions" style="display: none; gap: 8px;">
+        <button class="settings-btn subscribe-btn" onclick="followUser()">
+            <span>Підписатися</span>
+        </button>
+        <button class="settings-btn" onclick="checkChatAccess()">
+         <span>Повідомлення</span>
+        </button>
+        <button class="settings-btn report-btn" style="width: 40px;" title="Поскаржитися">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </button>
+    </div>
+</div>
+    </div> 
+    
+    <div id="games-modal" class="modal-games-overlay">
+        <div class="modal-games-content">
+            <div class="modal-games-header">
+    <div class="modal-header-top">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button id="modal-back-button" class="back-btn" onclick="loadMainLibrary()" style="display: none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+</button>
+            <h3 id="modal-games-main-title">Оберіть гру</h3>
+        </div>
+        
+        <button class="modal-close-btn" onclick="closeGamesModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+        </button>
+    </div>
+
+    <div class="search-container">
+    <input type="text" id="game-search-input" placeholder="Пошук гри...">
+    
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="M21 21l-4.3-4.3"></path>
+    </svg>
+</div>
+</div>
+            <div id="media-grid" class="media-grid"></div>
+            <div id="modal-footer-actions" style="margin-top: auto; display: none; padding-top: 20px; text-align: center;">
+                <button onclick="confirmSelection()" style="display: block; margin: 0 auto; background: #ff4500; color: white; border: none; padding: 12px 40px; border-radius: 12px; font-weight: bold; cursor: pointer;">Підтвердити вибір</button>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="editor-modal" class="custom-editor-modal">
+        <div class="editor-content">
+            <div class="editor-sidebar">
+                <div class="sidebar-region">
+                    <h3 class="sidebar-header">Налаштування</h3>
+                    <button class="sidebar-item active" onclick="switchEditorTab('profile')">Особиста інформація</button>
+                    <button class="sidebar-item" onclick="switchEditorTab('design')">Дизайн акаунта</button>
+                    <button class="sidebar-item" onclick="switchEditorTab('integrations')">Інтеграції (Steam/Roblox)</button>
+                    <button class="sidebar-item" onclick="switchEditorTab('devices')">Пристрої</button>
+                    <div class="sidebar-divider"></div>
+                    <h3 class="sidebar-header">Налаштування додатка</h3>
+                    <button class="sidebar-item" onclick="switchEditorTab('appearance')">Зовнішній вигляд</button>
+                    <button class="sidebar-item" onclick="switchEditorTab('language')">Мова</button>
+                    <button class="sidebar-item" onclick="switchEditorTab('voice')">Голос і відео</button>
+                    <div class="sidebar-divider"></div>
+                    <button class="sidebar-item logout-item" onclick="closeEditor()">Вийти</button>
+                </div>
+            </div>
+
+            <div class="editor-body">
+
+                <div id="tab-profile" class="editor-tab active">
+                    <div class="settings-content-right">
+                        <div class="card-content">
+                            <div class="setting-item">
+                                <label>ВІДОБРАЖУВАНЕ ІМ'Я</label>
+                                <div class="name-edit-wrapper">
+                                    <span id="edit-display-name" contenteditable="true" class="editable-name-text" style="color: white !important;" spellcheck="false">Завантаження...</span>
+                                    <button type="button" class="inline-btn" id="save-name-btn">Змінити</button>
+                                </div>
+                            </div>
+                            <div class="sidebar-divider"></div>
+                            <div class="setting-item">
+                                <label>ІМ'Я КОРИСТУВАЧА</label>
+                                <div class="input-wrapper">
+                                    <span id="edit-username" contenteditable="true" class="editable-name-text" style="color: white !important;" spellcheck="false">username</span>
+                                    <button type="button" class="inline-btn" id="btn-save-username">Змінити</button>
+                                </div>
+                            </div>
+                            <div class="sidebar-divider"></div>
+                            <div class="setting-item">
+                                <label>ЕЛЕКТРОННА ПОШТА</label>
+                                <div class="input-wrapper">
+                                    <span id="edit-secondary-email" contenteditable="true" class="editable-name-text" style="color: white !important;" spellcheck="false">example@mail.com</span>
+                                    <button type="button" class="inline-btn" id="btn-save-email">Додати</button>
+                                </div>
+                            </div>
+                            <div class="sidebar-divider"></div>
+                            <div class="setting-item">
+                                <label>ДАТА НАРОДЖЕННЯ</label>
+                                <div class="birthday-layout">
+                                    <div class="birthday-selectors">
+                                        <div class="date-column">
+                                            <button class="arrow-up" onclick="changeValue('day', 1)">▲</button>
+                                            <input type="text" id="birth-day" value="01" readonly>
+                                            <button class="arrow-down" onclick="changeValue('day', -1)">▼</button>
+                                        </div>
+                                        <div class="date-column">
+                                            <button class="arrow-up" onclick="changeValue('month', 1)">▲</button>
+                                            <input type="text" id="birth-month" value="01" readonly>
+                                            <button class="arrow-down" onclick="changeValue('month', -1)">▼</button>
+                                        </div>
+                                        <div class="date-column year">
+                                            <button class="arrow-up" onclick="changeValue('year', 1)">▲</button>
+                                            <input type="text" id="birth-year" value="2000" readonly>
+                                            <button class="arrow-down" onclick="changeValue('year', -1)">▼</button>
+                                        </div>
+                                    </div>
+                                    <button class="inline-btn" id="btn-save-birthday">Підтвердити</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="danger-zone-section">
+                            <h3 class="danger-title">КЕРУВАННЯ ОБЛІКОВИМ ЗАПИСОМ</h3>
+                            <div class="danger-buttons-row">
+                                <button class="btn-danger-outline" onclick="freezeAccount()">Заморозити акаунт</button>
+                                <button class="btn-danger-solid" onclick="deleteAccount()">Видалити акаунт</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-integrations" class="editor-tab">
+                    <div class="settings-content-right">
+                        <div class="card-content">
+                            <div class="integration-row">
+    <div class="platform-meta">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" width="24" alt="Steam">
+        <span>Steam</span>
+    </div>
+    <button class="btn-platform steam" id="btn-steam-auth">Підключити</button>
+</div>
+                            <div class="sidebar-divider"></div>
+                            <div class="integration-row">
+                                <div class="platform-meta">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg" width="24" alt="Roblox" style="filter: invert(1);">
+                                    <span>Roblox</span>
+                                </div>
+                                <button class="btn-platform roblox" onclick="startRobloxAuth()">Підключити</button>
+                            </div>
+                            <div class="sidebar-divider"></div>
+                            <div class="integration-row">
+                                <div class="platform-meta">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Epic_Games_logo.svg" width="24" alt="Epic" style="filter: invert(1);">
+                                    <span>Epic Games</span>
+                                </div>
+                                <button class="btn-platform epic" onclick="linkPlatform('Epic Games')">Підключити</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-design" class="editor-tab">
+                    <div class="settings-content-right">
+                        <div class="settings-profile-header" style="margin-bottom: 30px;">
+                            <div class="settings-banner">
+                                <img src="default-banner.jpg" id="settings-banner-img" alt="Banner">
+                            </div>
+                            <div class="settings-avatar-wrapper">
+                                <div class="settings-avatar">
+                                    <img src="default-avatar.png" id="settings-avatar-img" alt="Avatar">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-content design-card-adjustment">
+                            <h3 class="section-subtitle" style="margin-top: 10px; margin-bottom: 10px;">РЕДАГУВАННЯ ЗОВНІШНЬОГО ВИГЛЯДУ</h3>
+                            
+                            <div class="setting-item">
+                                <label>АВАТАР</label>
+                                <div class="input-wrapper">
+                                    <span class="design-hint">Змініть або видаліть поточне фото</span>
+                                    <div class="design-buttons" style="display: flex; gap: 10px; align-items: center;">
+                                        <button class="action-btn-gray" onclick="document.getElementById('avatar-input').click()">
+    Додати аватар
+</button>
+
+<input type="file" id="avatar-input" style="display: none;" accept="image/*">
+                                        <button class="btn-danger-outline" onclick="deleteAvatar()" style="padding: 5px 15px; font-size: 13px; cursor: pointer;">
+    Видалити
+</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-divider"></div>
+
+                            <div class="setting-item">
+                                <label class="design-label">ПРО МЕНЕ</label>
+                                <div class="input-container-new">
+                                    <span class="design-hint custom-hint-pos">Розкажіть трохи про себе</span>
+                                    <textarea id="user-bio" class="design-textarea" placeholder="Напишіть щось цікаве..." maxlength="231"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-divider"></div>
+
+                            <div class="setting-item">
+                                <label>ПРИКРАСА АВАТАРА</label>
+                                <div class="input-wrapper">
+                                    <span class="design-hint">Додайте унікальну рамку навколо фото</span>
+                                    <div class="design-buttons"  style="padding: 5px 15px; font-size: 13px; cursor: pointer;">
+                                        <button class="inline-btn" id="open-deco-modal-btn"  type="button">Обрати прикрасу</button>
+                                        <button type="button" class="btn-danger-outline" onclick="window.removeDecoration()">Прибрати</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-divider"></div>
+
+                            <div class="setting-item">
+                                <label>ФОТО БАНЕРА</label>
+
+                                
+                                <div class="input-wrapper design-column">
+                                    <label for="banner-file-input" class="banner-upload-square custom-long-box" style="cursor: pointer; border: 2px dashed #555; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #222; position: relative; z-index: 9999;">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                        <input type="file" id="banner-file-input" name="banner" accept="image/*" style="position: absolute; width: 1px; height: 1px; opacity: 0;" onchange="directUpload(this)">
+                                    </label>
+                                    <button id="btn-del-banner" class="btn-danger-outline" onclick="deleteBanner()" style="padding: 5px 15px; font-size: 13px; cursor: pointer; margin-left: 455px; margin-top: -50px;">
+            Видалити
+        </button>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-divider"></div>
+
+                            <div class="setting-item">
+                                <label class="design-label-bold">ФОН</label>
+                                <span class="design-hint">Виберіть фото, якщо немає фону</span>
+
+                            
+                                <div class="bg-upload-section" style="margin-top: 15px;">
+                                    <div class="bg-upload-square custom-long-box" onclick="document.getElementById('bg-file-input').click()">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                    </div>
+                                    <input type="file" id="bg-file-input" style="display: none;" accept="image/*" onchange="uploadBackground(this)">
+                                    <button id="btn-del-bg" class="btn-danger-outline" onclick="deleteBackground()" style="padding: 5px 15px; font-size: 13px; cursor: pointer; margin-left: 455px; margin-top: -50px;">
+            Видалити
+        </button>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-divider"></div>
+
+                            <div class="setting-item">
+                                <label class="design-label-bold">ГРАДІЄНТ</label>
+                                <span class="design-hint">Створіть власний колірний перехід</span>
+
+                                <div class="gradient-selection-container" style="margin-top: 15px; position: relative; width: fit-content;">
+                                    <div class="color-picker-wrapper tiny-picker" style="top: -10px; left: -10px; position: absolute; z-index: 10;">
+                                        <input type="color" id="color-left" value="#000000" oninput="updateGradientPreview()" style="cursor: pointer;">
+                                    </div>
+
+                                    <div id="gradient-preview-box" class="bg-upload-square custom-long-box" style="background: linear-gradient(135deg, #000, #ffffff); border: 2px solid rgba(255,255,255,0.1); position: relative; cursor: default; margin: 0;">
+                                        <div style="width: 100%; height: 2px; background: rgba(255,255,255,0.3); transform: rotate(-45deg); position: absolute;"></div>
+                                    </div>
+
+                                    <div class="color-picker-wrapper tiny-picker" style="bottom: -10px; right: -10px; position: absolute; z-index: 10;">
+                                        <input type="color" id="color-right" value="#ffffff" oninput="updateGradientPreview()" style="cursor: pointer;">
+                                    </div>
+                                </div>
+
+                                <button class="confirm-btn" onclick="applyGradientToBlock()" style="margin-top: 20px; width: 100%; padding: 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
+                                    Застосувати градієнт
+                                </button>
+                            </div>
+
+                            <h3 class="section-subtitle" style="margin-top: 40px; margin-bottom: 10px;">РЕДАГУВАННЯ ДОДАТКОВИХ ЕЛЕМЕНТІВ</h3>
+
+                            <div class="setting-item">
+                                <label>МОВА ТА КРАЇНА</label>
+                                <div class="input-wrapper">
+                                    <span class="design-hint">Налаштуйте відображення локальних даних</span>
+                                    <button class="inline-btn" onclick="openCountryModal()">Налаштувати</button>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-divider"></div>
+
+                            <div class="setting-item">
+                                <label>ВИБІР БЕЙДЖІВ</label>
+                                <div class="input-wrapper">
+                                    <span class="design-hint">Оберіть значки, які будуть бачити інші</span>
+                                    <button class="inline-btn" onclick="openBadgesModal()">Змінити бейджі</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-devices" class="editor-tab"></div>
+                <div id="tab-appearance" class="editor-tab"></div>
+                <div id="tab-language" class="editor-tab"></div>
+                <div id="tab-voice" class="editor-tab"></div>
+
+            </div> 
+        </div> 
+    </div> 
+    <div class="fade-rectangle" style="top: 70px;"></div>
+
+    <input type="file" id="avatar-input" style="display: none;" accept="image/*">
+    <input type="file" id="banner-input" style="display: none;" accept="image/*">
+    <div class="modal-overlay" id="region-modal" style="display: none;">
+        <div class="modal-content country-modal-size">
+            <div class="modal-header-center">
+                <h3>Регіональні налаштування</h3>
+                <div class="search-container">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="country-search-input" placeholder="Пошук країни..." oninput="filterCountries()">
+                </div>
+                <button class="close-modal-btn" onclick="closeCountryModal()">&times;</button>
+            </div>
+
+            <div class="modal-split-body">
+                <div class="split-column">
+                    <h4 class="column-title">Язики спілкування</h4>
+                    <div class="scrollable-list" id="language-list-container"></div>
+                </div>
+                <div class="vertical-divider"></div>
+                <div class="split-column">
+                    <h4 class="column-title">Країна проживання</h4>
+                    <div class="scrollable-list" id="country-list-container"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer-save">
+                <button class="save-btn" onclick="saveRegionSettings()">Зберегти зміни</button>
+            </div>
+        </div>
+    </div>
+
+   <div class="roblox-profile-section">
+    <h3 class="games-header">Мої ігри</h3>
+    
+    <button id="edit-games-btn" class="games-settings-btn" onclick="openGamesModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        </svg>
+    </button>
+    
+    <div id="roblox-games-render-zone" class="games-render-zone">
+        
+</div>
+</div>
+
+</div>
+
+</div>
+
+    <div id="deco-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 400px; text-align: center;">
+            <h3 style="color: white; margin-bottom: 20px;">Оберіть прикрасу</h3>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+                <div class="deco-item" onclick="window.applyDecoration('img/1.webm')" style="width: 120px; height: 120px; background: #222; border: 1px solid #444; cursor: pointer; overflow: hidden; border-radius: 10px;">
+                    <video src="img/1.webm" loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                </div>
+                <div class="deco-item" onclick="window.applyDecoration('img/2.webm')" style="width: 120px; height: 120px; background: #222; border: 1px solid #444; cursor: pointer; overflow: hidden; border-radius: 10px;">
+                    <video src="img/2.webm" loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0.5;"></video>
+                </div>
+            </div>
+            <button type="button" onclick="window.toggleDecoModal(false)" style="color: #ff4444; background: none; border: 1px solid #ff4444; padding: 8px 20px; cursor: pointer; border-radius: 5px;">
+                Закрити
+            </button>
+        </div>
+    </div>
+
+    <div id="badges-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 450px; text-align: center;">
+            <h3 style="color: white; margin-bottom: 10px;">Оберіть бейджі</h3>
+            <p style="color: #888; font-size: 13px; margin-bottom: 20px;">Натисніть, щоб обрати (макс. 5)</p>
+
+            <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap;">
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="vip" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 1.png" alt="VIP" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="admin" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 2.png" alt="Admin" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="verified" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 3.png" alt="Verified" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="bug_hunter" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 4.png" alt="Bug Hunter" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="creative" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 5.png" alt="Creative" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button type="button" onclick="closeBadgesModal()" style="color: #ccc; background: none; border: 1px solid #555; padding: 10px 25px; cursor: pointer; border-radius: 8px;">
+                    Скасувати
+                </button>
+                <button type="button" onclick="saveBadgesSelection()" style="color: white; background: #ff4500; border: none; padding: 10px 25px; cursor: pointer; border-radius: 8px; font-weight: bold;">
+                    Зберегти
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
+    <script>
+(function startBlogFetch() {
+    const blogSpan = document.getElementById('profile-blog-name');
+    
+    if (!blogSpan) {
+        setTimeout(startBlogFetch, 500);
+        return;
+    }
+
+    blogSpan.innerText = "З'єднання...";
+
+    async function loadIt() {
+        try {
+            // 1. Дивимось, чи є ID в адресі
+            const targetId = new URLSearchParams(window.location.search).get('id');
+            
+            // 2. Вибираємо ПРАВИЛЬНИЙ файл
+            // Якщо чужий профіль -> беремо get_user_blog_info.php
+            // Якщо свій профіль -> беремо get_my_blog.php (який ідеально працює на home.html!)
+            const fetchUrl = targetId ? `get_user_blog_info.php?user_id=${targetId}` : 'get_my_blog.php';
+
+            // 3. Робимо запит
+            const res = await fetch(fetchUrl, { credentials: 'include' });
+            const data = await res.json();
+
+            // 4. Оскільки файли віддають дані трохи по-різному, дістаємо назву універсально:
+            const blogTitle = (data.blog && data.blog.title) ? data.blog.title : data.blog_title;
+            const hasBlog = data.has_blog || (data.success && data.blog_title);
+
+            const blogWrapper = blogSpan.closest('.blog-btn-wrapper');
+
+            if (hasBlog && blogTitle) {
+                // ✅ Успіх! Блог є
+                blogSpan.innerText = blogTitle.length > 15 ? blogTitle.substring(0, 15) + '...' : blogTitle;
+                blogSpan.style.color = '#ffffff';
+                
+                if (blogWrapper) {
+                    blogWrapper.removeAttribute('onclick');
+                    blogWrapper.onclick = () => window.location.href = targetId ? `home.html?tab=blog&user=${targetId}` : `home.html?tab=blog`;
+                    blogWrapper.style.cursor = 'pointer';
+                    blogWrapper.style.opacity = '1';
+                }
+            } else {
+                // ❌ Блогу немає
+                blogSpan.innerText = "Немає блогу";
+                blogSpan.style.color = '#555';
+                if (blogWrapper) {
+                    blogWrapper.removeAttribute('onclick');
+                    blogWrapper.style.cursor = 'default';
+                    blogWrapper.style.opacity = '0.5';
+                }
+            }
+
+        } catch (err) {
+            blogSpan.innerText = "Помилка";
+            console.error("Блог крашнувся:", err);
+        }
+    }
+
+    loadIt();
+})();
+</script>
+
+    <script src="js/profile.js"></script>
+</body>
+
+</html>

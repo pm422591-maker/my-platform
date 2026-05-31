@@ -1,0 +1,503 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* 1. Налаштування тіла сторінки */
+body {
+    background-color: #000;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* 2. Контейнер фону (тепер він точно ззаду і не блокує кліки) */
+.animated-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* На самому задньому плані */
+    overflow: hidden;
+    pointer-events: none; /* Пропускає кліки крізь себе на кнопки */
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    will-change: transform;
+}
+
+/* Рожева пляма 1 */
+.blob-1 {
+    width: 50vw;
+    height: 50vw;
+    background: #880e4f;
+    filter: blur(120px);
+    opacity: 0.5;
+    top: -10%;
+    right: -5%;
+    animation: movePink 20s infinite alternate ease-in-out;
+}
+
+/* Рожева пляма 2 */
+.blob-2 {
+    width: 45vw;
+    height: 45vw;
+    background: #4a0024;
+    filter: blur(120px);
+    opacity: 0.5;
+    bottom: -10%;
+    left: -5%;
+    animation: movePink 25s infinite alternate-reverse ease-in-out;
+}
+
+/* ЧОРНЕ ЯДРО (Тепер воно РУХАЄТЬСЯ) */
+.blob-3 {
+    width: 30vw;
+    height: 30vw;
+    background: #000;
+    filter: blur(60px);
+    opacity: 1;
+    
+    /* Центруємо через flex або координати */
+    top: 50%;
+    left: 50%;
+    
+    /* Головна анімація руху */
+    animation: moveBlack 15s infinite alternate ease-in-out;
+    z-index: 2;
+}
+
+/* Анімація для рожевих плям */
+@keyframes movePink {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(10vw, 10vh) scale(1.1); }
+}
+
+/* Анімація для ЧОРНОГО КРУГА (зміщення від центру) */
+@keyframes moveBlack {
+    0% { 
+        /* translate(-50%, -50%) тримає його в центрі, 
+           а другий translate створює сам рух */
+        transform: translate(-50%, -50%) translate(-5vw, -5vh) scale(1); 
+    }
+    50% { 
+        transform: translate(-50%, -50%) translate(5vw, 5vh) scale(1.2); 
+    }
+    100% { 
+        transform: translate(-50%, -50%) translate(-2vw, 8vh) scale(0.9); 
+    }
+}
+
+/* --- НОВИЙ СТИЛЬ ДЛЯ ЛОГОТИПА --- */
+.text-logo {
+    font-size: 80px; /* Великий розмір як на макеті */
+    font-weight: 900;
+    color: white;
+    letter-spacing: -2px;
+}
+
+.pink-dot {
+    color: #F70087; /* Рожева крапка */
+}
+
+/* --- ОНОВЛЕНІ КНОПКИ (Рожеві замість синіх) --- */
+.blue-btn {
+    background: #F70087; /* Твій яскраво-рожевий */
+    color: white;
+}
+
+.blue-btn:hover { 
+    background: #d60075; /* Трохи темніший при наведенні */
+}
+
+/* Оновлена кнопка з точними розмірами */
+.outline-btn {
+    background: transparent !important; 
+    border: 2px solid #F70087 !important; 
+    border-radius: 20px !important; 
+    
+    /* === ТОЧНІ РОЗМІРИ З FIGMA === */
+    width: 300px !important; 
+    height: 40px !important; 
+    
+    color: #F70087 !important; 
+    font-weight: 700 !important; 
+    font-size: 16px;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-sizing: border-box; /* Гарантує, що рамка не збільшить загальну ширину */
+}
+
+.outline-btn:hover {
+    background: rgba(247, 0, 135, 0.1) !important; /* Легкий рожевий фон при наведенні */
+}
+/* --- ОНОВЛЕНІ ПОСИЛАННЯ --- */
+.terms a {
+    color: #F70087;
+    text-decoration: none;
+}
+
+.link {
+    color: #F70087;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+h1 {
+    font-family: 'Roboto', sans-serif; /* Параметр: Font з image_6.png */
+    font-size: 40px; /* Параметр: Size з image_6.png */
+    font-weight: 700; /* Параметр: Weight Bold з image_6.png */
+    line-height: 1; /* Параметр: Line height 100% з image_6.png */
+    letter-spacing: 0; /* Параметр: Letter spacing 0% з image_6.png */
+    margin-bottom: 20px; /* Залишено з оригінального коду для відступу */
+    color: #E8AFD0;
+}
+
+h2 {
+    font-family: 'Roboto', sans-serif; /* Параметр: Font з image_7.png */
+    font-size: 32px; /* Параметр: Size з image_7.png */
+    font-weight: 400; /* Параметр: Weight Regular з image_7.png */
+    line-height: 1; /* Параметр: Line height 100% з image_7.png */
+    letter-spacing: 0; /* Параметр: Letter spacing 0% з image_7.png */
+    margin-bottom: 35px; /* Залишено з оригінального коду */
+    color: #E8AFD0;
+}
+/* 3. Контент (Кнопки, текст) — робимо їх видимими */
+.main-container, .modal-overlay {
+    position: relative;
+    z-index: 10; /* Вище за анімований фон */
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* Напівпрозорий чорний */
+    backdrop-filter: blur(8px);      /* Розмиття фону (Glassmorphism) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-box {
+    background: #1a1a1a;
+    width: 90%;
+    max-width: 400px;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    text-align: center;
+}
+
+.modal-overlay.active .modal-box {
+    transform: translateY(0);
+}
+
+/* --- Елементи всередині --- */
+.modal-box h2 {
+    margin: 0 0 5px 0;
+    font-size: 24px;
+}
+
+.modal-subtitle {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+/* --- Inputs --- */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px;
+    background: #2a2a2a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box; /* Важливо, щоб padding не ламав ширину */
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+    border-color: #3b82f6; /* Синій колір при фокусі */
+    background: #252525;
+}
+
+/* --- Buttons --- */
+.full-width {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 10px;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s;
+}
+
+.full-width:active {
+    transform: scale(0.98);
+}
+
+
+/* --- Footer посилання --- */
+.modal-footer {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #888;
+}
+
+
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.hidden { display: none; }
+
+.main-container {
+    display: flex;
+    height: 100vh;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Логотип */
+.logo-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.logo-x {
+    fill: white;
+    width: 350px;
+    max-width: 50%;
+}
+
+/* Секция регистрации */
+.auth-section {
+    flex: 1;
+    padding: 40px;
+    max-width: 600px;
+}
+
+
+/* Кнопки */
+.btn-group {
+    width: 300px;
+}
+
+.btn {
+    width: 100%;
+    height: 40px;
+    border-radius: 20px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    transition: background 0.2s;
+}
+
+.btn img {
+    margin-right: 8px;
+}
+
+.white-btn {
+    background: #E8AFD0;
+    color: black;
+}
+
+.white-btn:hover { background: #e6e6e6; }
+
+
+/* Робимо контейнер Flex-блоком */
+.divider {
+    display: flex;
+    align-items: center; /* Вирівнюємо лінії та текст по центру по вертикалі */
+    margin: 25px 0; /* Відступи зверху і знизу */
+    color: #888; /* Колір тексту як на макеті */
+}
+
+/* Створюємо дві лінії: одну ДО тексту, іншу ПІСЛЯ */
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1; /* Змушує лінії розтягуватися на весь вільний простір */
+    height: 1px; /* Товщина лінії */
+    background: #E8AFD0; /* Колір лінії */
+}
+
+/* Відступ між лівою лінією і текстом */
+.divider::before {
+    margin-right: 15px; 
+}
+
+/* Відступ між текстом і правою лінією */
+.divider::after {
+    margin-left: 15px; 
+}
+
+/* Налаштування самого тексту всередині <span> */
+.divider span {
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    background: transparent; /* Тло прозоре, щоб було видно анімацію позаду! */
+}
+
+.divider span {
+    padding: 0 10px;
+    position: relative;
+    font-size: 14px;
+    color: #E8AFD0;
+}
+
+/* Текст условий */
+.terms {
+    font-size: 11px;
+    color: #E8AFD0;
+    line-height: 1.4;
+    margin-bottom: -40px;
+}
+
+.terms a {
+    color: #1d9bf0;
+    text-decoration: none;
+}
+
+/* Секция входа */
+.login-group {
+    margin-top: 60px;
+    width: 300px;
+}
+
+.login-group h3 {
+    font-family: 'Roboto', sans-serif; /* Шрифт Roboto */
+    font-size: 32px; /* Збільшений розмір */
+    font-weight: 700; /* Жирність Bold */
+    line-height: 1; /* Висота рядка 100% */
+    letter-spacing: 0;
+    color: #E8AFD0; /* Світло-рожевий колір з макета */
+    margin-bottom: 20px; /* Залишаємо нижній відступ для кнопки */
+}
+/* Контейнер заставки */
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+
+/* Логотип внутри заставки */
+.splash-logo {
+    fill: white;
+    width: 80px;
+    animation: pulse-and-grow 2s forwards ease-in-out;
+}
+
+/* Анимация логотипа */
+@keyframes pulse-and-grow {
+    0% {
+        transform: scale(1);
+        opacity: 0;
+    }
+    30% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    80% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.2); /* Немного увеличивается в конце */
+        opacity: 0;
+    }
+}
+
+/* Класс для скрытия экрана (добавим через JS) */
+.hidden {
+    opacity: 0;
+    pointer-events: none; /* Чтобы сквозь невидимый блок можно было кликать */
+}
+
+.modal-hidden {
+    display: none; /* Скрыто по умолчанию */
+}
+
+#auth-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(91, 112, 131, 0.4); /* Темный полупрозрачный фон */
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.modal-content {
+    background: #000;
+    padding: 30px;
+    border-radius: 16px;
+    width: 400px;
+    position: relative;
+    border: 1px solid #333;
+}
+

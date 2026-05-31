@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamer Auth</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="splash-screen">
+        <svg viewBox="0 0 24 24" class="splash-logo">
+            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+        </svg>
+    </div>
+    <div class="animated-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="logo-section">
+            <svg viewBox="0 0 24 24" class="logo">
+                 
+        </div>
+
+        <div class="auth-section">
+            <h1>Ласкаво просимо</h1>
+            <h2>Твій ігровий світ тут</h2>
+
+            <div class="btn-group">
+                <button id="google-auth" class="btn white-btn">
+                    <img src="https://img.icons8.com/color/24/google-logo.png" alt="Google"> 
+                    Увійти через Google
+                </button>
+
+                <button class="btn white-btn">
+                    <img src="https://img.icons8.com/ios-filled/24/mac-os.png" alt="Apple">
+                    Увійти через Apple ID
+                </button>
+
+                <div class="divider">
+                    <span>АБО ЧЕРЕЗ EMAIL</span>
+                </div>
+
+                <button id="btn-open-register" class="btn blue-btn">Створити акаунт</button>
+                
+                <p class="terms">
+                    Реєструючись, ви приймаєте Умови використання та Політику конфіденційності.
+                </p>
+            </div>
+
+            <div class="login-group">
+                <h3>Вже є акаунт?</h3>
+                <button id="btn-open-login" class="btn outline-btn">Увійти</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-register" class="modal-overlay hidden">
+        <div class="modal-box">
+            <span class="modal-close" data-target="modal-register">&times;</span>
+            <h2>Реєстрація</h2>
+            <p class="modal-subtitle">Створи свій профіль</p>
+            
+            <form id="form-register">
+                <div class="input-group">
+                    <input type="email" id="reg-email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="reg-password" placeholder="Пароль" required>
+                </div>
+                <button type="submit" class="btn blue-btn full-width">Продовжити</button>
+            </form>
+            
+            <p class="modal-footer">
+                Вже маєш акаунт? <span class="link switch-to-login">Увійти</span>
+            </p>
+        </div>
+    </div>
+
+    <div id="modal-login" class="modal-overlay hidden">
+        <div class="modal-box">
+            <span class="modal-close" data-target="modal-login">&times;</span>
+            <h2>Вхід</h2>
+            <p class="modal-subtitle">З поверненням!</p>
+            
+            <form id="form-login">
+                <div class="input-group">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="login-password" placeholder="Пароль" required>
+                </div>
+                <button type="submit" class="btn blue-btn full-width">Увійти</button>
+            </form>
+
+            <p class="modal-footer">
+                Немає акаунту? <span class="link switch-to-register">Створити</span>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+  // 1. Імпорти
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  // 2. Твоя НОВА конфігурація Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyAnc1n52-LVhZ72vYSmvWv97enqqrqBBi4",
+    authDomain: "mneploho-7ff8b.firebaseapp.com",
+    projectId: "mneploho-7ff8b",
+    storageBucket: "mneploho-7ff8b.firebasestorage.app",
+    messagingSenderId: "554377149418",
+    appId: "1:554377149418:web:44f345329d803c674c9093",
+    measurementId: "G-LM2032YE2W"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // 3. Екран завантаження
+  window.addEventListener('load', () => {
+    const splash = document.getElementById('splash-screen');
+    if(splash) {
+        setTimeout(() => {
+            splash.classList.add('hidden');
+            setTimeout(() => splash.remove(), 500);
+        }, 2000);
+    }
+  });
+
+  // 4. Функція відправки на твій PHP-сервер
+  async function sendToMyServer(userData, providerName) {
+      try {
+          console.log("Відправка даних на сервер...", userData.email);
+          
+          // Автоматично визначає твій домен (localhost або localtonet)
+          const response = await fetch(`${window.location.origin}/register.php`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  email: userData.email,
+                  username: userData.displayName || userData.email.split('@')[0],
+                  uid: userData.uid,
+                  provider: providerName
+              })
+          });
+          
+          if (!response.ok) throw new Error(`HTTP помилка! статус: ${response.status}`);
+
+          const result = await response.json();
+          
+          if (result.success) {
+              console.log("Дані в БД!");
+              localStorage.setItem('user_name', result.username);
+              localStorage.setItem('user_avatar', result.avatar);
+              window.location.replace("home.html");
+          } else {
+              alert("Помилка БД: " + result.message);
+          }
+      } catch (error) {
+          console.error("Помилка зв'язку:", error);
+          alert("Сервер не відповідає. Перевір Аліаси в OpenServer!");
+      }
+  }
+
+  // 5. Google Вхід
+  const googleBtn = document.getElementById('google-auth');
+  if (googleBtn) {
+      googleBtn.onclick = async () => {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        try {
+            const result = await signInWithPopup(auth, provider);
+            await sendToMyServer(result.user, 'google');
+        } catch (error) {
+            console.error("Google Error:", error);
+            alert("Помилка Google: " + error.message);
+        }
+      };
+  }
+
+  // 6. Apple Вхід
+  const appleImg = document.querySelector('.btn.white-btn img[alt="Apple"]');
+  if (appleImg) {
+      const appleBtn = appleImg.closest('button');
+      appleBtn.onclick = async () => {
+          const provider = new OAuthProvider('apple.com');
+          provider.addScope('email');
+          provider.addScope('name');
+          try {
+              const result = await signInWithPopup(auth, provider);
+              await sendToMyServer(result.user, 'apple');
+          } catch (error) {
+              alert("Apple ID вимагає HTTPS та налаштування в консолі Apple.");
+          }
+      };
+  }
+</script>
+<script src="js/script.js"></script>
+</body>
+</html>
