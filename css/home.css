@@ -6084,3 +6084,6 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     background: #000; /* Чорний фон, щоб бачити, чи є сам контейнер */
 }
 
+#camera-video {
+    background-color: transparent;
+}

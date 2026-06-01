@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 
 // Підключення до БД
 try {
-    $pdo = new PDO("mysql:host=db;dbname=mywebsite;charset=utf8", 'root', 'root', [
+    $pdo = new PDO("mysql:host=my-mysql;dbname=mywebsite;charset=utf8", 'root', 'root', [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
 } catch (Exception $e) {

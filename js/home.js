@@ -8739,8 +8739,12 @@ window.toggleBackgroundRemoval = async function() {
             document.body.appendChild(rawVideo);
         }
         rawVideo.srcObject = window.cameraStream;
-        await rawVideo.play();
+await rawVideo.play();
 
+// Ждем, пока видео действительно начнет воспроизводиться, прежде чем резать кадры
+rawVideo.onloadeddata = () => {
+    processFrame();
+};
         // Запускаємо нескінченний цикл обробки кадрів
         const processFrame = async () => {
             if (!window.isBackgroundRemoved) return;
@@ -8750,7 +8754,9 @@ window.toggleBackgroundRemoval = async function() {
         processFrame();
         
         // Підміняємо відео на екрані на наш прозорий canvas!
-        camVideo.srcObject = canvas.captureStream(30);
+        // Підміняємо відео на екрані на наш прозорий canvas!
+camVideo.srcObject = canvas.captureStream(30);
+camVideo.play(); // <-- Добавь эту строку
         
     } else {
         // --- ВИМИКАЄМО ВИРІЗАННЯ ---
