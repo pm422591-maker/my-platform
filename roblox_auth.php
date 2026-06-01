@@ -28,8 +28,8 @@ try {
     $client_id = '3297832364838545643';
     $client_secret = 'RBX-z6LMMDaBo0ydp7J9OFOkXrw_DkNWsQmUm4UEKbyCST2jdA3Hpx3885ljFCsSv0ky';
     
-    // ПЕРЕВІР, ЩОБ ТУТ БУВ ТВІЙ АКТУАЛЬНИЙ NGROK
-    $redirect_uri = 'https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html'; 
+    // ИСПРАВЛЕНО: Теперь здесь твой официальный домен с HTTPS
+    $redirect_uri = 'https://syncora.cyou/profile.html'; 
 
     // 4. ЗАПИТ НА ТОКЕН
     $token_url = 'https://apis.roblox.com/oauth/v1/token';
@@ -89,7 +89,6 @@ try {
     echo json_encode(['success' => true, 'data' => $roblox_user]);
 
 } catch (Throwable $e) {
-    // 🔥 ЦЕЙ БЛОК ЗЛОВИТЬ БУДЬ-ЯКУ СМЕРТЕЛЬНУ ПОМИЛКУ
     http_response_code(500);
     echo json_encode([
         'success' => false, 
