@@ -1,6 +1,6 @@
 const clientId = "3297832364838545643"; 
 const clientSecret = "RBX-z6LMMDaBo0ydp7J9OFOkXrw_DkNWsQmUm4UEKbyCST2jdA3Hpx3885ljFCsSv0ky";
-const redirectUri = "https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html";
+const redirectUri = "https://syncora.cyou/profile.html";
 
 // Элементы интерфейса
 const trigger = document.getElementById('activityTrigger');
