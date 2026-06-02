@@ -1,8 +1,14 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/db_config.php';
-require_once __DIR__ . '/external_api.php';
+// db підключення напряму
+function get_pdo(string $charset = 'utf8mb4'): PDO {
+    return new PDO(
+        "mysql:host=my-mysql;dbname=mywebsite;charset=$charset",
+        'root', 'root',
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+}
 
 session_start();
 header('Content-Type: application/json; charset=utf-8');
@@ -48,28 +54,55 @@ $library = [
 
 function roblox_item_is_owned(string $robloxId, string $itemType, string $itemId): array
 {
-    $url = sprintf(
-        'https://inventory.roblox.com/v1/users/%s/items/%s/%s/is-owned',
-        rawurlencode($robloxId),
-        rawurlencode($itemType),
-        rawurlencode($itemId)
-    );
+    // Для бейджів і геймпасів — різні API endpoints
+    if ($itemType === 'Badge') {
+        $url = sprintf(
+            'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
+            rawurlencode($robloxId),
+            rawurlencode($itemId)
+        );
+    } else {
+        // GamePass
+        $url = sprintf(
+            'https://inventory.roblox.com/v1/users/%s/items/GamePass/%s/is-owned',
+            rawurlencode($robloxId),
+            rawurlencode($itemId)
+        );
+    }
 
-    $api = api_http_get_json($url);
-    if (!$api['success']) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    $raw = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError || $httpCode !== 200) {
         return [
             'success' => false,
-            'owned' => false,
-            'message' => $api['message'],
-            'status' => $api['status'],
+            'owned'   => false,
+            'message' => "HTTP $httpCode cURL: $curlError",
+            'status'  => $httpCode,
         ];
+    }
+
+    $parsed = json_decode($raw, true);
+
+    if ($itemType === 'Badge') {
+        // badges API повертає {"data": [...]} — якщо масив не порожній, бейдж є
+        $owned = isset($parsed['data']) && count($parsed['data']) > 0;
+    } else {
+        // GamePass is-owned повертає просто true або false
+        $owned = $parsed === true;
     }
 
     return [
         'success' => true,
-        'owned' => $api['data'] === true,
+        'owned'   => $owned,
         'message' => '',
-        'status' => $api['status'],
+        'status'  => $httpCode,
     ];
 }
 
