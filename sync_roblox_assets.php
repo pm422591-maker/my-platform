@@ -1,71 +1,143 @@
 <?php
-session_start();
-header('Content-Type: application/json');
+declare(strict_types=1);
 
-// Підключення до БД
-try {
-    $pdo = new PDO("mysql:host=my-mysql;dbname=mywebsite;charset=utf8", 'root', 'root', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'DB Error']);
-    exit;
-}
+require_once __DIR__ . '/db_config.php';
+require_once __DIR__ . '/external_api.php';
+
+session_start();
+header('Content-Type: application/json; charset=utf-8');
 
 $data = json_decode(file_get_contents('php://input'), true);
-$robloxId = $data['roblox_id'] ?? null;
+$robloxId = is_array($data) ? (string)($data['roblox_id'] ?? '') : '';
 $userId = $_SESSION['user_id'] ?? null;
 
-if (!$robloxId || !$userId) {
-    echo json_encode(['success' => false, 'message' => 'No IDs provided']);
+if ($robloxId === '' || !preg_match('/^\d+$/', $robloxId) || !$userId) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Missing Roblox ID or active session',
+        'owned' => [],
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// ПОВНИЙ СПИСОК ID
-$fullLibrary = [
-    'badges' => [
-        "2128167319", "2128167321", "2128167324", "2128167328", "2128167329", // Evade
-        "2310366779580636", "2491852490394472", "2419608566642291", "554308544894889" // 99 nights
+$library = [
+    [
+        'game' => 'Evade',
+        'items' => [
+            ['id' => '2128167319', 'type' => 'Badge', 'name' => '25 lvl'],
+            ['id' => '2128167321', 'type' => 'Badge', 'name' => '50 lvl'],
+            ['id' => '2128167324', 'type' => 'Badge', 'name' => '75 lvl'],
+            ['id' => '2128167328', 'type' => 'Badge', 'name' => '100 lvl'],
+            ['id' => '2128167329', 'type' => 'Badge', 'name' => '125 lvl'],
+            ['id' => '1045160877', 'type' => 'GamePass', 'name' => 'Crystalline Set'],
+            ['id' => '1637578813', 'type' => 'GamePass', 'name' => 'Dog Set'],
+            ['id' => '1419753648', 'type' => 'GamePass', 'name' => 'Retro Cosmetics Set'],
+        ],
     ],
-    'passes' => [
-        "1045160877", "1637578813", "1419753648" // Evade passes
-    ]
+    [
+        'game' => '99 nights in the forest',
+        'items' => [
+            ['id' => '2310366779580636', 'type' => 'Badge', 'name' => '10 days'],
+            ['id' => '2491852490394472', 'type' => 'Badge', 'name' => '20 days'],
+            ['id' => '2419608566642291', 'type' => 'Badge', 'name' => '30 days'],
+            ['id' => '554308544894889', 'type' => 'Badge', 'name' => '40 days'],
+            ['id' => '3412064596604231', 'type' => 'Badge', 'name' => '50 days'],
+        ],
+    ],
 ];
 
-$ownedAssets = [];
+function roblox_item_is_owned(string $robloxId, string $itemType, string $itemId): array
+{
+    $url = sprintf(
+        'https://inventory.roblox.com/v1/users/%s/items/%s/%s/is-owned',
+        rawurlencode($robloxId),
+        rawurlencode($itemType),
+        rawurlencode($itemId)
+    );
 
-// 1. ПЕРЕВІРКА БЕЙДЖІВ
-$badgeUrl = "https://badges.roblox.com/v1/users/$robloxId/badges/awarded-dates?badgeIds=" . implode(',', $fullLibrary['badges']);
-$badgeRes = json_decode(@file_get_contents($badgeUrl), true);
-
-if (isset($badgeRes['data'])) {
-    foreach ($badgeRes['data'] as $badge) {
-        $ownedAssets[] = [
-            'id' => (string)$badge['badgeId'],
-            'type' => 'badge',
-            'owned' => true
+    $api = api_http_get_json($url);
+    if (!$api['success']) {
+        return [
+            'success' => false,
+            'owned' => false,
+            'message' => $api['message'],
+            'status' => $api['status'],
         ];
     }
+
+    return [
+        'success' => true,
+        'owned' => $api['data'] === true,
+        'message' => '',
+        'status' => $api['status'],
+    ];
 }
 
-// 2. ПЕРЕВІРКА ГЕЙМПАСІВ
-if (isset($fullLibrary['passes'])) {
-    foreach ($fullLibrary['passes'] as $passId) {
-        $passUrl = "https://inventory.roblox.com/v1/users/$robloxId/items/GamePass/$passId";
-        $passRes = json_decode(@file_get_contents($passUrl), true);
-        if (!empty($passRes['data'])) {
+$ownedAssets = [];
+$errors = [];
+$checked = 0;
+$failed = 0;
+$seen = [];
+
+foreach ($library as $game) {
+    foreach ($game['items'] as $item) {
+        $key = $item['type'] . ':' . $item['id'];
+        if (isset($seen[$key])) {
+            continue;
+        }
+        $seen[$key] = true;
+        $checked++;
+
+        $result = roblox_item_is_owned($robloxId, $item['type'], $item['id']);
+        if (!$result['success']) {
+            $failed++;
+            $errors[] = [
+                'id' => $item['id'],
+                'type' => $item['type'],
+                'status' => $result['status'],
+                'message' => $result['message'],
+            ];
+            continue;
+        }
+
+        if ($result['owned']) {
             $ownedAssets[] = [
-                'id' => (string)$passId,
-                'type' => 'pass',
-                'owned' => true
+                'id' => $item['id'],
+                'type' => $item['type'] === 'GamePass' ? 'pass' : 'badge',
+                'owned' => true,
+                'game' => $game['game'],
+                'name' => $item['name'],
             ];
         }
     }
 }
 
-// 3. ЗБЕРЕЖЕННЯ
-$inventoryJson = json_encode($ownedAssets);
-$stmt = $pdo->prepare("UPDATE users SET roblox_inventory = ? WHERE id = ?");
-$stmt->execute([$inventoryJson, $userId]);
+if ($checked > 0 && $failed === $checked) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Roblox Inventory API failed for every checked item. Existing inventory was not overwritten.',
+        'owned' => [],
+        'errors' => $errors,
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
-echo json_encode(['success' => true, 'owned' => $ownedAssets]);
+try {
+    $pdo = get_pdo('utf8mb4');
+    $inventoryJson = json_encode($ownedAssets, JSON_UNESCAPED_UNICODE);
+    $stmt = $pdo->prepare('UPDATE users SET roblox_inventory = ? WHERE id = ?');
+    $stmt->execute([$inventoryJson, $userId]);
+
+    echo json_encode([
+        'success' => true,
+        'owned' => $ownedAssets,
+        'errors' => $errors,
+    ], JSON_UNESCAPED_UNICODE);
+} catch (Throwable $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'DB Error: ' . $e->getMessage(),
+        'owned' => $ownedAssets,
+        'errors' => $errors,
+    ], JSON_UNESCAPED_UNICODE);
+}

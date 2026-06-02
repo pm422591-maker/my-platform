@@ -1,7 +1,10 @@
 FROM php:8.1-apache
 
 # Встановлюємо модулі для бази даних (mysqli та pdo)
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libcurl4-openssl-dev \
+    && docker-php-ext-install mysqli pdo pdo_mysql curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Вмикаємо модуль Apache для гарних посилань
 RUN a2enmod rewrite

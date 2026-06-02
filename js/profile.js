@@ -1,6 +1,6 @@
 const clientId = "3297832364838545643"; 
 const clientSecret = "RBX-z6LMMDaBo0ydp7J9OFOkXrw_DkNWsQmUm4UEKbyCST2jdA3Hpx3885ljFCsSv0ky";
-const redirectUri = "https://syncora.cyou/profile.html";
+const redirectUri = "https://faunlike-lumpily-nikola.ngrok-free.dev/profile.html";
 
 // Элементы интерфейса
 const trigger = document.getElementById('activityTrigger');
@@ -11,6 +11,7 @@ const iconDisplay = document.getElementById('statusIcon');
 
 let tempProfileData = null; 
 let selectedItems = []; 
+let userInventoryFromDB = [];
 let startHour = null;
 let endHour = null;
 let firstClick = null;
@@ -478,6 +479,97 @@ const mySteamLibrary = [
     }
 ];
 
+function normalizeAssetId(value) {
+    return String(value ?? '').trim();
+}
+
+function parseJsonArrayField(value) {
+    if (!value || value === 'null') return [];
+    if (Array.isArray(value)) return value;
+
+    try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.error('Failed to parse saved inventory JSON:', e);
+        return [];
+    }
+}
+
+function normalizeInventoryItems(items) {
+    return parseJsonArrayField(items)
+        .map(item => {
+            if (!item) return null;
+            const id = normalizeAssetId(item.id ?? item.badgeId ?? item.gamePassId ?? item.appid);
+            if (!id) return null;
+
+            return {
+                ...item,
+                id,
+                owned: item.owned !== false
+            };
+        })
+        .filter(Boolean);
+}
+
+function isModeOwned(mode) {
+    const modeId = normalizeAssetId(mode && mode.id);
+    if (!modeId) return false;
+
+    return userInventoryFromDB.some(item => normalizeAssetId(item.id) === modeId && item.owned !== false)
+        || Boolean(mode && mode.owned === true);
+}
+
+function syncOwnedFlagsFromInventory() {
+    const ownedIds = new Set(
+        userInventoryFromDB
+            .filter(item => item && item.owned !== false)
+            .map(item => normalizeAssetId(item.id))
+            .filter(Boolean)
+    );
+
+    myGamesLibrary.forEach(game => {
+        game.modes.forEach(mode => {
+            mode.owned = ownedIds.has(normalizeAssetId(mode.id));
+        });
+    });
+
+    mySteamLibrary.forEach(game => {
+        const modeId = `steam_${game.appId}`;
+        const owned = ownedIds.has(modeId);
+        game.owned = owned;
+        if (game.modes && game.modes[0]) {
+            game.modes[0].owned = owned;
+        }
+    });
+}
+
+async function syncRobloxInventoryFromServer(robloxId) {
+    if (!robloxId || robloxId === 'null') return false;
+
+    try {
+        const syncRes = await fetch('sync_roblox_assets.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ roblox_id: robloxId })
+        });
+        const syncData = await syncRes.json();
+
+        if (!syncData.success) {
+            console.warn('Roblox inventory sync failed:', syncData.message, syncData.errors || []);
+            return false;
+        }
+
+        userInventoryFromDB = normalizeInventoryItems(syncData.owned);
+        syncOwnedFlagsFromInventory();
+        return true;
+    } catch (e) {
+        console.error('Roblox inventory sync request failed:', e);
+        return false;
+    }
+}
+
 
 // --- 2. INITIALIZATION ---
 // --- 2. INITIALIZATION ---
@@ -540,11 +632,20 @@ async function loadUserData() {
             }
 
             // 2. ОНОВЛЮЄМО ГЛОБАЛЬНИЙ МАСИВ (Саме це поверне галочки в модалці після рефрешу!)
-            selectedItems = Array.isArray(savedGames) ? savedGames : []; 
+            userInventoryFromDB = normalizeInventoryItems(data.roblox_inventory);
+            syncOwnedFlagsFromInventory();
+            selectedItems = Array.isArray(savedGames)
+                ? savedGames.map(item => ({ ...item, id: normalizeAssetId(item.id) }))
+                : []; 
 
             // 3. Перевіряємо, чи підключений ХОЧА Б ОДИН акаунт
             const isRobloxLinked = data.roblox_id && data.roblox_id !== "null";
             const isSteamLinked = data.steam_id && data.steam_id !== "null";
+            window.isRobloxConnected = Boolean(isRobloxLinked);
+
+            if (isRobloxLinked && data.is_own_profile && userInventoryFromDB.length === 0) {
+                await syncRobloxInventoryFromServer(data.roblox_id);
+            }
 
             if (isRobloxLinked || isSteamLinked) {
                 console.log("✅ Знайдено підключені ігрові акаунти");
@@ -593,12 +694,11 @@ async function loadUserData() {
 
 
 // Всередині loadUserData, там де data.success === true:
-if (data.roblox_inventory) {
+if (data.roblox_inventory && userInventoryFromDB.length === 0) {
     try {
         // Перетворюємо рядок з бази у масив об'єктів
-        userInventoryFromDB = typeof data.roblox_inventory === 'string' 
-            ? JSON.parse(data.roblox_inventory) 
-            : data.roblox_inventory;
+        userInventoryFromDB = normalizeInventoryItems(data.roblox_inventory);
+        syncOwnedFlagsFromInventory();
             
         console.log("🎒 Інвентар завантажено з бази:", userInventoryFromDB);
     } catch (e) {
@@ -1321,7 +1421,7 @@ async function checkAssetsOwnership(userId) {
                 if (res.ok) {
                     const data = await res.json();
                     // Якщо Roblox повернув масив data і він не порожній - річ є!
-                    if (data && data.data && data.data.length > 0) {
+                    if (data && (data.owned === true || (data.data && data.data.length > 0))) {
                         mode.owned = true; 
                         console.log(`✅ Знайдено: ${mode.name}`);
                     }
@@ -1401,8 +1501,6 @@ window.loadMainLibrary = function() {
 // 2. ВІДКРИТТЯ КОНКРЕТНОЇ ГРИ (Бейджі)
 // Виносимо цю функцію на самий верхній рівень файлу
 // 1. Обов'язково оголоси цю змінну на самому початку файлу profile.js
-let userInventoryFromDB = []; 
-
 window.openGameModes = function(gameName) {
     console.log("📂 Відкриваю гру:", gameName);
     const grid = document.getElementById('media-grid');
@@ -1427,7 +1525,7 @@ window.openGameModes = function(gameName) {
         card.className = 'media-card';
 
         // КРИТИЧЕСКИЙ ФИКС: Сравниваем ID как строки, чтобы "steam_730" находилось
-        const isOwned = userInventoryFromDB.some(item => String(item.id) === String(mode.id));
+        const isOwned = isModeOwned(mode);
         const isSelected = selectedItems.some(item => String(item.id) === String(mode.id));
 
         if (isSelected) card.classList.add('selected');
@@ -1466,7 +1564,7 @@ window.openGamesModal = function() {
     if (!modal) return;
 
     // --- НАДІЙНА ПЕРЕВІРКА АВТОРИЗАЦІЇ ROBLOX ---
-    let isRobloxConnected = false;
+    let isRobloxConnected = window.isRobloxConnected === true;
     try {
         const robloxData = JSON.parse(localStorage.getItem('roblox_user'));
         if (robloxData && robloxData.id && robloxData.id !== "null") {
@@ -1492,7 +1590,7 @@ window.openGamesModal = function() {
         if (game.owned) {
             const sId = "steam_" + game.appId;
             if (!userInventoryFromDB.some(i => String(i.id) === sId)) {
-                userInventoryFromDB.push({ id: sId, owned: true });
+                userInventoryFromDB.push({ id: sId, owned: true, type: 'steam', game: game.name });
             }
         }
     });
@@ -1542,7 +1640,7 @@ window.openGamesModal = function() {
 };
 window.toggleModeSelection = function(gameName, mode, isSelecting) {
     if (isSelecting) {
-        if (!selectedItems.some(i => i.id === mode.id)) {
+        if (!selectedItems.some(i => normalizeAssetId(i.id) === normalizeAssetId(mode.id))) {
             selectedItems.push({
                 game: gameName,
                 id: mode.id,
@@ -1551,7 +1649,7 @@ window.toggleModeSelection = function(gameName, mode, isSelecting) {
             });
         }
     } else {
-        selectedItems = selectedItems.filter(i => i.id !== mode.id);
+        selectedItems = selectedItems.filter(i => normalizeAssetId(i.id) !== normalizeAssetId(mode.id));
     }
     console.log("📦 Поточні вибрані речі:", selectedItems);
 };
@@ -2978,7 +3076,7 @@ document.addEventListener('click', function(e) {
 window.toggleModeSelection = function(gameName, mode, isSelecting) {
     if (isSelecting) {
         // Додаємо в масив, якщо там ще немає такого ID
-        if (!selectedItems.some(i => i.id === mode.id)) {
+        if (!selectedItems.some(i => normalizeAssetId(i.id) === normalizeAssetId(mode.id))) {
             selectedItems.push({
                 game: gameName,
                 id: mode.id,
@@ -2988,7 +3086,7 @@ window.toggleModeSelection = function(gameName, mode, isSelecting) {
         }
     } else {
         // Видаляємо з масиву, якщо користувач "відтиснув" картку
-        selectedItems = selectedItems.filter(i => i.id !== mode.id);
+        selectedItems = selectedItems.filter(i => normalizeAssetId(i.id) !== normalizeAssetId(mode.id));
     }
     console.log("📦 Поточні вибрані речі:", selectedItems);
 };
@@ -3202,6 +3300,10 @@ window.checkSteamGamesOwnership = async function(steamId) {
         const response = await fetch(`check_steam_games.php?steam_id=${steamId}`);
         const result = await response.json();
 
+        if (result.private) {
+            console.warn(result.message || "Steam did not return owned games.");
+        }
+
         if (result.success && result.owned_games) {
             console.log("--- [РЕЗУЛЬТАТЫ ПРОВЕРКИ STEAM] ---");
             let foundCount = 0;
@@ -3220,25 +3322,25 @@ window.checkSteamGamesOwnership = async function(steamId) {
                     foundCount++;
 
                     // РОЗРАХУНОК ГОДИН (playtime_forever повертається Steam у хвилинах)
-                    let hours = 0;
-                    if (steamGameData.playtime_forever) {
-                        hours = Math.floor(steamGameData.playtime_forever / 60);
-                    }
+                    const playtime = steamGameData.playtime_forever ?? steamGameData.playtime ?? 0;
+                    const hours = Math.floor(Number(playtime) / 60);
 
                     // ОНОВЛЮЄМО ТЕКСТ (Замість "Гра в бібліотеці" пишемо години)
                     if (game.modes && game.modes.length > 0) {
                         game.modes[0].name = `${hours} год. зіграно`;
+                        game.modes[0].owned = true;
                     }
 
                     console.log(`✅ Найдено: ${game.name} (${hours} часов)`);
                     
                     const steamModeId = "steam_" + appIdStr;
                     if (!userInventoryFromDB.some(item => String(item.id) === steamModeId)) {
-                        userInventoryFromDB.push({ id: steamModeId, owned: true });
+                        userInventoryFromDB.push({ id: steamModeId, owned: true, type: 'steam', game: game.name });
                     }
                 } else {
                     console.warn(`❌ Игра не найдена: ${game.name}`);
                     game.owned = false;
+                    if (game.modes && game.modes[0]) game.modes[0].owned = false;
                 }
             });
 
