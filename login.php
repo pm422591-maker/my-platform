@@ -2,7 +2,7 @@
 // 1. Налаштування CORS та заголовків
 $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*';
 header("Access-Control-Allow-Origin: $origin");
-header("Access-Control-Allow-Credentials: true"); // 🔥 ОБОВ'ЯЗКОВО для сесій!
+header("Access-Control-Allow-Credentials: true"); 
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
@@ -11,17 +11,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// 2. Динамічне налаштування сесії
-$isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
-// Якщо використовуєш ngrok, залиш true:
-$isSecure = false;
+// 2. Автоматичне визначення безпечного з'єднання (HTTPS)
+$isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
+            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 
 session_set_cookie_params([
     'lifetime' => 86400,
     'path' => '/',
-    'secure' => $isSecure,     
+    'secure' => $isSecure, // Тепер автоматично буде true на https://syncora.cyou
     'httponly' => true,
-    'samesite' => 'None'  
+    'samesite' => $isSecure ? 'None' : 'Lax' // Якщо HTTPS немає (localhost) — ставимо Lax, якщо є — None
 ]);
 session_start();
 header('Content-Type: application/json');
