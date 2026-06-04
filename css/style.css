@@ -5,24 +5,104 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* 1. Налаштування тіла сторінки */
+/* Твій існуючий блок body (Темна тема) */
 body {
-    background-color: #000;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    background-color: #1D1115; 
+    background-image: 
+        linear-gradient(rgba(29, 17, 21, 0.4), rgba(29, 17, 21, 0.4)); 
+    background-size: cover; 
+    background-position: center; 
+    background-repeat: no-repeat; 
+    overflow: hidden;
+    height: 100vh;
+    position: relative; 
+    transition: background 0.5s ease; /* Додаємо плавний перехід між фонами */
 }
 
-/* 2. Контейнер фону (тепер він точно ззаду і не блокує кліки) */
+/* --- НОВИЙ БЛОК: Світла тема --- */
+body.light-theme {
+    background-color: #f0f0f0; /* Світлий резервний колір */
+    
+    /* Змінюємо градієнт на світлий (білий з прозорістю) та міняємо картинку */
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), 
+}
+
+/* === СТВОРЮЄМО ДВА ПЛАВАЮЧИХ ГРАДІЄНТА === */
+/* Ці елементи залишаються і будуть плавати ПОВЕРХ вашого фото, */
+/* створюючи кольоровий ефект завдяки blur та opacity. */
+/* === СТВОРЮЄМО ДВА ПЛАВАЮЧИХ ГРАДІЄНТА === */
+body::before,
+body::after {
+    content: '';
+    position: absolute;
+    background-color: #FF25BB;
+    filter: blur(120px); 
+    
+    /* 1. ЗБІЛЬШУЄМО opacity, бо 0.15 на фоні фотографії взагалі не буде видно */
+    opacity: 0.6; 
+    
+    /* 2. ВАЖЛИВО: Міняємо z-index з -1 на 0. 
+       Тепер плями будуть НАД фоновим фото, але ПІД твоїми блоками (у яких z-index: 1 і вище) */
+    z-index: 0; 
+    
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    animation: floatingBlobs 20s infinite alternate ease-in-out;
+}
+/* Перша пляма (зверху зліва) */
+body::before {
+    top: -10%;
+    left: -10%;
+    width: 40vw;
+    height: 40vw;
+    animation-delay: 0s;
+}
+
+/* Друга пляма (знизу справа) */
+body::after {
+    bottom: -10%;
+    right: -10%;
+    width: 45vw;
+    height: 45vw;
+    background-color: #FF25BB; /* Трохи темніший відтінок для глибини */
+    animation-duration: 25s; /* Рухається трохи повільніше */
+    animation-delay: -5s; /* Розсинхрон з першою плямою */
+}
+
+/* === АНІМАЦІЯ ПЛАВАННЯ ТА ЗМІНИ ФОРМИ === */
+@keyframes floatingBlobs {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    }
+    33% {
+        transform: translate(5vw, 8vh) rotate(90deg) scale(1.1);
+        border-radius: 60% 40% 30% 70% / 50% 60% 40% 50%;
+    }
+    66% {
+        transform: translate(-5vw, -5vh) rotate(180deg) scale(0.9);
+        border-radius: 30% 70% 50% 50% / 60% 30% 70% 40%;
+    }
+    100% {
+        transform: translate(0, 0) rotate(360deg) scale(1);
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    }
+}
+
+
+
+/* 2. Контейнер фону */
 .animated-bg {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1; /* На самому задньому плані */
+    z-index: -1;
     overflow: hidden;
-    pointer-events: none; /* Пропускає кліки крізь себе на кнопки */
+    pointer-events: none;
 }
 
 .blob {
@@ -31,7 +111,6 @@ body {
     will-change: transform;
 }
 
-/* Рожева пляма 1 */
 .blob-1 {
     width: 50vw;
     height: 50vw;
@@ -43,7 +122,6 @@ body {
     animation: movePink 20s infinite alternate ease-in-out;
 }
 
-/* Рожева пляма 2 */
 .blob-2 {
     width: 45vw;
     height: 45vw;
@@ -55,136 +133,412 @@ body {
     animation: movePink 25s infinite alternate-reverse ease-in-out;
 }
 
-/* ЧОРНЕ ЯДРО (Тепер воно РУХАЄТЬСЯ) */
 .blob-3 {
     width: 30vw;
     height: 30vw;
     background: #000;
     filter: blur(60px);
     opacity: 1;
-    
-    /* Центруємо через flex або координати */
     top: 50%;
     left: 50%;
-    
-    /* Головна анімація руху */
     animation: moveBlack 15s infinite alternate ease-in-out;
     z-index: 2;
 }
 
-/* Анімація для рожевих плям */
 @keyframes movePink {
     0% { transform: translate(0, 0) scale(1); }
     100% { transform: translate(10vw, 10vh) scale(1.1); }
 }
 
-/* Анімація для ЧОРНОГО КРУГА (зміщення від центру) */
 @keyframes moveBlack {
-    0% { 
-        /* translate(-50%, -50%) тримає його в центрі, 
-           а другий translate створює сам рух */
-        transform: translate(-50%, -50%) translate(-5vw, -5vh) scale(1); 
-    }
-    50% { 
-        transform: translate(-50%, -50%) translate(5vw, 5vh) scale(1.2); 
-    }
-    100% { 
-        transform: translate(-50%, -50%) translate(-2vw, 8vh) scale(0.9); 
-    }
+    0% { transform: translate(-50%, -50%) translate(-5vw, -5vh) scale(1); }
+    50% { transform: translate(-50%, -50%) translate(5vw, 5vh) scale(1.2); }
+    100% { transform: translate(-50%, -50%) translate(-2vw, 8vh) scale(0.9); }
 }
 
-/* --- НОВИЙ СТИЛЬ ДЛЯ ЛОГОТИПА --- */
-.text-logo {
-    font-size: 80px; /* Великий розмір як на макеті */
-    font-weight: 900;
-    color: white;
-    letter-spacing: -2px;
+/* --- ВЕРХНЯ ПАНЕЛЬ НАВІГАЦІЇ (ЧИСТИЙ НЕОН) --- */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    /* ЛИНИЯ УБРАНА ОТСЮДА: border-bottom удален */
+    z-index: 100;
+    display: flex;
+    align-items: center;
 }
 
-.pink-dot {
-    color: #F70087; /* Рожева крапка */
+.nav-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* --- ОНОВЛЕНІ КНОПКИ (Рожеві замість синіх) --- */
+/* Логотип в лівому кутку */
+.nav-logo {
+    display: flex;
+    align-items: center;
+    width: 100px; 
+}
+
+/* Чиста картинка логотипу без жодних рамок і ліній */
+.mini-logo-img {
+    height: 42px;
+    width: auto;
+    filter: drop-shadow(0 0 8px rgba(247, 0, 135, 0.5));
+    object-fit: contain;
+    border: none;
+    outline: none;
+}
+
+/* Центр панелі: Вкладки */
+.nav-links {
+    display: flex;
+    gap: 40px;
+}
+
+.nav-item {
+    position: relative; 
+    padding: 10px 0;
+}
+
+.nav-link {
+    color: #E8AFD0;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.nav-item:hover .nav-link {
+    color: #fff;
+    text-shadow: 0 0 10px #F70087, 0 0 20px #F70087; 
+}
+
+/* Випадаюча плашка з інфою */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(15px);
+    width: 260px;
+    background: rgba(26, 11, 19, 0.95); 
+    border: 1px solid rgba(247, 0, 135, 0.4);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(247, 0, 135, 0.25);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: rgba(26, 11, 19, 0.95);
+    border-top: 1px solid rgba(247, 0, 135, 0.4);
+    border-left: 1px solid rgba(247, 0, 135, 0.4);
+}
+
+.dropdown-menu p {
+    color: #E8AFD0;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+    margin: 0;
+}
+
+.nav-item:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(8px);
+    pointer-events: auto;
+}
+
+.nav-spacer {
+    width: 100px; 
+}
+
+/* --- ГОЛОВНИЙ ЕКРАН --- */
+.main-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 90px 40px 40px 40px; 
+    box-sizing: border-box;
+    position: relative;
+    z-index: 10;
+}
+
+/* --- ЛІВА ЧАСТИНА: Маскот та Лого --- */
+.logo-section {
+    flex: 1;
+    position: relative;
+    max-width: 55%;
+    height: 100vh;
+}
+
+.logo-img {
+    position: absolute;
+    top: 35%;
+    left: 10%;
+    transform: translateY(80px);
+    width: 600px;
+    height: auto;
+    filter: drop-shadow(0 4px 15px rgba(0,0,0,0.5));
+    z-index: 1;
+}
+
+.mascot-wrapper {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+}
+
+.mascot-wrapper::before {
+    content: '';
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(247, 0, 135, 0.45) 0%, rgba(136, 14, 79, 0.25) 35%, rgba(136, 14, 79, 0) 65%);
+    filter: blur(60px);
+    z-index: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulseGlow 4s ease-in-out infinite alternate;
+}
+
+.mascot-img {
+    width: 100%;
+    max-width: 480px;
+    height: auto;
+    max-height: 90vh;
+    filter: drop-shadow(0 0 40px #FF25BB);
+    animation: floatMascot 4s ease-in-out infinite alternate;
+    z-index: 2;
+    position: relative;
+    object-fit: contain;
+    margin-bottom: -80px;
+}
+
+@keyframes floatMascot {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-15px); }
+}
+
+@keyframes pulseGlow {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    100% { transform: scale(1.1); opacity: 1; }
+}
+
+/* --- ПРАВА ЧАСТИНА: Авторизація --- */
+.auth-section {
+    flex: 1;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+h1 {
+    font-family: 'Roboto', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 20px;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(247, 0, 135, 0.6), 0 0 20px rgba(247, 0, 135, 0.2);
+}
+
+h2 {
+    font-family: 'Roboto', sans-serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 35px;
+    color: #E8AFD0;
+    text-shadow: 0 0 8px rgba(232, 175, 208, 0.3);
+}
+
+/* --- КНОПКИ ТА ЕЛЕМЕНТИ ФОРМИ --- */
+.btn-group {
+    width: 300px;
+}
+
+.btn {
+    width: 100%;
+    height: 42px;
+    border-radius: 20px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    transition: all 0.3s ease;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn img {
+    margin-right: 8px;
+}
+
+.white-btn {
+    background: rgba(232, 175, 208, 0.12);
+    border: 1px solid rgba(232, 175, 208, 0.3);
+    color: #E8AFD0;
+    backdrop-filter: blur(4px);
+}
+
+.white-btn:hover { 
+    background: rgba(232, 175, 208, 0.22); 
+    border-color: #E8AFD0;
+    box-shadow: 0 0 15px rgba(232, 175, 208, 0.4);
+    color: #fff;
+}
+
 .blue-btn {
-    background: #F70087; /* Твій яскраво-рожевий */
+    background: #F70087;
     color: white;
+    box-shadow: 0 0 15px rgba(247, 0, 135, 0.5);
 }
 
 .blue-btn:hover { 
-    background: #d60075; /* Трохи темніший при наведенні */
+    background: #ff1a9b; 
+    box-shadow: 0 0 25px rgba(247, 0, 135, 0.8);
 }
 
-/* Оновлена кнопка з точними розмірами */
 .outline-btn {
     background: transparent !important; 
     border: 2px solid #F70087 !important; 
     border-radius: 20px !important; 
-    
-    /* === ТОЧНІ РОЗМІРИ З FIGMA === */
     width: 300px !important; 
-    height: 40px !important; 
-    
+    height: 42px !important; 
     color: #F70087 !important; 
     font-weight: 700 !important; 
     font-size: 16px;
-    
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease !important;
     cursor: pointer;
-    box-sizing: border-box; /* Гарантує, що рамка не збільшить загальну ширину */
+    box-sizing: border-box;
+    text-shadow: 0 0 5px rgba(247, 0, 135, 0.5);
 }
 
 .outline-btn:hover {
-    background: rgba(247, 0, 135, 0.1) !important; /* Легкий рожевий фон при наведенні */
+    background: rgba(247, 0, 135, 0.15) !important;
+    box-shadow: 0 0 20px rgba(247, 0, 135, 0.6), inset 0 0 8px rgba(247, 0, 135, 0.3) !important;
+    color: #fff !important;
 }
-/* --- ОНОВЛЕНІ ПОСИЛАННЯ --- */
+
+/* --- РОЗДІЛЮВАЧ "АБО" --- */
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 25px 0;
+    color: #E8AFD0;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(232, 175, 208, 0.4);
+}
+
+.divider::before { margin-right: 15px; }
+.divider::after { margin-left: 15px; }
+
+.divider span {
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    background: transparent;
+    color: #E8AFD0;
+    text-shadow: 0 0 5px rgba(232, 175, 208, 0.3);
+}
+
+.terms {
+    font-size: 11px;
+    color: rgba(232, 175, 208, 0.7);
+    line-height: 1.4;
+    margin-bottom: -40px;
+    margin-top: 10px;
+}
+
 .terms a {
     color: #F70087;
     text-decoration: none;
+    text-shadow: 0 0 5px rgba(247, 0, 135, 0.3);
 }
 
 .link {
     color: #F70087;
     cursor: pointer;
     font-weight: 600;
+    text-shadow: 0 0 5px rgba(247, 0, 135, 0.3);
 }
 
-h1 {
-    font-family: 'Roboto', sans-serif; /* Параметр: Font з image_6.png */
-    font-size: 40px; /* Параметр: Size з image_6.png */
-    font-weight: 700; /* Параметр: Weight Bold з image_6.png */
-    line-height: 1; /* Параметр: Line height 100% з image_6.png */
-    letter-spacing: 0; /* Параметр: Letter spacing 0% з image_6.png */
-    margin-bottom: 20px; /* Залишено з оригінального коду для відступу */
+.link:hover {
+    text-decoration: underline;
+    text-shadow: 0 0 8px rgba(247, 0, 135, 0.6);
+}
+
+.login-group {
+    margin-top: 60px;
+    width: 300px;
+}
+
+.login-group h3 {
+    font-family: 'Roboto', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
     color: #E8AFD0;
+    margin-bottom: 20px;
+    text-shadow: 0 0 8px rgba(232, 175, 208, 0.3);
 }
 
-h2 {
-    font-family: 'Roboto', sans-serif; /* Параметр: Font з image_7.png */
-    font-size: 32px; /* Параметр: Size з image_7.png */
-    font-weight: 400; /* Параметр: Weight Regular з image_7.png */
-    line-height: 1; /* Параметр: Line height 100% з image_7.png */
-    letter-spacing: 0; /* Параметр: Letter spacing 0% з image_7.png */
-    margin-bottom: 35px; /* Залишено з оригінального коду */
-    color: #E8AFD0;
-}
-/* 3. Контент (Кнопки, текст) — робимо їх видимими */
-.main-container, .modal-overlay {
-    position: relative;
-    z-index: 10; /* Вище за анімований фон */
-}
-
+/* --- МОДАЛЬНІ ВІКНА --- */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6); /* Напівпрозорий чорний */
-    backdrop-filter: blur(8px);      /* Розмиття фону (Glassmorphism) */
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -205,8 +559,8 @@ h2 {
     max-width: 400px;
     padding: 30px;
     border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(247, 0, 135, 0.15);
+    border: 1px solid rgba(247, 0, 135, 0.3);
     position: relative;
     transform: translateY(20px);
     transition: transform 0.3s ease;
@@ -217,14 +571,14 @@ h2 {
     transform: translateY(0);
 }
 
-/* --- Елементи всередині --- */
 .modal-box h2 {
     margin: 0 0 5px 0;
     font-size: 24px;
+    color: white;
 }
 
 .modal-subtitle {
-    color: #888;
+    color: #E8AFD0;
     font-size: 14px;
     margin-bottom: 25px;
 }
@@ -240,10 +594,9 @@ h2 {
 }
 
 .modal-close:hover {
-    color: #fff;
+    color: #F70087;
 }
 
-/* --- Inputs --- */
 .input-group {
     margin-bottom: 15px;
 }
@@ -257,16 +610,16 @@ h2 {
     color: #fff;
     font-size: 16px;
     outline: none;
-    box-sizing: border-box; /* Важливо, щоб padding не ламав ширину */
-    transition: border-color 0.2s;
+    box-sizing: border-box;
+    transition: all 0.2s;
 }
 
 .input-group input:focus {
-    border-color: #3b82f6; /* Синій колір при фокусі */
+    border-color: #F70087;
     background: #252525;
+    box-shadow: 0 0 12px rgba(247, 0, 135, 0.5);
 }
 
-/* --- Buttons --- */
 .full-width {
     width: 100%;
     padding: 14px;
@@ -279,156 +632,13 @@ h2 {
     transition: transform 0.1s;
 }
 
-.full-width:active {
-    transform: scale(0.98);
-}
-
-
-/* --- Footer посилання --- */
 .modal-footer {
     margin-top: 20px;
     font-size: 14px;
     color: #888;
 }
 
-
-
-.link:hover {
-    text-decoration: underline;
-}
-
-.hidden { display: none; }
-
-.main-container {
-    display: flex;
-    height: 100vh;
-    align-items: center;
-    padding: 20px;
-}
-
-/* Логотип */
-.logo-section {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-}
-
-.logo-x {
-    fill: white;
-    width: 350px;
-    max-width: 50%;
-}
-
-/* Секция регистрации */
-.auth-section {
-    flex: 1;
-    padding: 40px;
-    max-width: 600px;
-}
-
-
-/* Кнопки */
-.btn-group {
-    width: 300px;
-}
-
-.btn {
-    width: 100%;
-    height: 40px;
-    border-radius: 20px;
-    border: none;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 12px;
-    transition: background 0.2s;
-}
-
-.btn img {
-    margin-right: 8px;
-}
-
-.white-btn {
-    background: #E8AFD0;
-    color: black;
-}
-
-.white-btn:hover { background: #e6e6e6; }
-
-
-/* Робимо контейнер Flex-блоком */
-.divider {
-    display: flex;
-    align-items: center; /* Вирівнюємо лінії та текст по центру по вертикалі */
-    margin: 25px 0; /* Відступи зверху і знизу */
-    color: #888; /* Колір тексту як на макеті */
-}
-
-/* Створюємо дві лінії: одну ДО тексту, іншу ПІСЛЯ */
-.divider::before,
-.divider::after {
-    content: "";
-    flex: 1; /* Змушує лінії розтягуватися на весь вільний простір */
-    height: 1px; /* Товщина лінії */
-    background: #E8AFD0; /* Колір лінії */
-}
-
-/* Відступ між лівою лінією і текстом */
-.divider::before {
-    margin-right: 15px; 
-}
-
-/* Відступ між текстом і правою лінією */
-.divider::after {
-    margin-left: 15px; 
-}
-
-/* Налаштування самого тексту всередині <span> */
-.divider span {
-    font-size: 12px;
-    letter-spacing: 0.5px;
-    background: transparent; /* Тло прозоре, щоб було видно анімацію позаду! */
-}
-
-.divider span {
-    padding: 0 10px;
-    position: relative;
-    font-size: 14px;
-    color: #E8AFD0;
-}
-
-/* Текст условий */
-.terms {
-    font-size: 11px;
-    color: #E8AFD0;
-    line-height: 1.4;
-    margin-bottom: -40px;
-}
-
-.terms a {
-    color: #1d9bf0;
-    text-decoration: none;
-}
-
-/* Секция входа */
-.login-group {
-    margin-top: 60px;
-    width: 300px;
-}
-
-.login-group h3 {
-    font-family: 'Roboto', sans-serif; /* Шрифт Roboto */
-    font-size: 32px; /* Збільшений розмір */
-    font-weight: 700; /* Жирність Bold */
-    line-height: 1; /* Висота рядка 100% */
-    letter-spacing: 0;
-    color: #E8AFD0; /* Світло-рожевий колір з макета */
-    margin-bottom: 20px; /* Залишаємо нижній відступ для кнопки */
-}
-/* Контейнер заставки */
+/* --- ЗАСТАВКА (SPLASH SCREEN) --- */
 #splash-screen {
     position: fixed;
     top: 0;
@@ -443,61 +653,57 @@ h2 {
     transition: opacity 0.5s ease;
 }
 
-/* Логотип внутри заставки */
 .splash-logo {
     fill: white;
     width: 80px;
     animation: pulse-and-grow 2s forwards ease-in-out;
 }
 
-/* Анимация логотипа */
 @keyframes pulse-and-grow {
-    0% {
-        transform: scale(1);
-        opacity: 0;
-    }
-    30% {
-        transform: scale(1.1);
-        opacity: 1;
-    }
-    80% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(1.2); /* Немного увеличивается в конце */
-        opacity: 0;
-    }
+    0% { transform: scale(1); opacity: 0; }
+    30% { transform: scale(1.1); opacity: 1; }
+    80% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.2); opacity: 0; }
 }
 
-/* Класс для скрытия экрана (добавим через JS) */
 .hidden {
-    opacity: 0;
-    pointer-events: none; /* Чтобы сквозь невидимый блок можно было кликать */
+    display: none !important;
 }
 
-.modal-hidden {
-    display: none; /* Скрыто по умолчанию */
+/* --- АДАПТИВНІСТЬ ДЛЯ ТЕЛЕФОНІВ --- */
+@media (max-width: 968px) {
+    .navbar {
+        padding: 0 15px;
+    }
+    .nav-links {
+        gap: 15px;
+    }
+    .nav-link {
+        font-size: 13px;
+    }
+    .dropdown-menu {
+        width: 220px;
+    }
+    .main-container {
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: 90px 20px 20px 20px;
+        min-height: auto;
+    }
+    
+    .logo-section {
+        max-width: 100%;
+        margin-bottom: 40px;
+        margin-top: 20px;
+    }
+    
+    .mascot-img {
+        max-width: 300px;
+    }
+    
+    .auth-section {
+        width: 100%;
+        max-width: 100%;
+        align-items: center;
+    }
 }
-
-#auth-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(91, 112, 131, 0.4); /* Темный полупрозрачный фон */
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-}
-
-.modal-content {
-    background: #000;
-    padding: 30px;
-    border-radius: 16px;
-    width: 400px;
-    position: relative;
-    border: 1px solid #333;
-}
-
