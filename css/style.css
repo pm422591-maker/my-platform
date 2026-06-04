@@ -317,6 +317,8 @@ body::after {
     justify-content: center;
     align-items: center;
     z-index: 2;
+    /* --- ДОДАЙ ЦЕЙ РЯДОК --- */
+    pointer-events: none;
 }
 
 .mascot-wrapper::before {
@@ -356,13 +358,15 @@ body::after {
     100% { transform: scale(1.1); opacity: 1; }
 }
 
-/* --- ПРАВА ЧАСТИНА: Авторизація --- */
 .auth-section {
     flex: 1;
     max-width: 450px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    /* --- ДОДАЙ ЦІ ДВА РЯДКИ --- */
+    position: relative; 
+    z-index: 20; 
 }
 
 h1 {
@@ -431,6 +435,7 @@ h2 {
     background: #F70087;
     color: white;
     box-shadow: 0 0 15px rgba(247, 0, 135, 0.5);
+    z-index: 100;
 }
 
 .blue-btn:hover { 
