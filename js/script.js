@@ -90,6 +90,7 @@ if (formRegister) {
 
             if (result.success) {
                 localStorage.setItem('user_name', result.username || email.split('@')[0]);
+                sessionStorage.setItem('syncora_new_login', '1');
                 window.location.href = "home.html";
             } else {
                 alert("Помилка: " + result.message);
@@ -135,6 +136,7 @@ if (formLogin) {
                 if(result.avatar) localStorage.setItem('user_avatar', result.avatar);
                 if(result.banner) localStorage.setItem('user_banner', result.banner);
                 
+                sessionStorage.setItem('syncora_new_login', '1');
                 window.location.href = "home.html";
             } else {
                 alert("Невірний логін або пароль");

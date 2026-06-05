@@ -1,36 +1,20 @@
 /**
  * SYNCORA — Система навчання нових користувачів
- * tutorial.js
- *
- * Логіка:
- * 1. При першому вході (після реєстрації / логіну) перевіряємо localStorage.
- * 2. Якщо туторіал не пройдено — запускаємо покрокові підказки.
- * 3. Після туторіалу — пропонуємо пройти тест-онбординг.
- * 4. Результати тесту автоматично зберігаються в БД (save_filters.php + save_user_game.php).
+ * tutorial.js (updated)
  */
 
 // ─────────────────────────────────────────────
-// КОНФІГ КРОКІВ ТУТОРІАЛУ
+// КОНФІГ КРОКІВ ТУТОРІАЛУ (merged step 1+2, removed step 2)
 // ─────────────────────────────────────────────
 const TUTORIAL_STEPS = [
   {
-    id: 'filters',
+    id: 'search',
     targetId: 'top-game-filter',
     title: '🎮 Пошук гравців',
-    description: 'Тут ти знайдеш інших гравців! Натисни значок фільтрів, щоб відфільтрувати людей за віком, стилем гри, жанром та мовою спілкування.',
+    description: 'Тут ти знайдеш інших гравців! Шукай їх за нікнеймом, а значок фільтрів допоможе відібрати людей за віком, стилем гри, жанром та мовою. Ігри, що ти додав у профіль, одразу покращують підбір партнерів!',
     icon: '🔍',
     position: 'bottom',
     arrowSide: 'top',
-  },
-  {
-    id: 'games',
-    targetId: 'btn-games-toggle',           // кнопка вибору ігор у сайдбарі / хедері
-    fallbackSelector: '.nav-container-vertical', // якщо немає — підказуємо до навігації
-    title: '🕹️ Твої ігри',
-    description: 'Обери ігри, в які ти граєш. Це допоможе платформі знайти тобі партнерів із схожими інтересами.',
-    icon: '🎲',
-    position: 'right',
-    arrowSide: 'left',
   },
   {
     id: 'create-post',
@@ -149,12 +133,29 @@ const QUIZ_STEPS = [
 ];
 
 // ─────────────────────────────────────────────
-// HELPERS
+// HELPERS — localStorage + DB
 // ─────────────────────────────────────────────
-function tutorialDone()  { return localStorage.getItem('syncora_tutorial_done') === '1'; }
-function markTutorialDone() { localStorage.setItem('syncora_tutorial_done', '1'); }
-function quizDone()      { return localStorage.getItem('syncora_quiz_done') === '1'; }
-function markQuizDone()  { localStorage.setItem('syncora_quiz_done', '1'); }
+function tutorialDone()     { return localStorage.getItem('syncora_tutorial_done') === '1'; }
+function markTutorialDone() {
+  localStorage.setItem('syncora_tutorial_done', '1');
+  // Save to DB as well (non-blocking)
+  fetch('set_tutorial_done.php', { method: 'POST', credentials: 'include' }).catch(() => {});
+}
+function quizDone()         { return localStorage.getItem('syncora_quiz_done') === '1'; }
+function markQuizDone()     { localStorage.setItem('syncora_quiz_done', '1'); }
+
+// Check tutorial status from DB (for new sessions / different devices)
+async function checkTutorialFromDB() {
+  try {
+    const res = await fetch('get_tutorial_status.php', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success && data.tutorial_done) {
+      localStorage.setItem('syncora_tutorial_done', '1');
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
 
 function getTargetEl(step) {
   let el = step.targetId ? document.getElementById(step.targetId) : null;
@@ -168,6 +169,57 @@ function getTargetEl(step) {
 (function injectStyles() {
   const style = document.createElement('style');
   style.textContent = `
+    /* ══════════ WELCOME SCREEN ══════════ */
+    #syncora-welcome-screen {
+      position: fixed; inset: 0;
+      background: #000;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      font-family: 'Geologica', sans-serif;
+      animation: sw-fadein 0.6s ease forwards;
+    }
+    @keyframes sw-fadein {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes sw-fadeout {
+      from { opacity: 1; } to { opacity: 0; }
+    }
+    .sw-logo {
+      width: 80px;
+      opacity: 0;
+      animation: sw-logo-in 0.8s 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      filter: drop-shadow(0 0 24px rgba(240,4,127,0.7));
+    }
+    @keyframes sw-logo-in {
+      from { opacity: 0; transform: scale(0.7) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .sw-greeting {
+      font-size: 22px; font-weight: 800;
+      color: rgba(255,255,255,0);
+      animation: sw-text-in 0.7s 0.8s ease forwards;
+      letter-spacing: 0.01em;
+      text-align: center;
+    }
+    .sw-greeting span { color: #f0047f; }
+    @keyframes sw-text-in {
+      from { opacity: 0; transform: translateY(10px); color: rgba(255,255,255,0); }
+      to   { opacity: 1; transform: translateY(0);    color: rgba(255,255,255,1); }
+    }
+    .sw-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0);
+      animation: sw-sub-in 0.6s 1.2s ease forwards;
+      text-align: center;
+    }
+    @keyframes sw-sub-in {
+      from { opacity: 0; } to { color: rgba(255,255,255,0.4); opacity: 1; }
+    }
+
     /* ══════════ TUTORIAL OVERLAY ══════════ */
     #syncora-tutorial-overlay {
       position: fixed; inset: 0;
@@ -177,7 +229,6 @@ function getTargetEl(step) {
       font-family: 'Geologica', sans-serif;
     }
 
-    /* Spotlight cutout */
     #syncora-spotlight {
       position: fixed;
       border-radius: 16px;
@@ -189,7 +240,6 @@ function getTargetEl(step) {
       transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* ── Tooltip card ── */
     .syt-tooltip {
       position: fixed;
       z-index: 99995;
@@ -207,13 +257,10 @@ function getTargetEl(step) {
       pointer-events: all;
       animation: syt-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
-
     @keyframes syt-enter {
       from { opacity: 0; transform: scale(0.88) translateY(10px); }
       to   { opacity: 1; transform: scale(1)    translateY(0); }
     }
-
-    /* Arrow */
     .syt-tooltip::before {
       content: '';
       position: absolute;
@@ -228,118 +275,81 @@ function getTargetEl(step) {
     .syt-tooltip.arrow-right::before  { right: -8px;  top: 28px;  border-bottom: none; border-left: none; }
 
     .syt-icon {
-      font-size: 32px;
-      display: block;
-      margin-bottom: 10px;
+      font-size: 32px; display: block; margin-bottom: 10px;
       animation: syt-bounce 2.5s ease-in-out infinite;
     }
     @keyframes syt-bounce {
       0%,100% { transform: translateY(0); }
       50%      { transform: translateY(-5px); }
     }
-
     .syt-title {
-      font-size: 15px; font-weight: 700;
-      color: #fff;
-      margin-bottom: 8px;
-      letter-spacing: 0.01em;
+      font-size: 15px; font-weight: 700; color: #fff;
+      margin-bottom: 8px; letter-spacing: 0.01em;
     }
-
     .syt-desc {
       font-size: 13px; font-weight: 400;
       color: rgba(255,255,255,0.72);
-      line-height: 1.55;
-      margin-bottom: 18px;
+      line-height: 1.55; margin-bottom: 18px;
     }
-
     .syt-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
     }
-
-    .syt-dots {
-      display: flex; gap: 6px; align-items: center;
-    }
+    .syt-dots { display: flex; gap: 6px; align-items: center; }
     .syt-dot {
       width: 7px; height: 7px; border-radius: 50%;
-      background: rgba(240,4,127,0.3);
-      transition: all 0.3s;
+      background: rgba(240,4,127,0.3); transition: all 0.3s;
     }
     .syt-dot.active {
-      background: #f0047f;
-      width: 20px; border-radius: 4px;
+      background: #f0047f; width: 20px; border-radius: 4px;
       box-shadow: 0 0 8px rgba(240,4,127,0.7);
     }
-
     .syt-btn-skip {
       background: none; border: none; cursor: pointer;
       color: rgba(255,255,255,0.35); font-size: 12px;
       font-family: 'Geologica', sans-serif;
-      padding: 4px 8px; border-radius: 6px;
-      transition: color 0.2s;
+      padding: 4px 8px; border-radius: 6px; transition: color 0.2s;
     }
     .syt-btn-skip:hover { color: rgba(255,255,255,0.7); }
-
     .syt-btn-next {
       background: linear-gradient(135deg, #f0047f, #c7005a);
-      border: none; cursor: pointer;
-      color: #fff; font-size: 13px; font-weight: 700;
+      border: none; cursor: pointer; color: #fff;
+      font-size: 13px; font-weight: 700;
       font-family: 'Geologica', sans-serif;
       padding: 9px 22px; border-radius: 12px;
       transition: transform 0.15s, box-shadow 0.15s;
       box-shadow: 0 4px 16px rgba(240,4,127,0.4);
       display: flex; align-items: center; gap: 7px;
     }
-    .syt-btn-next:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 22px rgba(240,4,127,0.6);
-    }
+    .syt-btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(240,4,127,0.6); }
     .syt-btn-next svg { width:14px; height:14px; }
 
     /* ══════════ QUIZ MODAL ══════════ */
     #syncora-quiz-backdrop {
       position: fixed; inset: 0;
       background: rgba(10, 0, 8, 0.88);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       z-index: 99998;
       display: flex; align-items: center; justify-content: center;
       animation: sqb-in 0.4s ease forwards;
       font-family: 'Geologica', sans-serif;
     }
-    @keyframes sqb-in {
-      from { opacity: 0; } to { opacity: 1; }
-    }
+    @keyframes sqb-in { from { opacity: 0; } to { opacity: 1; } }
 
     #syncora-quiz-card {
-      position: relative;
-      width: min(480px, 92vw);
+      position: relative; width: min(480px, 92vw);
       background: rgba(16, 4, 13, 0.95);
       border: 1px solid rgba(240, 4, 127, 0.35);
-      border-radius: 28px;
-      padding: 36px 32px 28px;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04),
-        0 24px 64px rgba(0,0,0,0.8),
-        0 0 80px rgba(240,4,127,0.1);
+      border-radius: 28px; padding: 36px 32px 28px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 24px 64px rgba(0,0,0,0.8), 0 0 80px rgba(240,4,127,0.1);
       animation: sqc-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       overflow: hidden;
     }
-
-    /* Decorative glow blob inside card */
     #syncora-quiz-card::before {
-      content: '';
-      position: absolute;
-      width: 200px; height: 200px;
-      background: #f0047f;
-      border-radius: 50%;
-      filter: blur(90px);
-      opacity: 0.08;
-      top: -60px; right: -40px;
-      pointer-events: none;
+      content: ''; position: absolute;
+      width: 200px; height: 200px; background: #f0047f;
+      border-radius: 50%; filter: blur(90px); opacity: 0.08;
+      top: -60px; right: -40px; pointer-events: none;
     }
-
     @keyframes sqc-in {
       from { opacity: 0; transform: scale(0.9) translateY(20px); }
       to   { opacity: 1; transform: scale(1)   translateY(0); }
@@ -356,149 +366,75 @@ function getTargetEl(step) {
       transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 0 8px rgba(240,4,127,0.6);
     }
-
     .sqz-icon { font-size: 42px; display: block; margin-bottom: 14px; }
-
-    .sqz-question {
-      font-size: 21px; font-weight: 700;
-      color: #fff; margin-bottom: 6px;
-      line-height: 1.25;
-    }
-
-    .sqz-subtitle {
-      font-size: 13px; color: rgba(255,255,255,0.5);
-      margin-bottom: 24px; line-height: 1.4;
-    }
-
+    .sqz-question { font-size: 21px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.25; }
+    .sqz-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 24px; line-height: 1.4; }
     .sqz-options {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 10px;
-      margin-bottom: 28px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px; margin-bottom: 28px;
     }
-
     .sqz-option {
       display: flex; align-items: center; gap: 10px;
       padding: 13px 16px; border-radius: 14px;
       border: 1.5px solid rgba(255,255,255,0.1);
       background: rgba(255,255,255,0.04);
-      cursor: pointer;
-      transition: all 0.2s ease;
+      cursor: pointer; transition: all 0.2s ease;
       font-size: 14px; font-weight: 600;
-      color: rgba(255,255,255,0.75);
-      user-select: none;
+      color: rgba(255,255,255,0.75); user-select: none;
     }
     .sqz-option:hover {
       border-color: rgba(240,4,127,0.5);
-      background: rgba(240,4,127,0.08);
-      color: #fff;
-      transform: translateY(-1px);
+      background: rgba(240,4,127,0.08); color: #fff; transform: translateY(-1px);
     }
     .sqz-option.selected {
-      border-color: #f0047f;
-      background: rgba(240,4,127,0.14);
-      color: #fff;
+      border-color: #f0047f; background: rgba(240,4,127,0.14); color: #fff;
       box-shadow: 0 0 18px rgba(240,4,127,0.2), inset 0 0 0 1px rgba(240,4,127,0.3);
     }
     .sqz-option .sqz-emoji { font-size: 20px; }
-
-    .sqz-footer {
-      display: flex; align-items: center; justify-content: space-between;
-    }
-
-    .sqz-step-label {
-      font-size: 12px; color: rgba(255,255,255,0.3); font-weight: 600;
-      letter-spacing: 0.05em;
-    }
-
-    .sqz-btn-wrap {
-      display: flex; gap: 10px;
-    }
-
-    .sqz-btn {
-      border: none; cursor: pointer;
-      font-family: 'Geologica', sans-serif;
-      font-weight: 700; font-size: 13px;
-      border-radius: 12px; padding: 10px 22px;
-      transition: all 0.18s ease;
-    }
-    .sqz-btn-skip {
-      background: rgba(255,255,255,0.07);
-      color: rgba(255,255,255,0.45);
-    }
-    .sqz-btn-skip:hover {
-      background: rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.7);
-    }
+    .sqz-footer { display: flex; align-items: center; justify-content: space-between; }
+    .sqz-step-label { font-size: 12px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.05em; }
+    .sqz-btn-wrap { display: flex; gap: 10px; }
+    .sqz-btn { border: none; cursor: pointer; font-family: 'Geologica', sans-serif; font-weight: 700; font-size: 13px; border-radius: 12px; padding: 10px 22px; transition: all 0.18s ease; }
+    .sqz-btn-skip { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.45); }
+    .sqz-btn-skip:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
     .sqz-btn-next {
-      background: linear-gradient(135deg, #f0047f, #c7005a);
-      color: #fff;
+      background: linear-gradient(135deg, #f0047f, #c7005a); color: #fff;
       box-shadow: 0 4px 16px rgba(240,4,127,0.4);
       display: flex; align-items: center; gap: 8px;
     }
-    .sqz-btn-next:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(240,4,127,0.55);
-    }
-    .sqz-btn-next:disabled {
-      opacity: 0.4; transform: none; cursor: not-allowed;
-      box-shadow: none;
-    }
+    .sqz-btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(240,4,127,0.55); }
+    .sqz-btn-next:disabled { opacity: 0.4; transform: none; cursor: not-allowed; box-shadow: none; }
 
-    /* ── Quiz prompt (after tutorial) ── */
     #syncora-quiz-prompt {
       position: fixed; inset: 0;
       background: rgba(10, 0, 8, 0.88);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       z-index: 99998;
       display: flex; align-items: center; justify-content: center;
       font-family: 'Geologica', sans-serif;
       animation: sqb-in 0.4s ease forwards;
     }
-
     #syncora-quiz-prompt-card {
       width: min(440px, 92vw);
       background: rgba(16, 4, 13, 0.96);
       border: 1px solid rgba(240, 4, 127, 0.35);
-      border-radius: 28px;
-      padding: 40px 32px 32px;
+      border-radius: 28px; padding: 40px 32px 32px;
       text-align: center;
       box-shadow: 0 24px 64px rgba(0,0,0,0.8), 0 0 80px rgba(240,4,127,0.1);
       position: relative; overflow: hidden;
       animation: sqc-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     #syncora-quiz-prompt-card::before {
-      content: '';
-      position: absolute;
-      width: 250px; height: 250px;
-      background: #f0047f;
-      border-radius: 50%;
-      filter: blur(110px);
-      opacity: 0.1;
-      bottom: -80px; left: -60px;
-      pointer-events: none;
+      content: ''; position: absolute;
+      width: 250px; height: 250px; background: #f0047f;
+      border-radius: 50%; filter: blur(110px); opacity: 0.1;
+      bottom: -80px; left: -60px; pointer-events: none;
     }
-
-    .sqp-emoji {
-      font-size: 52px; display: block;
-      margin-bottom: 18px;
-      animation: syt-bounce 2.5s ease-in-out infinite;
-    }
-    .sqp-title {
-      font-size: 22px; font-weight: 800;
-      color: #fff; margin-bottom: 10px;
-    }
-    .sqp-desc {
-      font-size: 14px; color: rgba(255,255,255,0.6);
-      line-height: 1.6; margin-bottom: 32px;
-      max-width: 360px; margin-left: auto; margin-right: auto;
-    }
+    .sqp-emoji { font-size: 52px; display: block; margin-bottom: 18px; animation: syt-bounce 2.5s ease-in-out infinite; }
+    .sqp-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 10px; }
+    .sqp-desc { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 32px; max-width: 360px; margin-left: auto; margin-right: auto; }
     .sqp-desc b { color: #f0047f; }
-
-    .sqp-buttons {
-      display: flex; flex-direction: column; gap: 12px;
-    }
+    .sqp-buttons { display: flex; flex-direction: column; gap: 12px; }
     .sqp-btn-yes {
       background: linear-gradient(135deg, #f0047f, #c7005a);
       color: #fff; font-weight: 700; font-size: 15px;
@@ -508,51 +444,55 @@ function getTargetEl(step) {
       transition: all 0.2s ease;
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .sqp-btn-yes:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(240,4,127,0.6);
-    }
+    .sqp-btn-yes:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(240,4,127,0.6); }
     .sqp-btn-no {
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.45); font-weight: 600; font-size: 14px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px; padding: 13px 28px;
-      cursor: pointer; font-family: 'Geologica', sans-serif;
-      transition: all 0.2s ease;
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); font-weight: 600; font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 13px 28px;
+      cursor: pointer; font-family: 'Geologica', sans-serif; transition: all 0.2s ease;
     }
-    .sqp-btn-no:hover {
-      background: rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.7);
-    }
+    .sqp-btn-no:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
 
-    /* ── Final screen ── */
-    .sqz-final {
-      text-align: center; padding: 12px 0;
-    }
+    .sqz-final { text-align: center; padding: 12px 0; }
     .sqz-final-emoji { font-size: 56px; display: block; margin-bottom: 18px; }
-    .sqz-final-title {
-      font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 10px;
-    }
-    .sqz-final-desc {
-      font-size: 14px; color: rgba(255,255,255,0.55);
-      line-height: 1.6; margin-bottom: 28px;
-    }
+    .sqz-final-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 10px; }
+    .sqz-final-desc { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; margin-bottom: 28px; }
     .sqz-final-desc b { color: #f0047f; }
     .sqz-btn-done {
-      background: linear-gradient(135deg, #f0047f, #c7005a);
-      color: #fff; font-weight: 700; font-size: 15px;
-      border: none; border-radius: 16px; padding: 14px 36px;
+      background: linear-gradient(135deg, #f0047f, #c7005a); color: #fff;
+      font-weight: 700; font-size: 15px; border: none; border-radius: 16px; padding: 14px 36px;
       cursor: pointer; font-family: 'Geologica', sans-serif;
-      box-shadow: 0 6px 22px rgba(240,4,127,0.45);
-      transition: all 0.2s ease;
+      box-shadow: 0 6px 22px rgba(240,4,127,0.45); transition: all 0.2s ease;
     }
-    .sqz-btn-done:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(240,4,127,0.6);
-    }
+    .sqz-btn-done:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(240,4,127,0.6); }
   `;
   document.head.appendChild(style);
 })();
+
+// ─────────────────────────────────────────────
+// WELCOME SCREEN (after login/register)
+// ─────────────────────────────────────────────
+function showWelcomeScreen(username, callback) {
+  const screen = document.createElement('div');
+  screen.id = 'syncora-welcome-screen';
+
+  const logoSrc = document.querySelector('.header-logo')?.src || 'img/logo.png';
+
+  screen.innerHTML = `
+    <img class="sw-logo" src="${logoSrc}" alt="Syncora">
+    <div class="sw-greeting">Ласкаво просимо до SYNCORA,<br><span>@${username}</span>!</div>
+    <div class="sw-sub">Твій ігровий простір вже чекає тебе ✨</div>
+  `;
+  document.body.appendChild(screen);
+
+  // After 2.5s — fade out and call callback
+  setTimeout(() => {
+    screen.style.animation = 'sw-fadeout 0.7s ease forwards';
+    setTimeout(() => {
+      screen.remove();
+      if (typeof callback === 'function') callback();
+    }, 700);
+  }, 2500);
+}
 
 // ─────────────────────────────────────────────
 // TUTORIAL ENGINE
@@ -625,7 +565,6 @@ function positionTooltip(el, step) {
     top  = r.top + r.height / 2 - th / 2;
   }
 
-  // Keep inside viewport
   left = Math.max(12, Math.min(left, window.innerWidth  - tw - 12));
   top  = Math.max(12, Math.min(top,  window.innerHeight - th - 12));
 
@@ -638,7 +577,6 @@ function showTutorialStep(index) {
   const el = getTargetEl(step);
 
   if (!el) {
-    // Element not found — skip to next
     if (index < TUTORIAL_STEPS.length - 1) {
       currentStep++;
       showTutorialStep(currentStep);
@@ -649,7 +587,6 @@ function showTutorialStep(index) {
   }
 
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
   setTimeout(() => {
     positionSpotlight(el);
     positionTooltip(el, step);
@@ -669,12 +606,17 @@ window.skipTutorial = function () {
   finishTutorial();
 };
 
+function cleanupTutorialDOM() {
+  if (spotlight)       { spotlight.remove();       spotlight = null; }
+  if (tooltip)         { tooltip.remove();         tooltip = null; }
+  if (tutorialOverlay) { tutorialOverlay.remove(); tutorialOverlay = null; }
+  // Also remove any lingering tutorial-related elements
+  document.querySelectorAll('.syt-tooltip, #syncora-spotlight, #syncora-tutorial-overlay').forEach(el => el.remove());
+}
+
 function finishTutorial() {
   markTutorialDone();
-  if (spotlight) spotlight.remove();
-  if (tooltip)   tooltip.remove();
-  if (tutorialOverlay) tutorialOverlay.remove();
-  spotlight = tooltip = tutorialOverlay = null;
+  cleanupTutorialDOM();
 
   if (!quizDone()) {
     setTimeout(showQuizPrompt, 400);
@@ -682,6 +624,7 @@ function finishTutorial() {
 }
 
 function startTutorial() {
+  cleanupTutorialDOM(); // Clean before starting
   buildTutorialDOM();
   currentStep = 0;
   showTutorialStep(0);
@@ -693,7 +636,6 @@ function startTutorial() {
 function showQuizPrompt() {
   const backdrop = document.createElement('div');
   backdrop.id = 'syncora-quiz-prompt';
-
   backdrop.innerHTML = `
     <div id="syncora-quiz-prompt-card">
       <span class="sqp-emoji">🎯</span>
@@ -703,16 +645,11 @@ function showQuizPrompt() {
         та вибір ігор під тебе. Займе лише <b>хвилину</b>!
       </div>
       <div class="sqp-buttons">
-        <button class="sqp-btn-yes" onclick="startQuiz()">
-          🚀 Пройти тест
-        </button>
-        <button class="sqp-btn-no" onclick="declineQuiz()">
-          Може пізніше
-        </button>
+        <button class="sqp-btn-yes" onclick="startQuiz()">🚀 Пройти тест</button>
+        <button class="sqp-btn-no" onclick="declineQuiz()">Може пізніше</button>
       </div>
     </div>
   `;
-
   document.body.appendChild(backdrop);
 }
 
@@ -733,7 +670,6 @@ let quizCard = null;
 window.startQuiz = function () {
   const prompt = document.getElementById('syncora-quiz-prompt');
   if (prompt) prompt.remove();
-
   quizAnswers = {};
   quizStep = 0;
   renderQuiz();
@@ -741,16 +677,12 @@ window.startQuiz = function () {
 
 function renderQuiz() {
   if (quizBackdrop) quizBackdrop.remove();
-
   quizBackdrop = document.createElement('div');
   quizBackdrop.id = 'syncora-quiz-backdrop';
-
   quizCard = document.createElement('div');
   quizCard.id = 'syncora-quiz-card';
-
   quizBackdrop.appendChild(quizCard);
   document.body.appendChild(quizBackdrop);
-
   renderQuizStep();
 }
 
@@ -807,15 +739,12 @@ window.quizSelectOption = function (el, stepId, value, isMulti) {
     quizAnswers[stepId] = value;
     document.querySelectorAll('#syncora-quiz-card .sqz-option').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
-    // Enable next btn
     const btn = document.getElementById('sqz-next-btn');
     if (btn) btn.disabled = false;
   }
 };
 
-window.quizSkipStep = function () {
-  quizNextStep(true);
-};
+window.quizSkipStep = function () { quizNextStep(true); };
 
 window.quizNextStep = function (skip = false) {
   if (!skip) {
@@ -823,10 +752,8 @@ window.quizNextStep = function (skip = false) {
     const val = quizAnswers[step.id];
     if (!val || (Array.isArray(val) && val.length === 0 && !step.allowSkip)) return;
   }
-
   if (quizStep < QUIZ_STEPS.length - 1) {
     quizStep++;
-    // Animate out then re-render
     quizCard.style.transition = 'opacity 0.2s, transform 0.2s';
     quizCard.style.opacity = '0';
     quizCard.style.transform = 'scale(0.96)';
@@ -843,8 +770,6 @@ window.quizNextStep = function (skip = false) {
 
 async function saveQuizAndFinish() {
   markQuizDone();
-
-  // Show saving state
   quizCard.innerHTML = `
     <div class="sqz-final">
       <span class="sqz-final-emoji">⚡</span>
@@ -854,36 +779,27 @@ async function saveQuizAndFinish() {
   `;
 
   const { games, age, comm_style, skill_level, language } = quizAnswers;
-
   try {
-    // 1. Save filters
     const filterPayload = {
       age:         age         || 'any',
       comm_style:  comm_style  || 'any',
       skill_level: skill_level || 'any',
       language:    language    || 'any',
     };
-
     await fetch('save_filters.php', {
-      method: 'POST',
-      credentials: 'include',
+      method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(filterPayload),
     });
-
-    // 2. Save games (multi)
     if (games && games.length) {
       await Promise.all(games.map(gameName =>
         fetch('save_user_game.php', {
-          method: 'POST',
-          credentials: 'include',
+          method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'add', game_name: gameName }),
         })
       ));
     }
-
-    // Success screen
     quizCard.innerHTML = `
       <div class="sqz-final">
         <span class="sqz-final-emoji">🎉</span>
@@ -895,11 +811,8 @@ async function saveQuizAndFinish() {
         <button class="sqz-btn-done" onclick="closeQuiz()">Почати 🚀</button>
       </div>
     `;
-
-    // Reload filters UI if function exists
     if (typeof loadUserFilters === 'function') setTimeout(loadUserFilters, 800);
     if (typeof loadUserGamesUI === 'function') setTimeout(loadUserGamesUI, 800);
-
   } catch (e) {
     quizCard.innerHTML = `
       <div class="sqz-final">
@@ -920,47 +833,40 @@ window.closeQuiz = function () {
 };
 
 // ─────────────────────────────────────────────
-// ENTRY POINT — вмикається після входу / реєстрації
+// ENTRY POINT
 // ─────────────────────────────────────────────
-function checkAndStartTutorial() {
-  if (tutorialDone()) {
-    // Туторіал пройдено — перевіряємо, чи треба показати квіз
-    if (!quizDone()) {
-      setTimeout(showQuizPrompt, 1200);
-    }
+async function checkAndStartTutorial() {
+  // First check DB (handles new devices / cleared localStorage)
+  const dbDone = await checkTutorialFromDB();
+
+  if (dbDone || tutorialDone()) {
+    if (!quizDone()) setTimeout(showQuizPrompt, 1200);
     return;
   }
 
-  // Невеликий таймаут, щоб сторінка повністю прогрузилась
-  setTimeout(startTutorial, 1500);
+  setTimeout(startTutorial, 800);
 }
 
-// Хук: запускаємо після авторизації та завантаження DOM
-document.addEventListener('DOMContentLoaded', function () {
-  // Перевірка: чи є сесія (PHP) або localStorage (Google)
-  const isLoggedIn = localStorage.getItem('user_name') ||
-                     document.cookie.includes('PHPSESSID');
-
-  if (isLoggedIn) {
-    checkAndStartTutorial();
+// Show welcome screen only if flagged as new login
+function maybeShowWelcome(callback) {
+  const isNewLogin = sessionStorage.getItem('syncora_new_login');
+  if (isNewLogin) {
+    sessionStorage.removeItem('syncora_new_login');
+    const username = localStorage.getItem('user_name') || 'Гравець';
+    showWelcomeScreen(username, callback);
   } else {
-    // Якщо логін через PHP сесію (нема в localStorage) — ждемо get_user
-    // Підключаємось до існуючого updateUIFromPHP через невеликий таймаут
-    setTimeout(() => {
-      // Якщо є аватар у топ-барі — значить авторизований
-      const avatar = document.getElementById('top-bar-avatar');
-      if (avatar && avatar.src && !avatar.src.includes('default_avatar')) {
-        checkAndStartTutorial();
-      } else {
-        checkAndStartTutorial(); // На всяк випадок запускаємо
-      }
-    }, 2000);
+    callback();
   }
-});
+}
 
-// Також дозволяємо запустити вручну (напр. з кнопки в профілі)
-window.startSyncoraOnboarding = function () {
-  localStorage.removeItem('syncora_tutorial_done');
-  localStorage.removeItem('syncora_quiz_done');
-  checkAndStartTutorial();
-};
+document.addEventListener('DOMContentLoaded', function () {
+  const isLoggedIn = localStorage.getItem('user_name') || document.cookie.includes('PHPSESSID');
+  if (!isLoggedIn) {
+    setTimeout(() => {
+      const avatar = document.getElementById('top-bar-avatar');
+      if (avatar) maybeShowWelcome(checkAndStartTutorial);
+    }, 2000);
+    return;
+  }
+  maybeShowWelcome(checkAndStartTutorial);
+});
