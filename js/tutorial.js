@@ -929,3 +929,119 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   maybeShowWelcomeAndStart();
 });
+
+window.triggerTutorialReward = function() {
+    console.log("🪙 Функция triggerTutorialReward успешно вызвана!");
+
+    // 1. ЗАПРОС НА БЭКЕНД — Зачисляем коины в базу данных
+    fetch('add_tutorial_coins.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include' // Передаем сессию авторизованного юзера
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`✅ Коины успешно начислены в БД! Баланс: ${data.new_balance}`);
+            // Если на странице есть элемент баланса (например, id="userCoins"), обновляем его текст
+            const coinsEl = document.getElementById('userCoins');
+            if (coinsEl) coinsEl.textContent = data.new_balance;
+            
+            // Также обновляем общие данные пользователя, если нужно
+            if (typeof updateUIFromPHP === 'function') updateUIFromPHP();
+        } else {
+            console.warn("⚠️ Предупреждение от бэкенда:", data.message);
+        }
+    })
+    .catch(err => console.error("❌ Ошибка при отправке коинов на бэкенд:", err));
+
+    // 2. ПРЕМИУМ НЕОНОВАЯ АНИМАЦИЯ ПОЛЕТА МОНЕТ
+    createPremiumCoinExplosion();
+};
+
+// Вспомогательная функция для генерации частиц монет
+function createPremiumCoinExplosion() {
+    const coinCount = 18; // Количество монеток во взрыве
+    const container = document.body;
+
+    // Динамически добавляем стили для неонового свечения, если их еще нет
+    if (!document.getElementById('neon-coin-styles')) {
+        const style = document.createElement('style');
+        style.id = 'neon-coin-styles';
+        style.innerHTML = `
+            @keyframes coinExplode {
+                0% {
+                    transform: translate(-50%, -50%) scale(0);
+                    opacity: 0;
+                }
+                15% {
+                    opacity: 1;
+                    transform: translate(-50%, -50%) scale(1.3) translate(var(--mx), var(--my));
+                }
+                45% {
+                    transform: translate(-50%, -50%) scale(1) translate(var(--mx), var(--my));
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(-50%, -50%) scale(0.7) translate(var(--tx), var(--ty));
+                    opacity: 0;
+                }
+            }
+            .syncora-neon-coin {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                width: 32px;
+                height: 32px;
+                background: radial-gradient(circle, #ffe600 30%, #f0047f 100%);
+                border: 2px solid #ffffff;
+                border-radius: 50%;
+                box-shadow: 0 0 12px #f0047f, 0 0 25px #ffe600, inset 0 0 4px rgba(255,255,255,0.8);
+                z-index: 100000;
+                pointer-events: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Geologica', sans-serif;
+                font-weight: 800;
+                color: #ffffff;
+                font-size: 15px;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Генерируем монетки вокруг центра экрана
+    for (let i = 0; i < coinCount; i++) {
+        const coin = document.createElement('div');
+        coin.className = 'syncora-neon-coin';
+        coin.innerText = '₪'; // Красивый футуристичный знак коина (можно заменить на $ или 🪙)
+
+        // Вычисляем случайный радиус взрыва (куда монетка отлетит сначала)
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 90 + Math.random() * 110;
+        const mx = Math.cos(angle) * distance + 'px';
+        const my = Math.sin(angle) * distance + 'px';
+
+        // Куда монетка полетит в финале (улетает наверх к профилю/шапке)
+        const tx = (Math.cos(angle) * distance * 0.4) + 'px';
+        const ty = '-85vh'; // Наверх за пределы экрана
+
+        coin.style.setProperty('--mx', mx);
+        coin.style.setProperty('--my', my);
+        coin.style.setProperty('--tx', tx);
+        coin.style.setProperty('--ty', ty);
+
+        // Добавляем случайную задержку анимации для реалистичности рассыпчатости
+        coin.style.animation = `coinExplode 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards`;
+        coin.style.animationDelay = (Math.random() * 0.25) + 's';
+
+        container.appendChild(coin);
+
+        // Чистим DOM после завершения анимации
+        setTimeout(() => {
+            coin.remove();
+        }, 2000);
+    }
+}
