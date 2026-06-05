@@ -872,36 +872,36 @@ async function checkAndStartTutorial() {
 }
 
 // Show welcome screen then run tutorial.
+// Welcome screen only shows for brand-new registrations.
 // Falls back gracefully if sessionStorage is blocked (Tracking Prevention).
 function maybeShowWelcomeAndStart() {
   const username = localStorage.getItem('user_name') || 'Гравець';
 
-  // Try sessionStorage first (may be blocked by Tracking Prevention)
-  let isNewLogin = false;
+  // Try to read sessionStorage (may be blocked by Tracking Prevention)
+  let isNewRegistration = false;
   try {
-    isNewLogin = sessionStorage.getItem('syncora_new_login') === '1';
-    if (isNewLogin) sessionStorage.removeItem('syncora_new_login');
+    isNewRegistration = sessionStorage.getItem('syncora_new_login') === '1';
+    if (isNewRegistration) sessionStorage.removeItem('syncora_new_login');
   } catch (e) {
-    // sessionStorage blocked — fall back to DB check only
-    isNewLogin = false;
+    isNewRegistration = false;
   }
 
-  if (isNewLogin) {
-    // New login: always show welcome screen, then check tutorial
+  if (isNewRegistration) {
+    // Brand new registration: show welcome screen then tutorial
     showWelcomeScreen(username, checkAndStartTutorial);
-  } else {
-    // Either returning user OR sessionStorage was blocked.
-    // Ask the DB: if tutorial not done yet → show welcome + tutorial.
-    checkTutorialFromDB().then(dbDone => {
-      if (!dbDone) {
-        // Not done — treat as new user, show welcome screen
-        showWelcomeScreen(username, checkAndStartTutorial);
-      } else {
-        // Done — just check quiz
-        if (!quizDone()) setTimeout(showQuizPrompt, 1200);
-      }
-    });
+    return;
   }
+
+  // Returning user (or sessionStorage was blocked):
+  // Check DB — if tutorial done, just check quiz silently.
+  // If not done (sessionStorage blocked edge case), show welcome + tutorial as fallback.
+  checkTutorialFromDB().then(dbDone => {
+    if (dbDone) {
+      if (!quizDone()) setTimeout(showQuizPrompt, 1200);
+    } else {
+      showWelcomeScreen(username, checkAndStartTutorial);
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function () {
