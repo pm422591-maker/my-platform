@@ -129,6 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 
     <div class="top-bar-right">
+        <button title="Повторити навчання" onclick="window.startSyncoraOnboarding && window.startSyncoraOnboarding()" style="background:none;border:none;cursor:pointer;padding:6px 8px;border-radius:10px;color:rgba(255,255,255,0.35);transition:color 0.2s,background 0.2s;display:flex;align-items:center;" onmouseover="this.style.color='#f0047f';this.style.background='rgba(240,4,127,0.1)'" onmouseout="this.style.color='rgba(255,255,255,0.35)';this.style.background='none'">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </button>
         <button id="user-profile-btn" class="profile-avatar-btn">
             <img id="top-bar-avatar" class="current-user-avatar" src="img/default_avatar.png" alt="Profile">
         </button>
@@ -965,6 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="js/home.js"></script>
+<script src="js/tutorial.js"></script>
 
 </body>
 </html>
