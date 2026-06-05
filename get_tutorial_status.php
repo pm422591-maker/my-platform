@@ -8,10 +8,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
-// Use same session params as login.php / register.php
-$isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
-$isSecure = true; // Match register.php setting
-
+$isSecure = true;
 session_set_cookie_params([
     'lifetime' => 86400,
     'path' => '/',
@@ -23,7 +20,6 @@ session_start();
 
 $userId = $_SESSION['user_id'] ?? null;
 
-// Debug: log session state
 error_log("[get_tutorial_status] session_id=" . session_id() . " user_id=" . ($userId ?? 'null'));
 
 if (!$userId) {
@@ -33,18 +29,20 @@ if (!$userId) {
 
 try {
     $pdo = new PDO("mysql:host=my-mysql;dbname=mywebsite;charset=utf8", 'root', 'root', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    
-    try {
-        $stmt = $pdo->prepare("SELECT tutorial_done FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        $done = $row && isset($row['tutorial_done']) && $row['tutorial_done'] == 1;
-    } catch (Exception $inner) {
-        // Column doesn't exist yet — not done
-        error_log("[get_tutorial_status] column error: " . $inner->getMessage());
-        $done = false;
+
+    // Check column exists (compatible with older MySQL)
+    $cols = $pdo->query("SHOW COLUMNS FROM users LIKE 'tutorial_done'")->fetchAll();
+    if (empty($cols)) {
+        // Column doesn't exist yet — nobody has completed tutorial
+        echo json_encode(['success' => true, 'tutorial_done' => false, 'user_id' => $userId]);
+        exit;
     }
-    
+
+    $stmt = $pdo->prepare("SELECT tutorial_done FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $done = $row && isset($row['tutorial_done']) && $row['tutorial_done'] == 1;
+
     echo json_encode(['success' => true, 'tutorial_done' => $done, 'user_id' => $userId]);
 } catch (Exception $e) {
     error_log("[get_tutorial_status] DB error: " . $e->getMessage());
