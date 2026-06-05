@@ -671,6 +671,11 @@ window.declineQuiz = function () {
   markQuizDone();
   const el = document.getElementById('syncora-quiz-prompt');
   if (el) el.remove();
+
+  // Выдаем 100 коинсов при пропуске
+  if (typeof window.triggerTutorialReward === 'function') {
+      window.triggerTutorialReward();
+  }
 };
 
 // ─────────────────────────────────────────────
@@ -842,7 +847,15 @@ async function saveQuizAndFinish() {
 window.closeQuiz = function () {
   if (quizBackdrop) {
     quizBackdrop.style.animation = 'sqb-in 0.3s ease reverse forwards';
-    setTimeout(() => { if (quizBackdrop) quizBackdrop.remove(); quizBackdrop = null; }, 320);
+    setTimeout(() => { 
+        if (quizBackdrop) quizBackdrop.remove(); 
+        quizBackdrop = null; 
+    }, 320);
+  }
+
+  // Выдаем 100 коинсов после успешного прохождения
+  if (typeof window.triggerTutorialReward === 'function') {
+      window.triggerTutorialReward();
   }
 };
 

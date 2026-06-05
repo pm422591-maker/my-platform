@@ -8814,3 +8814,132 @@ camVideo.play(); // <-- Добавь эту строку
         camVideo.srcObject = window.cameraStream;
     }
 };
+
+// Переменные для отслеживания текущего кошелька
+window.currentUserCoins = 0;
+
+// Цены на подарки к постам (Heart = 10, Star = 15, Fire = 20, Like = 5)
+window.giftPrices = {
+    'heart': 10,
+    'star': 15,
+    'fire': 20,
+    'like': 5
+};
+
+// Функция получения уникального ID пользователя (универсально для PHP и Google авторизации)
+function getUserWalletUID() {
+    return localStorage.getItem('user_name') || (window.auth && window.auth.currentUser ? window.auth.currentUser.uid : null);
+}
+
+// 1. Инициализация и прослушивание кошелька в БД в реальном времени
+async function listenToUserWallet() {
+    const userUID = getUserWalletUID();
+    if (!userUID || !window.db) return;
+
+    const { doc, onSnapshot, setDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const walletRef = doc(window.db, "wallets", userUID);
+
+    onSnapshot(walletRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            window.currentUserCoins = data.coins || 0;
+            
+            // Обновляем визуальный счетчик в топ-баре
+            const coinLabel = document.getElementById('top-bar-coins');
+            if (coinLabel) coinLabel.textContent = window.currentUserCoins.toLocaleString();
+        } else {
+            // Если у пользователя еще нет записи кошелька — создаем его с 0 балансом
+            setDoc(walletRef, { coins: 0, tutorialRewarded: false }, { merge: true });
+        }
+    });
+}
+
+// Вызываем инициализацию, как только подтвержден вход
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(listenToUserWallet, 2000); // Небольшая задержка для загрузки Firebase
+});
+
+// 2. ФУНКЦИЯ НАГРАДЫ ЗА ОБУЧЕНИЕ (Вызывать из tutorial.js при прохождении или пропуске)
+window.triggerTutorialReward = async function() {
+    const userUID = getUserWalletUID();
+    if (!userUID || !window.db) {
+        console.error("Пользователь не идентифицирован для выдачи награды.");
+        return;
+    }
+
+    const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const walletRef = doc(window.db, "wallets", userUID);
+
+    try {
+        const docSnap = await getDoc(walletRef);
+        let alreadyRewarded = false;
+        let currentCoins = 0;
+
+        if (docSnap.exists()) {
+            alreadyRewarded = docSnap.data().tutorialRewarded || false;
+            currentCoins = docSnap.data().coins || 0;
+        }
+
+        // Если награда еще не была получена именно этим пользователем
+        if (!alreadyRewarded) {
+            await setDoc(walletRef, {
+                coins: currentCoins + 100,
+                tutorialRewarded: true
+            }, { merge: true });
+
+            // Показываем окно с анимацией
+            const modal = document.getElementById('coin-reward-modal');
+            if (modal) modal.style.display = 'flex';
+        } else {
+            console.log("❌ Награда за обучение уже была получена ранее.");
+        }
+    } catch (err) {
+        console.error("Ошибка транзакции кошелька в Firestore: ", err);
+    }
+};
+
+// Функции управления модальными окнами
+window.closeCoinRewardModal = function() {
+    document.getElementById('coin-reward-modal').style.display = 'none';
+};
+
+window.openPremiumModal = function() {
+    document.getElementById('premium-modal').style.display = 'flex';
+};
+
+window.closePremiumModal = function() {
+    document.getElementById('premium-modal').style.display = 'none';
+};
+
+// 3. БЕЗОПАСНАЯ ПОКУПКА ПОДАРКОВ ЗА КОИНСЫ
+window.buyGiftForPost = async function(postId, giftType) {
+    const cost = window.giftPrices[giftType] || 10;
+    
+    if (window.currentUserCoins < cost) {
+        alert(`Недостаточно коинсов! Подарок "${giftType}" стоит ${cost} коинсов. Ваш баланс: ${window.currentUserCoins}`);
+        return false;
+    }
+
+    const userUID = getUserWalletUID();
+    if (!userUID || !window.db) return false;
+
+    const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const walletRef = doc(window.db, "wallets", userUID);
+
+    try {
+        // Списываем коинсы из БД
+        await updateDoc(walletRef, {
+            coins: increment(-cost)
+        });
+        
+        alert(`Успешно куплено! Списано ${cost} коинсов.`);
+        
+        // Тут вызывается твоя функция добавления подарка к посту, например:
+        // if (typeof window.addGiftToPostUI === 'function') window.addGiftToPostUI(postId, giftType);
+        
+        return true;
+    } catch (e) {
+        console.error("Ошибка при покупке подарка:", e);
+        return false;
+    }
+};

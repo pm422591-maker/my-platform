@@ -128,11 +128,23 @@ document.addEventListener('DOMContentLoaded', () => {
     <img src="img/logo.png" alt="Syncora" class="header-logo" style="height: 40px !important; max-height: 40px !important; width: auto !important; max-width: 150px !important; object-fit: contain !important; filter: drop-shadow(0 0 6px rgba(240, 4, 127, 0.5));">
 </div>
 
-    <div class="top-bar-right">
-        <button id="user-profile-btn" class="profile-avatar-btn">
-            <img id="top-bar-avatar" class="current-user-avatar" src="img/default_avatar.png" alt="Profile">
-        </button>
+    <div class="top-bar-right" style="display: flex; align-items: center; gap: 15px;">
+    <!-- Кнопка Премиум подписки -->
+    <button id="premium-open-btn" class="premium-top-btn" onclick="openPremiumModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; color: #ffbc00;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <span>Premium</span>
+    </button>
+
+    <!-- Значок валюты (Коинсы) -->
+    <div class="coins-display-container" title="Ваш баланс коинсов">
+        <span class="coin-icon">🪙</span>
+        <span id="top-bar-coins">0</span>
     </div>
+
+    <button id="user-profile-btn" class="profile-avatar-btn">
+        <img id="top-bar-avatar" class="current-user-avatar" src="img/default_avatar.png" alt="Profile">
+    </button>
+</div>
 </div>
    </div>
 
@@ -959,6 +971,59 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </div>
         <div id="media-grid" class="media-grid"></div>
+    </div>
+</div>
+<!-- МОДАЛЬНОЕ ОКНО: Анимация получения 100 коинсов -->
+<div id="coin-reward-modal" class="coin-reward-overlay" style="display: none;">
+    <div class="coin-reward-content">
+        <div class="coin-icon-large">🪙</div>
+        <h2>Поздравляем! 🎉</h2>
+        <p>Вы успешно завершили или пропустили обучение и заработали <span style="color: #ffbc00; font-weight: 800;">100 коинсов</span>!</p>
+        <button class="coin-reward-btn" onclick="closeCoinRewardModal()">Отлично, забрать!</button>
+    </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: Премиум Подписка -->
+<div id="premium-modal" class="premium-modal-overlay" style="display: none;">
+    <div class="premium-modal-content">
+        <div class="premium-modal-header">
+            <h3>SYNCORA PREMIUM ⭐</h3>
+            <button class="premium-close-x" onclick="closePremiumModal()">&times;</button>
+        </div>
+        
+        <div class="premium-advantages-list">
+            <div class="premium-advantage-item">
+                <span class="advantage-icon">🎨</span>
+                <span class="advantage-text">Кастомизация постов (уникальные стили оформления)</span>
+            </div>
+            <div class="premium-advantage-item">
+                <span class="advantage-icon">👤</span>
+                <span class="advantage-text">Кастом профиля (возможность ставить уникальные живые фоны)</span>
+            </div>
+            <div class="premium-advantage-item">
+                <span class="advantage-icon">🖼️</span>
+                <span class="advantage-text">Уникальная светящаяся рамка вокруг вашей аватарки</span>
+            </div>
+            <div class="premium-advantage-item">
+                <span class="advantage-icon">✨</span>
+                <span class="advantage-text">Кастом имени (выделение вашего никнейма градиентом в чатах)</span>
+            </div>
+        </div>
+
+        <div class="premium-pricing-container">
+            <div class="pricing-card" onclick="alert('Перенаправление на платежную систему...')">
+                <div class="pricing-duration">1 Месяц</div>
+                <div class="pricing-cost">$5.00</div>
+                <div class="pricing-or">или</div>
+                <div class="pricing-coins">1 000 коинсов</div>
+            </div>
+            <div class="pricing-card popular" onclick="alert('Перенаправление на платежную систему...')">
+                <div class="pricing-duration">1 Год</div>
+                <div class="pricing-cost">$30.00</div>
+                <div class="pricing-or">или</div>
+                <div class="pricing-coins">20 000 коинсов</div>
+            </div>
+        </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>

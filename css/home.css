@@ -6355,3 +6355,162 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     gap: 2px;
     opacity: 0.85;
 }
+
+/* Элементы Топ Бара */
+.coins-display-container {
+    display: flex;
+    align-items: center;
+    background: rgba(240, 4, 127, 0.1);
+    border: 1px solid rgba(240, 4, 127, 0.3);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-family: 'Geologica', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(240, 4, 127, 0.2);
+    user-select: none;
+}
+.coin-icon {
+    margin-right: 6px;
+    display: inline-block;
+    animation: spinCoinY 4s linear infinite;
+}
+@keyframes spinCoinY {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+}
+
+.premium-top-btn {
+    background: linear-gradient(90deg, #f0047f 0%, #ffbc00 100%);
+    border: none;
+    color: white;
+    padding: 7px 14px;
+    border-radius: 50px;
+    font-family: 'Geologica', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(240, 4, 127, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.premium-top-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(255, 188, 0, 0.5);
+}
+
+/* Оверлеи Модальных Окон */
+.coin-reward-overlay, .premium-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 0, 8, 0.85);
+    backdrop-filter: blur(15px);
+    z-index: 999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Geologica', sans-serif;
+}
+
+/* Анимированная плашка Награды */
+.coin-reward-content {
+    background: #1d0016;
+    border: 2px solid #f0047f;
+    border-radius: 24px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(240, 4, 127, 0.5);
+    max-width: 420px;
+    width: 90%;
+    transform: scale(0.3);
+    opacity: 0;
+    animation: popInBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popInBounce {
+    to { transform: scale(1); opacity: 1; }
+}
+.coin-icon-large {
+    font-size: 70px;
+    margin-bottom: 20px;
+    animation: floatCoin 1.5s ease-in-out infinite alternate;
+}
+@keyframes floatCoin {
+    from { transform: translateY(0); filter: drop-shadow(0 0 10px #ffbc00); }
+    to { transform: translateY(-15px); filter: drop-shadow(0 0 25px #ffbc00); }
+}
+.coin-reward-content h2 {
+    color: white; margin: 0 0 12px 0; font-size: 26px; font-weight: 800;
+}
+.coin-reward-content p {
+    color: rgba(255,255,255,0.8); font-size: 15px; line-height: 1.5; margin-bottom: 25px;
+}
+.coin-reward-btn {
+    background: #f0047f; color: white; border: none; padding: 14px 32px;
+    border-radius: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;
+    box-shadow: 0 5px 20px rgba(240, 4, 127, 0.4); text-transform: uppercase;
+}
+.coin-reward-btn:hover {
+    background: #ff058c; box-shadow: 0 5px 30px rgba(240, 4, 127, 0.7);
+}
+
+/* Окно Премиума */
+.premium-modal-content {
+    background: #0f000c;
+    border: 1px solid rgba(240, 4, 127, 0.3);
+    border-radius: 24px;
+    width: 90%; max-width: 500px;
+    padding: 30px;
+    box-shadow: 0 0 35px rgba(240, 4, 127, 0.4);
+    color: white;
+    animation: popInBounce 0.4s ease forwards;
+}
+.premium-modal-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;
+}
+.premium-modal-header h3 {
+    margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px;
+    background: linear-gradient(45deg, #f0047f, #ffbc00);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.premium-close-x {
+    background: transparent; border: none; color: rgba(255,255,255,0.4);
+    font-size: 28px; cursor: pointer; transition: 0.2s; line-height: 1;
+}
+.premium-close-x:hover { color: #f0047f; }
+
+.premium-advantages-list {
+    display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;
+}
+.premium-advantage-item {
+    display: flex; align-items: center; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(240, 4, 127, 0.08); padding: 14px 18px; border-radius: 14px;
+}
+.advantage-icon { font-size: 20px; margin-right: 15px; }
+.advantage-text { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); }
+
+/* Контейнер цен подписки */
+.premium-pricing-container {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+}
+.pricing-card {
+    background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 18px; padding: 22px 15px; text-align: center; transition: 0.3s; cursor: pointer;
+}
+.pricing-card:hover {
+    border-color: #f0047f; box-shadow: 0 0 20px rgba(240, 4, 127, 0.3); transform: translateY(-3px);
+}
+.pricing-card.popular {
+    border-color: #ffbc00; box-shadow: 0 0 20px rgba(255, 188, 0, 0.15); position: relative;
+}
+.pricing-card.popular::before {
+    content: 'ВЫГОДНО'; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    background: #ffbc00; color: #000; font-size: 9px; font-weight: 800; padding: 2px 10px;
+    border-radius: 20px; letter-spacing: 0.5px;
+}
+.pricing-duration { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+.pricing-cost { font-size: 24px; font-weight: 800; color: #fff; }
+.pricing-or { font-size: 11px; color: rgba(255,255,255,0.3); margin: 4px 0; }
+.pricing-coins { font-size: 13px; font-weight: 700; color: #ffbc00; }
