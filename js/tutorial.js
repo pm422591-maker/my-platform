@@ -850,16 +850,18 @@ window.closeQuiz = function () {
 // ENTRY POINT
 // ─────────────────────────────────────────────
 async function checkAndStartTutorial() {
-  const lsDone = tutorialDone();
-  console.log('[Tutorial] localStorage done:', lsDone);
-
   const dbDone = await checkTutorialFromDB();
   console.log('[Tutorial] DB done:', dbDone);
 
-  if (dbDone || lsDone) {
-    console.log('[Tutorial] Already done — skipping');
+  if (dbDone) {
+    console.log('[Tutorial] Already done (DB) — skipping');
     if (!quizDone()) setTimeout(showQuizPrompt, 1200);
     return;
+  }
+
+  // Синхронізуємо localStorage з БД (не навпаки!)
+  if (dbDone === false) {
+    localStorage.removeItem('syncora_tutorial_done');
   }
 
   console.log('[Tutorial] Starting in 2s...');

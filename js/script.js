@@ -89,9 +89,13 @@ if (formRegister) {
             const result = await response.json();
 
             if (result.success) {
-                localStorage.setItem('user_name', result.username || email.split('@')[0]);
-                sessionStorage.setItem('syncora_new_login', '1');
-                window.location.href = "home.html";
+    // ← ДОДАТИ ЦЕ:
+    localStorage.removeItem('syncora_tutorial_done');
+    localStorage.removeItem('syncora_quiz_done');
+    
+    localStorage.setItem('user_name', result.username || email.split('@')[0]);
+    sessionStorage.setItem('syncora_new_login', '1');
+    window.location.href = "home.html";
             } else {
                 alert("Помилка: " + result.message);
             }
