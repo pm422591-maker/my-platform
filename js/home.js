@@ -1572,6 +1572,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.currentGiftPostId = null;
 
+// Список подарунків з картинками та цінами
+window.GIFTS_LIST = [
+    { id: 'gift_1', img: 'img/gifts/gift_1.png', label: 'Серце', price: 0 },
+    { id: 'gift_2', img: 'img/gifts/gift_2.png', label: 'Зірка', price: 0 },
+    { id: 'gift_3', img: 'img/gifts/gift_3.png', label: 'Корона', price: 0 },
+    { id: 'gift_4', img: 'img/gifts/gift_4.png', label: 'Квітка', price: 0 },
+    { id: 'gift_5', img: 'img/gifts/gift_5.png', label: 'Діамант', price: 0 },
+    { id: 'gift_6', img: 'img/gifts/gift_6.png', label: 'Торт', price: 0 },
+    { id: 'gift_7', img: 'img/gifts/gift_7.png', label: 'Ракета', price: 0 },
+    { id: 'gift_8', img: 'img/gifts/gift_8.png', label: 'Вогонь', price: 0 },
+    { id: 'gift_9', img: 'img/gifts/gift_9.png', label: 'Магія', price: 0 },
+];
+
 window.openGiftModal = function(postId) {
     if (!postId) {
         console.error("❌ Спроба відкрити модалку без ID поста!");
@@ -1580,44 +1593,67 @@ window.openGiftModal = function(postId) {
     window.currentGiftPostId = postId;
     console.log("🎁 Готуємо подарунок для поста:", postId);
 
-    let modal = document.getElementById('giftModal');
-    if (!modal) {
-        // Створюємо модалку, якщо її ще немає (твій HTML)
-        const modalHTML = `
-        <div id="giftModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10005; display:none; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
-            <div style="background:#1e1e1e; padding:25px; border-radius:20px; width:320px; text-align:center; border:1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <h3 style="color:white; margin-bottom:5px; font-size:18px;">Нагородити автора</h3>
-                <p style="color:#888; font-size:13px; margin-bottom:20px;">Подарунок з'явиться на пості анонімно</p>
-                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin-bottom:20px;">
-                    <div onclick="window.sendGift('https://cdn-icons-png.flaticon.com/512/616/616490.png')" class="gift-item-select">
-                        <img src="https://cdn-icons-png.flaticon.com/512/616/616490.png" style="width:45px;">
-                    </div>
-                    <div onclick="window.sendGift('https://cdn-icons-png.flaticon.com/512/3533/3533961.png')" class="gift-item-select">
-                        <img src="https://cdn-icons-png.flaticon.com/512/3533/3533961.png" style="width:45px;">
-                    </div>
-                    <div onclick="window.sendGift('https://cdn-icons-png.flaticon.com/512/1041/1041844.png')" class="gift-item-select">
-                        <img src="https://cdn-icons-png.flaticon.com/512/1041/1041844.png" style="width:45px;">
-                    </div>
-                </div>
-                <button onclick="window.closeGiftModal()" style="background:rgba(255,255,255,0.05); color:#aaa; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; width:100%;">Скасувати</button>
+    // Видаляємо старий модал якщо є
+    const old = document.getElementById('giftModal');
+    if (old) old.remove();
+
+    const giftsHTML = window.GIFTS_LIST.map(g => `
+        <div class="gift-item-select" onclick="window.sendGift('${g.img}', '${g.id}')">
+            <div class="gift-item-img-wrap">
+                <img src="${g.img}" alt="${g.label}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616490.png'">
+            </div>
+            <div class="gift-item-label">${g.label}</div>
+            <div class="gift-item-price">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5h-2v-2h2v2zm0-4h-2V7h2v5.5z"/></svg>
+                ${g.price} SC
             </div>
         </div>
-        <style>
-            .gift-item-select { cursor:pointer; background:#2a2a2a; padding:12px; border-radius:15px; transition:0.2s; border:1px solid transparent; }
-            .gift-item-select:hover { background:#333; transform: scale(1.1); border-color: #ffd700; }
-        </style>`;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        modal = document.getElementById('giftModal');
-    }
-    modal.style.display = 'flex';
+    `).join('');
+
+    const modalHTML = `
+    <div id="giftModal" class="gift-modal-overlay">
+        <div class="gift-modal-box">
+            <div class="gift-modal-glow"></div>
+            <div class="gift-modal-header">
+                <div class="gift-modal-title">
+                    <span class="gift-modal-icon">🎁</span>
+                    Нагородити автора
+                </div>
+                <button class="gift-modal-close" onclick="window.closeGiftModal()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <p class="gift-modal-subtitle">Подарунок з'явиться на пості анонімно</p>
+            <div class="gift-items-grid">
+                ${giftsHTML}
+            </div>
+            <button onclick="window.closeGiftModal()" class="gift-cancel-btn">Скасувати</button>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Анімація появи
+    requestAnimationFrame(() => {
+        const modal = document.getElementById('giftModal');
+        if (modal) {
+            modal.style.opacity = '0';
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => { modal.style.opacity = '1'; });
+        }
+    });
 };
 
-window.sendGift = async function(iconUrl) {
+window.sendGift = async function(iconUrl, giftId) {
     const postId = window.currentGiftPostId;
     if (!postId) {
         alert("Помилка: пост не вибрано.");
         return;
     }
+
+    // Анімація вибраного подарунку
+    const allItems = document.querySelectorAll('.gift-item-select');
+    allItems.forEach(el => el.style.pointerEvents = 'none');
 
     try {
         const response = await fetch('save_gift.php', {
@@ -1626,7 +1662,8 @@ window.sendGift = async function(iconUrl) {
             credentials: 'include',
             body: JSON.stringify({ 
                 post_id: postId, 
-                gift_icon: iconUrl 
+                gift_icon: iconUrl,
+                gift_id: giftId || ''
             })
         });
 
@@ -4628,28 +4665,35 @@ window.reactToMessage = async function(emoji, msgId = null, eventData = null) {
 function renderPostGifts(gifts) {
     if (!gifts || gifts.length === 0) return '';
 
-    // Групуємо подарунки
+    // Групуємо подарунки по іконці
     const counts = gifts.reduce((acc, g) => {
-        acc[g.icon] = (acc[g.icon] || 0) + 1;
+        if (!acc[g.icon]) acc[g.icon] = { count: 0 };
+        acc[g.icon].count++;
         return acc;
     }, {});
 
-    let html = ''; // Повертаємо чистий набір бейджів
-    for (const [icon, count] of Object.entries(counts)) {
+    let html = '<div class="post-gifts-row">';
+    for (const [icon, data] of Object.entries(counts)) {
+        // Знаходимо мета-інфо подарунка зі списку (назва, ціна)
+        const meta = (window.GIFTS_LIST || []).find(g => g.img === icon);
+        const label = meta ? meta.label : 'Подарунок';
+        const price = meta ? meta.price : 0;
+        const count = data.count;
+
         html += `
-            <div class="gift-badge" style="
-                background: #ffb6c1; 
-                border: 1px solid #ffb6c1; 
-                padding: 2px 8px; 
-                border-radius: 12px; 
-                display: flex; 
-                align-items: center; 
-                gap: 5px;
-                flex-shrink: 0;">
-                <img src="${icon}" style="width: 16px; height: 16px; object-fit: contain;">
-                ${count > 1 ? `<span style="color: #1a1a1a; font-size: 11px; font-weight: bold;">${count}</span>` : ''}
+            <div class="post-gift-card">
+                <div class="post-gift-img-wrap">
+                    <img src="${icon}" alt="${label}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616490.png'">
+                    ${count > 1 ? `<span class="post-gift-count">×${count}</span>` : ''}
+                </div>
+                <div class="post-gift-name">${label}</div>
+                <div class="post-gift-price">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                    ${price} SC
+                </div>
             </div>`;
     }
+    html += '</div>';
     return html;
 }
 document.addEventListener('DOMContentLoaded', () => {

@@ -210,7 +210,10 @@
       };
   }
 
-  // 6. Apple Вхід
+  // ======================================================
+// Вставити замість блоку "// 6. Apple Вхід" в index.html
+// ======================================================
+
   const appleImg = document.querySelector('.btn.white-btn img[alt="Apple"]');
   if (appleImg) {
       const appleBtn = appleImg.closest('button');
@@ -220,12 +223,78 @@
           provider.addScope('name');
           try {
               const result = await signInWithPopup(auth, provider);
-              await sendToMyServer(result.user, 'apple');
+              const user = result.user;
+
+              // Apple після першого входу дає ім'я через additionalUserInfo
+              // Після повторного — displayName може бути null, це нормально
+              const additionalInfo = result._tokenResponse;
+              let displayName = user.displayName;
+
+              if (!displayName && additionalInfo?.firstName) {
+                  displayName = additionalInfo.firstName + ' ' + (additionalInfo.lastName || '');
+              }
+
+              await sendToServer(user, 'apple', displayName);
+
           } catch (error) {
-              alert("Apple ID вимагає HTTPS та налаштування в консолі Apple.");
+              if (error.code === 'auth/popup-closed-by-user') {
+                  // Юзер сам закрив — нічого не робимо
+                  return;
+              }
+              if (error.code === 'auth/operation-not-allowed') {
+                  alert("Apple Sign In не увімкнений у Firebase Console. Перейди: Authentication → Sign-in method → Apple.");
+                  return;
+              }
+              alert("Помилка Apple ID: " + error.message);
           }
       };
   }
+
+// ======================================================
+// Замінити функцію sendToMyServer на цю універсальну:
+// ======================================================
+
+  async function sendToServer(userData, providerName, overrideName = null) {
+      try {
+          const username = overrideName || userData.displayName || userData.email?.split('@')[0] || 'user';
+
+          // Apple: вибираємо endpoint
+          const endpoint = providerName === 'apple' ? 'apple_auth.php' : 'register.php';
+
+          const response = await fetch(`${window.location.origin}/${endpoint}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                  email:    userData.email    || '',
+                  username: username,
+                  uid:      userData.uid,
+                  provider: providerName
+              })
+          });
+
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          const result = await response.json();
+
+          if (result.success) {
+              localStorage.setItem('user_name',   result.username);
+              localStorage.setItem('user_avatar', result.avatar  || '');
+              if (result.banner) localStorage.setItem('user_banner', result.banner);
+              window.location.replace("home.html");
+          } else {
+              alert("Помилка: " + result.message);
+          }
+      } catch (error) {
+          console.error("Помилка сервера:", error);
+          alert("Сервер не відповідає. Перевір OpenServer / ngrok.");
+      }
+  }
+
+// ======================================================
+// В блоці "// 5. Google Вхід" — замінити sendToMyServer на sendToServer:
+// ======================================================
+//   await sendToServer(result.user, 'google');
 </script>
 <script src="js/script.js"></script>
 </body>
