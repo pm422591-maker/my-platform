@@ -149,11 +149,14 @@ async function checkTutorialFromDB() {
   try {
     const res = await fetch('get_tutorial_status.php', { credentials: 'include' });
     const data = await res.json();
+    console.log('[Tutorial] get_tutorial_status response:', data);
     if (data.success && data.tutorial_done) {
       localStorage.setItem('syncora_tutorial_done', '1');
       return true;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('[Tutorial] checkTutorialFromDB error:', e);
+  }
   return false;
 }
 
@@ -572,11 +575,21 @@ function positionTooltip(el, step) {
   tooltip.style.top  = top  + 'px';
 }
 
+function isElementVisible(el) {
+  if (!el) return false;
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) return false;
+  const style = window.getComputedStyle(el);
+  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+  return true;
+}
+
 function showTutorialStep(index) {
   const step = TUTORIAL_STEPS[index];
   const el = getTargetEl(step);
 
-  if (!el) {
+  if (!el || !isElementVisible(el)) {
+    console.warn(`[Tutorial] Step "${step.id}" — element not visible/found, skipping. targetId: ${step.targetId}`);
     if (index < TUTORIAL_STEPS.length - 1) {
       currentStep++;
       showTutorialStep(currentStep);
@@ -586,11 +599,12 @@ function showTutorialStep(index) {
     return;
   }
 
+  console.log(`[Tutorial] Showing step ${index}: "${step.title}"`);
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   setTimeout(() => {
     positionSpotlight(el);
     positionTooltip(el, step);
-  }, 300);
+  }, 350);
 }
 
 window.nextTutorialStep = function () {
@@ -836,15 +850,20 @@ window.closeQuiz = function () {
 // ENTRY POINT
 // ─────────────────────────────────────────────
 async function checkAndStartTutorial() {
-  // First check DB (handles new devices / cleared localStorage)
-  const dbDone = await checkTutorialFromDB();
+  const lsDone = tutorialDone();
+  console.log('[Tutorial] localStorage done:', lsDone);
 
-  if (dbDone || tutorialDone()) {
+  const dbDone = await checkTutorialFromDB();
+  console.log('[Tutorial] DB done:', dbDone);
+
+  if (dbDone || lsDone) {
+    console.log('[Tutorial] Already done — skipping');
     if (!quizDone()) setTimeout(showQuizPrompt, 1200);
     return;
   }
 
-  setTimeout(startTutorial, 800);
+  console.log('[Tutorial] Starting in 2s...');
+  setTimeout(startTutorial, 2000);
 }
 
 // Show welcome screen only if flagged as new login
