@@ -853,41 +853,66 @@ async function checkAndStartTutorial() {
   const dbDone = await checkTutorialFromDB();
   console.log('[Tutorial] DB done:', dbDone);
 
+  // Sync localStorage with DB (DB is the source of truth)
+  if (dbDone) {
+    localStorage.setItem('syncora_tutorial_done', '1');
+  } else {
+    localStorage.removeItem('syncora_tutorial_done');
+  }
+
   if (dbDone) {
     console.log('[Tutorial] Already done (DB) — skipping');
+    // Check quiz: also trust DB over stale localStorage
     if (!quizDone()) setTimeout(showQuizPrompt, 1200);
     return;
   }
 
-  // Синхронізуємо localStorage з БД (не навпаки!)
-  if (dbDone === false) {
-    localStorage.removeItem('syncora_tutorial_done');
-  }
-
-  console.log('[Tutorial] Starting in 2s...');
-  setTimeout(startTutorial, 2000);
+  console.log('[Tutorial] Starting...');
+  startTutorial();
 }
 
-// Show welcome screen only if flagged as new login
-function maybeShowWelcome(callback) {
-  const isNewLogin = sessionStorage.getItem('syncora_new_login');
+// Show welcome screen then run tutorial.
+// Falls back gracefully if sessionStorage is blocked (Tracking Prevention).
+function maybeShowWelcomeAndStart() {
+  const username = localStorage.getItem('user_name') || 'Гравець';
+
+  // Try sessionStorage first (may be blocked by Tracking Prevention)
+  let isNewLogin = false;
+  try {
+    isNewLogin = sessionStorage.getItem('syncora_new_login') === '1';
+    if (isNewLogin) sessionStorage.removeItem('syncora_new_login');
+  } catch (e) {
+    // sessionStorage blocked — fall back to DB check only
+    isNewLogin = false;
+  }
+
   if (isNewLogin) {
-    sessionStorage.removeItem('syncora_new_login');
-    const username = localStorage.getItem('user_name') || 'Гравець';
-    showWelcomeScreen(username, callback);
+    // New login: always show welcome screen, then check tutorial
+    showWelcomeScreen(username, checkAndStartTutorial);
   } else {
-    callback();
+    // Either returning user OR sessionStorage was blocked.
+    // Ask the DB: if tutorial not done yet → show welcome + tutorial.
+    checkTutorialFromDB().then(dbDone => {
+      if (!dbDone) {
+        // Not done — treat as new user, show welcome screen
+        showWelcomeScreen(username, checkAndStartTutorial);
+      } else {
+        // Done — just check quiz
+        if (!quizDone()) setTimeout(showQuizPrompt, 1200);
+      }
+    });
   }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
   const isLoggedIn = localStorage.getItem('user_name') || document.cookie.includes('PHPSESSID');
   if (!isLoggedIn) {
+    // Wait for page to render avatar before starting
     setTimeout(() => {
       const avatar = document.getElementById('top-bar-avatar');
-      if (avatar) maybeShowWelcome(checkAndStartTutorial);
+      if (avatar) maybeShowWelcomeAndStart();
     }, 2000);
     return;
   }
-  maybeShowWelcome(checkAndStartTutorial);
+  maybeShowWelcomeAndStart();
 });

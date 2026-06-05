@@ -139,7 +139,9 @@ if (formLogin) {
                 localStorage.setItem('user_name', result.username);
                 if(result.avatar) localStorage.setItem('user_avatar', result.avatar);
                 if(result.banner) localStorage.setItem('user_banner', result.banner);
-                
+                // Clear tutorial/quiz flags so each user gets fresh onboarding
+                localStorage.removeItem('syncora_tutorial_done');
+                localStorage.removeItem('syncora_quiz_done');
                 sessionStorage.setItem('syncora_new_login', '1');
                 window.location.href = "home.html";
             } else {
