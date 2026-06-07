@@ -1011,19 +1011,22 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="premium-pricing-container">
-            <div class="pricing-card" onclick="alert('Перенаправление на платежную систему...')">
-                <div class="pricing-duration">1 Месяц</div>
-                <div class="pricing-cost">$5.00</div>
-                <div class="pricing-or">или</div>
-                <div class="pricing-coins">1 000 коинсов</div>
-            </div>
-            <div class="pricing-card popular" onclick="alert('Перенаправление на платежную систему...')">
-                <div class="pricing-duration">1 Год</div>
-                <div class="pricing-cost">$30.00</div>
-                <div class="pricing-or">или</div>
-                <div class="pricing-coins">20 000 коинсов</div>
-            </div>
-        </div>
+    <div style="text-align:center; margin-bottom: 14px; color: #ffbc00; font-size: 14px; font-weight: 700;">
+        🪙 Ваш баланс: <span id="premium-modal-coins-balance">0</span> монет
+    </div>
+    <div class="pricing-card" onclick="buyPremiumWithCoins('month')">
+        <div class="pricing-duration">1 Месяц</div>
+        <div class="pricing-cost">$5.00</div>
+        <div class="pricing-or">или</div>
+        <div class="pricing-coins">1 000 монет</div>
+    </div>
+    <div class="pricing-card popular" onclick="buyPremiumWithCoins('year')">
+        <div class="pricing-duration">1 Год</div>
+        <div class="pricing-cost">$30.00</div>
+        <div class="pricing-or">или</div>
+        <div class="pricing-coins">20 000 монет</div>
+    </div>
+</div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>

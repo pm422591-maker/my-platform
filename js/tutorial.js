@@ -933,30 +933,38 @@ document.addEventListener('DOMContentLoaded', function () {
 window.triggerTutorialReward = function() {
     console.log("🪙 Функция triggerTutorialReward успешно вызвана!");
 
-    // 1. ЗАПРОС НА БЭКЕНД — Зачисляем коины в базу данных
     fetch('add_tutorial_coins.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include' // Передаем сессию авторизованного юзера
+        credentials: 'include'
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            console.log(`✅ Коины успешно начислены в БД! Баланс: ${data.new_balance}`);
-            // Если на странице есть элемент баланса (например, id="userCoins"), обновляем его текст
-            const coinsEl = document.getElementById('userCoins');
-            if (coinsEl) coinsEl.textContent = data.new_balance;
-            
-            // Также обновляем общие данные пользователя, если нужно
-            if (typeof updateUIFromPHP === 'function') updateUIFromPHP();
+            if (data.already_rewarded) {
+                console.log("ℹ️ Награда за туториал уже была получена ранее.");
+                return;
+            }
+            console.log(`✅ Коины начислены в БД! +${data.added} | Баланс: ${data.new_balance}`);
+
+            // Обновляем счётчик в топ-баре
+            const topBarCoins = document.getElementById('top-bar-coins');
+            if (topBarCoins) topBarCoins.textContent = Number(data.new_balance).toLocaleString();
+
+            // Обновляем глобальную переменную
+            window.currentUserCoins = data.new_balance;
+
+            // Показываем модальное окно награды
+            const rewardModal = document.getElementById('coin-reward-modal');
+            if (rewardModal) rewardModal.style.display = 'flex';
+
+            // Анимация монет
+            createPremiumCoinExplosion();
         } else {
             console.warn("⚠️ Предупреждение от бэкенда:", data.message);
         }
     })
-    .catch(err => console.error("❌ Ошибка при отправке коинов на бэкенд:", err));
-
-    // 2. ПРЕМИУМ НЕОНОВАЯ АНИМАЦИЯ ПОЛЕТА МОНЕТ
-    createPremiumCoinExplosion();
+    .catch(err => console.error("❌ Ошибка при начислении коинов:", err));
 };
 
 // Вспомогательная функция для генерации частиц монет
