@@ -616,6 +616,7 @@ async function loadUserData() {
         const data = JSON.parse(text); // Потім перетворюємо на об'єкт
 
         if (data.success) {
+            window._profileData = data; // Store for premium check
             const timestamp = Date.now();
 
             // === РОБОТА З ІГРАМИ (Roblox + Steam) ===

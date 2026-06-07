@@ -8847,6 +8847,10 @@ function loadUserCoinsFromDB() {
             if (coinLabel) coinLabel.textContent = Number(window.currentUserCoins).toLocaleString();
 
             updatePremiumButtonState(data.premium_active, data.premium_until);
+            // Apply blog premium locks
+            if (typeof window.applyBlogPremiumLocks === 'function') {
+                window.applyBlogPremiumLocks(!!window.isPremiumActive);
+            }
         }
     })
     .catch(err => console.error("❌ Ошибка загрузки баланса монет:", err));
@@ -8917,6 +8921,7 @@ window.buyPremiumWithCoins = async function(plan) {
             window.refreshCoinsDisplay(data.new_balance);
             window.isPremiumActive = true;
             updatePremiumButtonState(true, data.premium_until);
+            if (typeof window.applyBlogPremiumLocks === 'function') window.applyBlogPremiumLocks(true);
 
             const modalBalance = document.getElementById('premium-modal-coins-balance');
             if (modalBalance) modalBalance.textContent = Number(data.new_balance).toLocaleString();

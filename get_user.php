@@ -43,7 +43,7 @@ try {
     if ($targetId) {
         $isOwnProfile = ($currentUserId && $targetId == $currentUserId);
 
-        $sql = "SELECT username, `user`, avatar_url, banner_url, background_url, created_at, bio, country_code, languages_icons, secondary_email, grad_color_left, grad_color_right, status_start_hour, status_end_hour, status_last_updated, badges, roblox_id, roblox_data, roblox_inventory, steam_id FROM users WHERE id = ?";
+        $sql = "SELECT username, `user`, avatar_url, banner_url, background_url, created_at, bio, country_code, languages_icons, secondary_email, grad_color_left, grad_color_right, status_start_hour, status_end_hour, status_last_updated, badges, roblox_id, roblox_data, roblox_inventory, steam_id, premium_until FROM users WHERE id = ?";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$targetId]);
@@ -107,7 +107,9 @@ try {
                 "roblox_id"   => $res['roblox_id'], 
                 "roblox_data" => $res['roblox_data'],
                 'roblox_inventory'   => $res['roblox_inventory'],
-                "steam_id" => $res['steam_id']
+                "steam_id" => $res['steam_id'],
+                "premium_until" => $res['premium_until'],
+                "is_premium" => ($res['premium_until'] && new DateTime($res['premium_until']) > new DateTime())
             
             ]);
         } else {
