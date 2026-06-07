@@ -982,100 +982,78 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="coin-reward-btn" onclick="closeCoinRewardModal()">Отлично, забрать!</button>
     </div>
 </div>
-<!-- ========== PREMIUM MODAL (profile.html) ========== -->
-<div id="profile-premium-modal" style="display:none; position:fixed; inset:0; z-index:9999999; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px);">
-  <div style="background:linear-gradient(145deg,#1a0014,#0d000a); border:1px solid rgba(240,4,127,0.35); border-radius:24px; padding:40px 32px 32px; max-width:400px; width:90%; position:relative; box-shadow:0 0 60px rgba(240,4,127,0.25), 0 20px 60px rgba(0,0,0,0.6); font-family:'Geologica',sans-serif;">
-    
-    <!-- Close -->
-    <button onclick="hidePremiumModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;">&times;</button>
 
-    <!-- Crown icon -->
-    <div style="text-align:center;margin-bottom:20px;">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#f0047f,#ff8c42);box-shadow:0 0 30px rgba(240,4,127,0.5);">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M2 20h20v2H2v-2zM4 17l3-9 5 5 5-8 3 12H4z"/></svg>
+<div id="premium-modal" class="premium-modal-overlay" style="display: none;">
+  <div style="width:480px; background:#1a0a12; border-radius:20px; border:0.5px solid rgba(220,80,140,0.3); overflow:hidden;">
+
+    <div style="padding:24px 28px 20px; border-bottom:0.5px solid rgba(220,80,140,0.15); display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:8px; background:rgba(210,60,120,0.2); display:flex; align-items:center; justify-content:center;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e0608a" stroke-width="2"><path d="M3 18l4-8 5 5 4-7 4 10H3z"/></svg>
+        </div>
+        <span style="font-size:16px; font-weight:500; color:#f0c0d4; letter-spacing:0.04em;">SYNCORA PREMIUM ⭐</span>
+      </div>
+      <button onclick="closePremiumModal()" style="background:rgba(220,80,140,0.1); border:0.5px solid rgba(220,80,140,0.25); border-radius:6px; width:28px; height:28px; color:#c06080; cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center;">&times;</button>
+    </div>
+
+    <div style="padding:18px 28px 0;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div style="display:flex; align-items:center; gap:10px; background:rgba(220,60,120,0.07); border:0.5px solid rgba(220,60,120,0.18); border-radius:10px; padding:10px 12px;">
+          <span style="font-size:18px;">🎨</span>
+          <span style="font-size:12px; color:#c090a8; line-height:1.4;">Кастомизация постов</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; background:rgba(220,60,120,0.07); border:0.5px solid rgba(220,60,120,0.18); border-radius:10px; padding:10px 12px;">
+          <span style="font-size:18px;">👤</span>
+          <span style="font-size:12px; color:#c090a8; line-height:1.4;">Живые фоны профиля</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; background:rgba(220,60,120,0.07); border:0.5px solid rgba(220,60,120,0.18); border-radius:10px; padding:10px 12px;">
+          <span style="font-size:18px;">🖼️</span>
+          <span style="font-size:12px; color:#c090a8; line-height:1.4;">Светящаяся рамка аватарки</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; background:rgba(220,60,120,0.07); border:0.5px solid rgba(220,60,120,0.18); border-radius:10px; padding:10px 12px;">
+          <span style="font-size:18px;">✨</span>
+          <span style="font-size:12px; color:#c090a8; line-height:1.4;">Градиентный никнейм</span>
+        </div>
       </div>
     </div>
 
-    <h2 style="text-align:center;color:#fff;margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:0.5px;">Syncora Premium</h2>
-    <p style="text-align:center;color:rgba(255,255,255,0.5);margin:0 0 24px;font-size:13px;">Ця функція доступна тільки з підпискою</p>
-
-    <!-- Features list -->
-    <div style="margin-bottom:24px;display:flex;flex-direction:column;gap:10px;">
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px;">
-        <span style="color:#f0047f;font-size:16px;">✦</span> Зміна кольору / градієнту анкети
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px;">
-        <span style="color:#f0047f;font-size:16px;">✦</span> Ободок (прикраса) навколо аватарки
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px;">
-        <span style="color:#f0047f;font-size:16px;">✦</span> Зміна кольору і фото блогу
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.8);font-size:13px;">
-        <span style="color:#f0047f;font-size:16px;">✦</span> Ексклюзивні бейджі та значки
+    <div style="padding:14px 28px 6px; display:flex; align-items:center; justify-content:space-between;">
+      <span style="font-size:12px; color:#a07090;">Ваш баланс</span>
+      <div style="display:flex; align-items:center; gap:5px; background:rgba(220,60,120,0.1); border:0.5px solid rgba(220,60,120,0.25); border-radius:20px; padding:4px 12px;">
+        <span style="font-size:14px;">🪙</span>
+        <span style="font-size:13px; font-weight:500; color:#f0b0cc;" id="premium-modal-coins-balance">0</span>
+        <span style="font-size:13px; color:#d08098;">монет</span>
       </div>
     </div>
 
-    <!-- Plans -->
-    <div style="display:flex;gap:12px;margin-bottom:20px;">
-      <div id="ppm-plan-month" onclick="selectPremiumPlan('month')" style="flex:1;border:2px solid rgba(240,4,127,0.4);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:0.2s;">
-        <div style="color:#fff;font-weight:800;font-size:15px;">1 місяць</div>
-        <div style="color:#f0047f;font-weight:700;font-size:18px;margin:4px 0;">1 000</div>
-        <div style="color:rgba(255,255,255,0.4);font-size:11px;">монет</div>
-      </div>
-      <div id="ppm-plan-year" onclick="selectPremiumPlan('year')" style="flex:1;border:2px solid rgba(240,4,127,0.4);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:0.2s;">
-        <div style="color:#fff;font-weight:800;font-size:15px;">1 рік</div>
-        <div style="color:#f0047f;font-weight:700;font-size:18px;margin:4px 0;">20 000</div>
-        <div style="color:rgba(255,255,255,0.4);font-size:11px;">монет</div>
-      </div>
-    </div>
+    <div style="padding:10px 28px 24px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
 
-    <!-- Balance -->
-    <div style="text-align:center;color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:16px;">
-      Ваш баланс: <span id="ppm-balance" style="color:#fff;font-weight:700;">...</span> монет
-    </div>
+      <div onclick="buyPremiumWithCoins('month')" style="border:0.5px solid rgba(220,60,120,0.25); border-radius:14px; padding:20px 16px; cursor:pointer; background:rgba(220,60,120,0.05);">
+        <p style="font-size:11px; color:#a07090; margin:0 0 8px; text-transform:uppercase; letter-spacing:0.06em;">1 месяц</p>
+        <p style="font-size:26px; font-weight:500; color:#f0b0cc; margin:0 0 10px; line-height:1;">$5.00</p>
+        <div style="height:0.5px; background:rgba(220,60,120,0.2); margin:0 0 10px;"></div>
+        <div style="display:flex; align-items:center; gap:5px;">
+          <span style="font-size:13px;">🪙</span>
+          <span style="font-size:13px; color:#d08098;">1 000 монет</span>
+        </div>
+      </div>
 
-    <!-- Buy button -->
-    <button id="ppm-buy-btn" onclick="buyPremiumFromProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f0047f,#c0036a);border:none;border-radius:14px;color:white;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(240,4,127,0.4);transition:0.2s;">
-      Отримати Premium
-    </button>
-    <div id="ppm-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px;color:#f0047f;"></div>
+      <div onclick="buyPremiumWithCoins('year')" style="border:1.5px solid rgba(210,60,120,0.55); border-radius:14px; padding:20px 16px; cursor:pointer; background:rgba(220,60,120,0.1); position:relative;">
+        <div style="position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#b03060; border-radius:20px; padding:3px 12px; white-space:nowrap;">
+          <span style="font-size:10px; color:#ffd0e0; letter-spacing:0.05em; text-transform:uppercase;">Выгодно</span>
+        </div>
+        <p style="font-size:11px; color:#c080a0; margin:0 0 8px; text-transform:uppercase; letter-spacing:0.06em;">1 год</p>
+        <p style="font-size:26px; font-weight:500; color:#f8c0d8; margin:0 0 10px; line-height:1;">$30.00</p>
+        <div style="height:0.5px; background:rgba(220,60,120,0.3); margin:0 0 10px;"></div>
+        <div style="display:flex; align-items:center; gap:5px;">
+          <span style="font-size:13px;">🪙</span>
+          <span style="font-size:13px; color:#e090b0;">20 000 монет</span>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
-
-<style>
-/* Premium lock button */
-.premium-lock-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(240,4,127,0.12);
-  border: 1px solid rgba(240,4,127,0.3);
-  border-radius: 6px;
-  padding: 4px 7px;
-  cursor: pointer;
-  color: #f0047f;
-  vertical-align: middle;
-  margin-left: 6px;
-  transition: background 0.2s, box-shadow 0.2s;
-}
-.premium-lock-btn:hover {
-  background: rgba(240,4,127,0.25);
-  box-shadow: 0 0 8px rgba(240,4,127,0.4);
-}
-/* Locked overlay on gradient section when no premium */
-.gradient-locked-overlay {
-  position: absolute; inset: 0;
-  border-radius: 8px;
-  background: rgba(0,0,0,0.55);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 5;
-}
-#ppm-plan-month.selected, #ppm-plan-year.selected {
-  border-color: #f0047f;
-  background: rgba(240,4,127,0.1);
-  box-shadow: 0 0 16px rgba(240,4,127,0.3);
-}
-</style>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
