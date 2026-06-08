@@ -531,21 +531,34 @@ body::after {
 /* ===== SETTINGS MODAL — PINK THEME ===== */
 @import url('https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700;800&display=swap');
 
+/* ===== SETTINGS MODAL — HOME.CSS STYLE ===== */
+@import url('https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700;800&display=swap');
+
 .custom-editor-modal {
     display: none;
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.80);
-    backdrop-filter: blur(12px);
+    background: rgba(10, 0, 8, 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     z-index: 10000;
     align-items: center;
     justify-content: center;
 }
 
+/* Main window — glassmorphism panel like home side-panel */
 .editor-content {
-    background: linear-gradient(145deg, #1a0014 0%, #0d000a 100%) !important;
-    border: 1px solid rgba(240, 4, 127, 0.28);
+    --accent: #f0047f;
+    --accent-glow: rgba(240, 4, 127, 0.4);
+    --accent-dim: rgba(240, 4, 127, 0.18);
+    --panel-bg: rgba(159, 45, 107, 0.22);
+    --sidebar-bg: rgba(176, 53, 106, 0.32);
+
+    background: var(--sidebar-bg) !important;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
     width: 900px;
     height: 600px;
     border-radius: 20px;
@@ -553,91 +566,142 @@ body::after {
     position: relative;
     overflow: hidden;
     box-shadow:
-        0 0 60px rgba(240, 4, 127, 0.15),
-        0 25px 70px rgba(0, 0, 0, 0.85);
+        0 0 0 1px rgba(240, 4, 127, 0.12),
+        0 8px 32px rgba(0, 0, 0, 0.55),
+        0 0 60px rgba(240, 4, 127, 0.08);
     font-family: 'Geologica', sans-serif;
 }
 
-/* Боковая панель */
+/* ── SIDEBAR ── same feel as home side-panel-top */
 .editor-sidebar {
-    background: rgba(240, 4, 127, 0.04) !important;
-    border-right: 1px solid rgba(240, 4, 127, 0.15);
-    width: 218px;
-    display: flex;
-    justify-content: flex-end;
-    padding: 48px 6px 48px 20px;
+    background: rgba(29, 0, 22, 0.55) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
+    width: 240px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Subtle pink glow strip on the right edge of sidebar */
+.editor-sidebar::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0;
+    width: 1px; height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(240,4,127,0.4) 40%, rgba(240,4,127,0.4) 60%, transparent);
 }
 
 .sidebar-region {
-    width: 192px;
+    width: 100%;
+    padding: 44px 0 32px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
+/* Section label — same as home .section-header */
 .sidebar-header {
-    color: rgba(240, 4, 127, 0.7);
+    color: rgba(255, 255, 255, 0.38);
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    line-height: 16px;
+    font-weight: 800;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    padding: 10px 10px 8px;
+    padding: 4px 20px 8px;
     margin: 0;
     font-family: 'Geologica', sans-serif;
+    background: rgba(0, 0, 0, 0.15);
 }
 
 .editor-sidebar h3 {
     font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
-    color: rgba(240, 4, 127, 0.6);
-    letter-spacing: 1.5px;
-    margin-bottom: 10px;
-    padding-left: 10px;
+    color: rgba(255, 255, 255, 0.38);
+    letter-spacing: 2px;
+    padding: 4px 20px 8px;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.15);
     font-family: 'Geologica', sans-serif;
 }
 
+/* Nav items — exactly like home .nav-button */
 .sidebar-item {
+    position: relative;
     width: 100%;
-    background: none;
+    background: transparent !important;
     border: none;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.5);
     text-align: left;
-    padding: 9px 12px;
-    border-radius: 8px;
-    font-size: 13.5px;
-    font-weight: 500;
+    padding: 18px 20px 18px 24px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.18s, color 0.18s;
-    margin-bottom: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 0;
+    border-radius: 0;
     font-family: 'Geologica', sans-serif;
+    overflow: hidden;
+}
+
+/* Neon left stripe — same as home ::before */
+.sidebar-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0;
+    width: 4px; height: 100%;
+    background: #f0047f;
+    box-shadow: 0 0 15px rgba(240, 4, 127, 0.8);
+    transform: scaleY(0);
+    opacity: 0;
+    transition: all 0.28s ease;
 }
 
 .sidebar-item:hover {
-    background: rgba(240, 4, 127, 0.10);
-    color: rgba(255, 255, 255, 0.9);
+    color: #ffffff !important;
+    padding-left: 30px;
+    background: linear-gradient(90deg, rgba(29, 0, 22, 0.7) 0%, rgba(29, 0, 22, 0) 80%) !important;
+}
+
+.sidebar-item:hover::before {
+    transform: scaleY(0.7);
+    opacity: 1;
 }
 
 .sidebar-item.active {
-    background: rgba(240, 4, 127, 0.18);
-    color: #ffffff;
-    font-weight: 600;
-    box-shadow: inset 3px 0 0 #f0047f;
+    color: #ffffff !important;
+    padding-left: 34px;
+    background: linear-gradient(90deg, rgba(29, 0, 22, 0.75) 0%, rgba(29, 0, 22, 0) 85%) !important;
+    font-weight: 800;
+}
+
+.sidebar-item.active::before {
+    transform: scaleY(1);
+    opacity: 1;
 }
 
 .logout-item {
-    color: rgba(255, 80, 80, 0.75) !important;
+    color: rgba(255, 100, 100, 0.65) !important;
     font-family: 'Geologica', sans-serif;
 }
-
+.logout-item::before {
+    background: #ff5555;
+    box-shadow: 0 0 12px rgba(255, 85, 85, 0.8);
+}
 .logout-item:hover {
-    background: rgba(255, 60, 60, 0.10) !important;
-    color: #ff6060 !important;
+    color: #ff8080 !important;
+    background: linear-gradient(90deg, rgba(60, 0, 0, 0.6) 0%, transparent 80%) !important;
 }
 
-/* Разделитель */
+/* Divider — thin pink-tinted line */
 .sidebar-divider {
     height: 1px;
-    background: rgba(240, 4, 127, 0.18);
-    margin: 16px 0;
+    background: rgba(255, 255, 255, 0.07);
+    margin: 10px 20px;
 }
 
 .birthday-card {
@@ -645,9 +709,10 @@ body::after {
 }
 
 .editor-modal-container {
-    background: linear-gradient(145deg, #1a0014, #0d000a);
-    border: 1px solid rgba(240, 4, 127, 0.28);
-    border-radius: 24px;
+    background: rgba(159, 45, 107, 0.22);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 20px;
     display: flex;
     overflow: hidden;
     color: #fff;
@@ -655,20 +720,20 @@ body::after {
 }
 
 .sidebar-item.close-item { 
-    color: rgba(255, 80, 80, 0.75);
+    color: rgba(255, 100, 100, 0.65);
     margin-top: auto;
     font-family: 'Geologica', sans-serif;
 }
 
 .close-item:hover {
-    background: rgba(255, 60, 60, 0.10);
-    color: #ff6060;
+    background: linear-gradient(90deg, rgba(60, 0, 0, 0.6) 0%, transparent 80%) !important;
+    color: #ff8080;
 }
 
-/* Основная область */
+/* ── BODY / CONTENT AREA ── */
 .editor-body {
     flex: 1;
-    background-color: transparent !important;
+    background: rgba(29, 0, 22, 0.38) !important;
     overflow-y: auto;
     position: relative;
     padding-top: 0;
@@ -677,29 +742,67 @@ body::after {
 }
 
 .settings-content-right {
-    padding-top: 30px !important;
-    padding-left: 30px;
-    padding-right: 30px;
+    padding-top: 28px !important;
+    padding-left: 32px;
+    padding-right: 32px;
     padding-bottom: 30px;
     width: 100%;
     max-width: 800px;
     box-sizing: border-box;
+    font-family: 'Geologica', sans-serif;
+}
+
+/* Sticky section title bar at top of editor body */
+.editor-body-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(29, 0, 22, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.editor-body-header h2 {
+    font-family: 'Geologica', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+    margin: 0;
+}
+
+.editor-body-header-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f0047f;
+    box-shadow: 0 0 10px rgba(240,4,127,0.9);
+    flex-shrink: 0;
 }
 
 .tab-title {
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     margin-bottom: 20px;
     font-family: 'Geologica', sans-serif;
-    color: #fff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.9);
 }
 
 .discord-card {
-    background: rgba(240, 4, 127, 0.04);
-    border-radius: 12px;
+    background: rgba(159, 45, 107, 0.15);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba(240, 4, 127, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .card-banner {
@@ -715,11 +818,13 @@ body::after {
 }
 
 .editor-tab h2 {
-    font-size: 20px;
+    font-size: 18px;
     margin-bottom: 30px;
-    font-weight: 700;
+    font-weight: 800;
     font-family: 'Geologica', sans-serif;
-    color: #fff;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.9);
 }
 
 .editor-tab { display: none; }
@@ -730,15 +835,15 @@ body::after {
     flex-direction: column;
     gap: 10px;
 }
-.setting-block label { font-size: 11px;
-    color: rgba(240, 4, 127, 0.75);
-    font-weight: 700;
-    letter-spacing: 0.8px;
+.setting-block label { font-size: 10px;
+    color: rgba(255, 255, 255, 0.38);
+    font-weight: 800;
+    letter-spacing: 2px;
     text-transform: uppercase;
     font-family: 'Geologica', sans-serif;
  }
-.setting-block input {background: rgba(240, 4, 127, 0.06);
-    border: 1px solid rgba(240, 4, 127, 0.25);
+.setting-block input {background: rgba(29, 0, 22, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 12px 15px;
     color: #fff;
@@ -1307,17 +1412,19 @@ body::after {
 }
 
 .card-content {
-    background: rgba(240, 4, 127, 0.04) !important;
-    border: 1px solid rgba(240, 4, 127, 0.15);
+    background: rgba(159, 45, 107, 0.15) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     margin-top: 45px !important;
-    border-radius: 14px;
-    padding: 15px 20px;
+    border-radius: 16px;
+    padding: 18px 22px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    transition: border-color 0.2s;
 }
 
 .card-content:hover {
-    border-color: rgba(240, 4, 127, 0.35);
+    border-color: rgba(255, 255, 255, 0.13);
 }
 
 .integration-row {
@@ -1349,12 +1456,12 @@ body::after {
 
 .setting-item label {
     display: block;
-    color: rgba(240, 4, 127, 0.75);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
+    color: rgba(255, 255, 255, 0.38);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
     font-family: 'Geologica', sans-serif;
 }
 
@@ -1395,17 +1502,17 @@ body::after {
 
 /* Скроллбар в стиле Discord */
 .editor-body::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
 }
 .editor-body::-webkit-scrollbar-track {
     background: transparent;
 }
 .editor-body::-webkit-scrollbar-thumb {
-    background: rgba(240, 4, 127, 0.35);
+    background: rgba(176, 53, 106, 0.5);
     border-radius: 10px;
 }
 .editor-body::-webkit-scrollbar-thumb:hover {
-    background: rgba(240, 4, 127, 0.6);
+    background: rgba(240, 4, 127, 0.7);
 }
 
 /* Разделитель внутри карточки */
