@@ -528,142 +528,147 @@ body::after {
 }
 
 /* Модальное окно */
+/* ===== SETTINGS MODAL — PINK THEME ===== */
+@import url('https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700;800&display=swap');
+
 .custom-editor-modal {
     display: none;
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.80);
+    backdrop-filter: blur(12px);
     z-index: 10000;
     align-items: center;
     justify-content: center;
 }
 
-
-
 .editor-content {
-    /* Зробили відтінки трохи світлішими: від темно-сірого до глибокого графіту */
-    background: radial-gradient(
-        ellipse at center, 
-        #1a1a1a 0%,    /* Світліший центр (було #0a0a0a) */
-        #020202 100%   /* Світліші краї (було #000000) */
-    ) !important;
-
+    background: linear-gradient(145deg, #1a0014 0%, #0d000a 100%) !important;
+    border: 1px solid rgba(240, 4, 127, 0.28);
     width: 900px;
     height: 600px;
-    border-radius: 12px; /* Трохи збільшив радіус для сучасного вигляду */
+    border-radius: 20px;
     display: flex;
     position: relative;
     overflow: hidden;
-
-    /* Додаємо тонку рамку Coal Dust, як ви хотіли в коментарях */
-
-    
-    /* Глибока тінь для ефекту об'єму */
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+    box-shadow:
+        0 0 60px rgba(240, 4, 127, 0.15),
+        0 25px 70px rgba(0, 0, 0, 0.85);
+    font-family: 'Geologica', sans-serif;
 }
 
 /* Боковая панель */
 .editor-sidebar {
-    background: transparent !important;
+    background: rgba(240, 4, 127, 0.04) !important;
+    border-right: 1px solid rgba(240, 4, 127, 0.15);
     width: 218px;
     display: flex;
     justify-content: flex-end;
-    padding: 60px 6px 60px 20px;
+    padding: 48px 6px 48px 20px;
+    flex-shrink: 0;
 }
 
 .sidebar-region {
     width: 192px;
 }
 
-
-
 .sidebar-header {
-    color: #8e9297;
-    font-size: 11px;
+    color: rgba(240, 4, 127, 0.7);
+    font-size: 10px;
     font-weight: 700;
+    letter-spacing: 1.5px;
     line-height: 16px;
     text-transform: uppercase;
-    padding: 10px 10px 6px;
+    padding: 10px 10px 8px;
     margin: 0;
+    font-family: 'Geologica', sans-serif;
 }
 
 .editor-sidebar h3 {
     font-size: 10px;
     text-transform: uppercase;
-    color: #666;
-    letter-spacing: 1px;
+    color: rgba(240, 4, 127, 0.6);
+    letter-spacing: 1.5px;
     margin-bottom: 10px;
     padding-left: 10px;
+    font-family: 'Geologica', sans-serif;
 }
 
 .sidebar-item {
     width: 100%;
     background: none;
     border: none;
-    color: #b9bbbe;
+    color: rgba(255, 255, 255, 0.55);
     text-align: left;
-    padding: 8px 10px;
-    border-radius: 4px;
-    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.18s, color 0.18s;
     margin-bottom: 2px;
+    font-family: 'Geologica', sans-serif;
 }
 
 .sidebar-item:hover {
-    background: #262626;
-    color: #dcddde;
+    background: rgba(240, 4, 127, 0.10);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .sidebar-item.active {
-    background: #171717;
-    color: #d4d4d4;
-    font-weight: 500;
+    background: rgba(240, 4, 127, 0.18);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 #f0047f;
 }
 
 .logout-item {
-    color: #ff4d4d !important;
+    color: rgba(255, 80, 80, 0.75) !important;
+    font-family: 'Geologica', sans-serif;
 }
 
 .logout-item:hover {
-    background: rgba(255, 77, 77, 0.1) !important;
+    background: rgba(255, 60, 60, 0.10) !important;
+    color: #ff6060 !important;
 }
 
 /* Разделитель */
 .sidebar-divider {
     height: 1px;
-    background: #333;
-    margin: 20px 0px;
+    background: rgba(240, 4, 127, 0.18);
+    margin: 16px 0;
 }
 
 .birthday-card {
     margin-top: 5px !important;
 }
+
 .editor-modal-container {
-    background: #111;
-    border: 1px solid #333;
+    background: linear-gradient(145deg, #1a0014, #0d000a);
+    border: 1px solid rgba(240, 4, 127, 0.28);
     border-radius: 24px;
     display: flex;
-    overflow: hidden; /* Чтобы закругления обрезали внутренние элементы */
+    overflow: hidden;
     color: #fff;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Geologica', sans-serif;
 }
 
 .sidebar-item.close-item { 
-    color: #ff4d4d;
-    margin-top: auto; 
+    color: rgba(255, 80, 80, 0.75);
+    margin-top: auto;
+    font-family: 'Geologica', sans-serif;
 }
 
 .close-item:hover {
-    background: rgba(255, 77, 77, 0.1);
-    color: #ff4d4d;
+    background: rgba(255, 60, 60, 0.10);
+    color: #ff6060;
 }
+
 /* Основная область */
 .editor-body {
     flex: 1;
-    /* Делаем прозрачным, чтобы видеть градиент подложки */
-    background-color: transparent !important; 
+    background-color: transparent !important;
     overflow-y: auto;
     position: relative;
     padding-top: 0;
@@ -683,16 +688,18 @@ body::after {
 
 .tab-title {
     font-size: 20px;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 20px;
+    font-family: 'Geologica', sans-serif;
+    color: #fff;
 }
 
 .discord-card {
-    background: #0f0f0f;
-    border-radius: 8px;
+    background: rgba(240, 4, 127, 0.04);
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
-    border: 1px solid #1a1a1a;
+    border: 1px solid rgba(240, 4, 127, 0.18);
 }
 
 .card-banner {
@@ -708,9 +715,11 @@ body::after {
 }
 
 .editor-tab h2 {
-    font-size: 24px;
+    font-size: 20px;
     margin-bottom: 30px;
-    font-weight: 600;
+    font-weight: 700;
+    font-family: 'Geologica', sans-serif;
+    color: #fff;
 }
 
 .editor-tab { display: none; }
@@ -721,11 +730,15 @@ body::after {
     flex-direction: column;
     gap: 10px;
 }
-.setting-block label { font-size: 14px;
-    color: #aaa;
+.setting-block label { font-size: 11px;
+    color: rgba(240, 4, 127, 0.75);
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-family: 'Geologica', sans-serif;
  }
-.setting-block input {background: #1a1a1a;
-    border: 1px solid #333;
+.setting-block input {background: rgba(240, 4, 127, 0.06);
+    border: 1px solid rgba(240, 4, 127, 0.25);
     border-radius: 12px;
     padding: 12px 15px;
     color: #fff;
@@ -1294,27 +1307,17 @@ body::after {
 }
 
 .card-content {
-    /* Заменили #222222 на #0f0f0f, чтобы убрать яркое пятно */
-    background: radial-gradient(
-        circle at center, 
-        #0f0f0f 0%, 
-        #0a0a0a 60%, 
-        #000000 100%
-    ) !important;
-
+    background: rgba(240, 4, 127, 0.04) !important;
+    border: 1px solid rgba(240, 4, 127, 0.15);
     margin-top: 45px !important;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 15px 20px;
     margin-bottom: 30px;
-    
-    /* Оставляем тень для объема */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    
-
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .card-content:hover {
-    border-color: #7f7f7f; /* Цвет Raven при наведении */
+    border-color: rgba(240, 4, 127, 0.35);
 }
 
 .integration-row {
@@ -1346,10 +1349,13 @@ body::after {
 
 .setting-item label {
     display: block;
-    color: #a3a3a3;
-    font-size: 12px;
+    color: rgba(240, 4, 127, 0.75);
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
     margin-bottom: 5px;
+    font-family: 'Geologica', sans-serif;
 }
 
 .input-wrapper {
@@ -1389,20 +1395,23 @@ body::after {
 
 /* Скроллбар в стиле Discord */
 .editor-body::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 .editor-body::-webkit-scrollbar-track {
-    background: #000;
+    background: transparent;
 }
 .editor-body::-webkit-scrollbar-thumb {
-    background: #1a1a1a;
+    background: rgba(240, 4, 127, 0.35);
     border-radius: 10px;
+}
+.editor-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(240, 4, 127, 0.6);
 }
 
 /* Разделитель внутри карточки */
 .sidebar-divider {
     height: 1px;
-    background-color: #a3a3a3;
+    background: rgba(240, 4, 127, 0.18);
     /* УВЕЛИЧЕНО: был 5px, стал 15px */
     margin: 15px 0; 
 }
