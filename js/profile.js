@@ -1657,38 +1657,30 @@ window.toggleModeSelection = function(gameName, mode, isSelecting) {
 
 
 // --- 6. UTILITIES ---
-function closeEditor() { document.getElementById('editor-modal').style.display = 'none'; }
+function closeEditor() {
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
 
-// --- ГЛОБАЛЬНА НАВІГАЦІЯ (ВИПРАВЛЕННЯ ПОМИЛКИ DEFINED) ---
+// --- ГЛОБАЛЬНА НАВІГАЦІЯ ---
 window.switchEditorTab = function(tabName) {
     console.log("📂 Перехід до вкладки:", tabName);
-    const tabs = document.querySelectorAll('.editor-tab');
-    const buttons = document.querySelectorAll('.sidebar-item');
-
-    tabs.forEach(t => {
-        t.style.setProperty('display', 'none', 'important');
-        t.classList.remove('active');
-    });
-    buttons.forEach(b => b.classList.remove('active'));
-
-    const target = document.getElementById('tab-' + tabName);
-    if (target) {
-        target.style.setProperty('display', 'block', 'important');
-        target.classList.add('active');
+    const tabMap = { 'profile':'profile', 'design':'appearance', 'integrations':'integrations', 'devices':'security', 'appearance':'appearance', 'language':'appearance', 'voice':'appearance' };
+    const newTab = tabMap[tabName] || tabName;
+    if (typeof smSwitchTabById === 'function') {
+        smSwitchTabById(newTab);
+        document.querySelectorAll('.sm-nav-item').forEach(btn => {
+            btn.classList.remove('active');
+            if ((btn.getAttribute('onclick') || '').includes("'" + newTab + "'")) btn.classList.add('active');
+        });
     }
-
-    buttons.forEach(btn => {
-        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabName)) {
-            btn.classList.add('active');
-        }
-    });
 };
 
 window.openIntegrationsTab = function() {
     console.log("🔗 Виклик openIntegrationsTab...");
-    const modal = document.getElementById('editor-modal');
-    if (modal) modal.style.display = 'flex';
-    
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay) overlay.classList.add('active');
+
     const gamesModal = document.getElementById('games-modal');
     if (gamesModal) {
         gamesModal.style.display = 'none';
@@ -2227,36 +2219,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 window.openSettings = function() {
-    const modal = document.getElementById('editor-modal');
-    if (modal) {
-        modal.style.display = 'flex';
-        // При відкритті за замовчуванням показуємо вкладку профілю
-        window.switchEditorTab('profile');
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay) {
+        overlay.classList.add('active');
+        if (typeof smSyncUserInfo === 'function') smSyncUserInfo();
+        if (typeof smSwitchTabById === 'function') smSwitchTabById('profile');
     }
 };
 function closeEditor() {
-    const modal = document.getElementById('editor-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay) overlay.classList.remove('active');
 }
 
-// Додайте також функцію для перемикання вкладок, щоб вони працювали
+// switchEditorTab — тепер перемикає вкладки нового модалу
 function switchEditorTab(tabName) {
-    // Ховаємо всі вкладки
-    const tabs = document.querySelectorAll('.editor-tab');
-    tabs.forEach(tab => tab.classList.remove('active'));
-    
-    // Прибираємо активний клас у кнопок
-    const buttons = document.querySelectorAll('.sidebar-item');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    
-    // Показуємо потрібну вкладку
-    const activeTab = document.getElementById('tab-' + tabName);
-    if (activeTab) activeTab.classList.add('active');
-    
-    // Робимо кнопку активною (через event або пошук тексту)
-    event.currentTarget.classList.add('active');
+    // Маппінг старих назв вкладок на нові
+    const tabMap = {
+        'profile': 'profile',
+        'design': 'appearance',
+        'integrations': 'integrations',
+        'devices': 'security',
+        'appearance': 'appearance',
+        'language': 'appearance',
+        'voice': 'appearance',
+    };
+    const newTab = tabMap[tabName] || tabName;
+    if (typeof smSwitchTabById === 'function') {
+        smSwitchTabById(newTab);
+        // також оновити активну кнопку в боковій панелі
+        document.querySelectorAll('.sm-nav-item').forEach(btn => {
+            btn.classList.remove('active');
+            const onclick = btn.getAttribute('onclick') || '';
+            if (onclick.includes("'" + newTab + "'")) btn.classList.add('active');
+        });
+    }
 }
 async function uploadAvatar(file) {
     let formData = new FormData();
