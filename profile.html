@@ -248,273 +248,479 @@
         </div>
     </div>
 
-    <div id="editor-modal" class="custom-editor-modal">
-        <div class="editor-content">
-            <div class="editor-sidebar">
-                <div class="sidebar-region">
-                    <h3 class="sidebar-header">Налаштування</h3>
-                    <button class="sidebar-item active" onclick="switchEditorTab('profile')">Особиста інформація</button>
-                    <button class="sidebar-item" onclick="switchEditorTab('design')">Дизайн акаунта</button>
-                    <button class="sidebar-item" onclick="switchEditorTab('integrations')">Інтеграції (Steam/Roblox)</button>
-                    <button class="sidebar-item" onclick="switchEditorTab('devices')">Пристрої</button>
-                    <div class="sidebar-divider"></div>
-                    <button class="sidebar-item logout-item" onclick="closeEditor()">Вийти</button>
-                </div>
-            </div>
 
-            <div class="editor-body">
+<!-- ─── SETTINGS OVERLAY (new) ─── -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-modal" id="settingsModal">
 
-                <div id="tab-profile" class="editor-tab active">
-                    <div class="editor-body-header"><div class="editor-body-header-dot"></div><h2>Особиста інформація</h2></div>
-                    <div class="settings-content-right">
-                        <div class="card-content">
-                            <div class="setting-item">
-                                <label>ВІДОБРАЖУВАНЕ ІМ'Я</label>
-                                <div class="name-edit-wrapper">
-                                    <span id="edit-display-name" contenteditable="true" class="editable-name-text" style="color: white !important;" spellcheck="false">Завантаження...</span>
-                                    <button type="button" class="inline-btn" id="save-name-btn">Змінити</button>
-                                </div>
-                            </div>
-                            <div class="sidebar-divider"></div>
-                            <div class="setting-item">
-                                <label>ІМ'Я КОРИСТУВАЧА</label>
-                                <div class="input-wrapper">
-                                    <span id="edit-username" contenteditable="true" class="editable-name-text" style="color: white !important;" spellcheck="false">username</span>
-                                    <button type="button" class="inline-btn" id="btn-save-username">Змінити</button>
-                                </div>
-                            </div>
-                            <div class="sidebar-divider"></div>
-                            <div class="setting-item">
-                                <label>ЕЛЕКТРОННА ПОШТА</label>
-                                <div class="input-wrapper">
-                                    <span id="edit-secondary-email" contenteditable="true" class="editable-name-text" style="color: white !important;" spellcheck="false">example@mail.com</span>
-                                    <button type="button" class="inline-btn" id="btn-save-email">Додати</button>
-                                </div>
-                            </div>
-                            <div class="sidebar-divider"></div>
-                            <div class="setting-item">
-                                <label>ДАТА НАРОДЖЕННЯ</label>
-                                <div class="birthday-layout">
-                                    <div class="birthday-selectors">
-                                        <div class="date-column">
-                                            <button class="arrow-up" onclick="changeValue('day', 1)">▲</button>
-                                            <input type="text" id="birth-day" value="01" readonly>
-                                            <button class="arrow-down" onclick="changeValue('day', -1)">▼</button>
-                                        </div>
-                                        <div class="date-column">
-                                            <button class="arrow-up" onclick="changeValue('month', 1)">▲</button>
-                                            <input type="text" id="birth-month" value="01" readonly>
-                                            <button class="arrow-down" onclick="changeValue('month', -1)">▼</button>
-                                        </div>
-                                        <div class="date-column year">
-                                            <button class="arrow-up" onclick="changeValue('year', 1)">▲</button>
-                                            <input type="text" id="birth-year" value="2000" readonly>
-                                            <button class="arrow-down" onclick="changeValue('year', -1)">▼</button>
-                                        </div>
-                                    </div>
-                                    <button class="inline-btn" id="btn-save-birthday">Підтвердити</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="danger-zone-section">
-                            <h3 class="danger-title">КЕРУВАННЯ ОБЛІКОВИМ ЗАПИСОМ</h3>
-                            <div class="danger-buttons-row">
-                                <button class="btn-danger-outline" onclick="freezeAccount()">Заморозити акаунт</button>
-                                <button class="btn-danger-solid" onclick="deleteAccount()">Видалити акаунт</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- SIDEBAR -->
+    <div class="sm-sidebar">
+      <div class="sm-sidebar-top">
+        <div class="sm-user-mini">
+          <div class="sm-user-avatar" id="sm-user-avatar-mini">
+            <img id="sm-user-avatar-img" src="" alt="" style="display:none;">
+            <span id="sm-user-avatar-letter">U</span>
+          </div>
+          <div class="sm-user-info">
+            <div class="sm-user-name" id="sm-username-display">Username</div>
+            <div class="sm-user-tag" id="sm-usertag-display">@username</div>
+          </div>
+        </div>
+      </div>
 
-                <div id="tab-integrations" class="editor-tab">
-                    <div class="editor-body-header"><div class="editor-body-header-dot"></div><h2>Інтеграції</h2></div>
-                    <div class="settings-content-right">
-                        <div class="card-content">
-                            <div class="integration-row">
-    <div class="platform-meta">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" width="24" alt="Steam">
-        <span>Steam</span>
+      <nav class="sm-nav">
+        <div class="sm-nav-group-label">Обліковий запис</div>
+
+        <button class="sm-nav-item active" onclick="smSwitchTab(this,'profile')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Профіль
+        </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'security')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Безпека
+        </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'integrations')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Інтеграції
+        </button>
+
+        <div class="sm-nav-divider"></div>
+        <div class="sm-nav-group-label">Персоналізація</div>
+
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'appearance')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          Зовнішній вигляд
+        </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'notifications')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Сповіщення
+        </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'privacy')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Приватність
+        </button>
+
+        <div class="sm-nav-divider" style="margin-top: auto;"></div>
+        <button class="sm-nav-item sm-danger-item" onclick="smCloseSettings()">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Вийти
+        </button>
+      </nav>
     </div>
-    <button class="btn-platform steam" id="btn-steam-auth">Підключити</button>
+
+    <!-- BODY -->
+    <div class="sm-body">
+      <div class="sm-body-header">
+        <div class="sm-body-header-left">
+          <div class="sm-header-dot"></div>
+          <span class="sm-header-title" id="smTabTitle">Профіль</span>
+        </div>
+        <button class="sm-close-btn" onclick="smCloseSettings()" title="Закрити">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="sm-content">
+
+        <!-- PROFILE TAB -->
+        <div class="sm-tab active" id="sm-tab-profile">
+          <div class="sm-section-title">Фото та банер</div>
+          <div class="sm-card">
+            <div class="sm-avatar-row">
+              <div class="sm-avatar-preview" id="sm-avatar-preview">
+                <img id="sm-avatar-preview-img" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                <span id="sm-avatar-preview-letter">U</span>
+              </div>
+              <div class="sm-avatar-actions">
+                <div class="sm-avatar-btns">
+                  <button class="sm-inline-btn accent" onclick="document.getElementById('avatar-input').click()">Змінити фото</button>
+                  <button class="sm-inline-btn" onclick="deleteAvatar()">Видалити</button>
+                </div>
+                <p>JPG, PNG або GIF · Не більше 8 МБ</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Особиста інформація</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Відображуване ім'я</div>
+                <div class="sm-field-value" id="sm-display-name-val">—</div>
+              </div>
+              <button class="sm-inline-btn" onclick="document.getElementById('edit-display-name').focus(); smSwitchToEditorTab('profile')">Змінити</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Ім'я користувача</div>
+                <div class="sm-field-value" id="sm-username-val">—</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smSwitchToEditorTab('profile')">Змінити</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Про себе</div>
+                <div class="sm-field-hint">Розкажіть щось цікаве про себе</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smSwitchToEditorTab('design')">Редагувати</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Дата народження</div>
+                <div class="sm-field-value" id="sm-birthday-val">—</div>
+                <div class="sm-field-hint">Видно тільки вам</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smSwitchToEditorTab('profile')">Змінити</button>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Керування обліковим записом</div>
+          <div class="sm-danger-card">
+            <div class="sm-danger-title">Небезпечна зона</div>
+            <div class="sm-danger-row">
+              <button class="sm-btn-danger outline" onclick="freezeAccount()">Заморозити акаунт</button>
+              <button class="sm-btn-danger solid" onclick="deleteAccount()">Видалити акаунт</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECURITY TAB -->
+        <div class="sm-tab" id="sm-tab-security">
+          <div class="sm-section-title">Захист акаунта</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Пароль</div>
+                <div class="sm-field-hint">Змінюйте пароль регулярно для безпеки</div>
+              </div>
+              <button class="sm-inline-btn accent">Змінити пароль</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Двофакторна автентифікація</div>
+                <div class="sm-sec-status">
+                  <div class="sm-sec-dot off"></div>
+                  <span style="color:rgba(255,255,255,0.3);">Вимкнено</span>
+                </div>
+              </div>
+              <button class="sm-inline-btn">Увімкнути 2FA</button>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Підключені пристрої</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Windows · Chrome</div>
+                <div class="sm-field-hint">Поточна сесія</div>
+              </div>
+              <div class="sm-sec-status">
+                <div class="sm-sec-dot on"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INTEGRATIONS TAB -->
+        <div class="sm-tab" id="sm-tab-integrations">
+          <div class="sm-section-title">Ігрові платформи</div>
+          <div class="sm-card">
+            <div class="sm-platform-row">
+              <div class="sm-platform-icon steam">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" alt="Steam">
+              </div>
+              <div class="sm-platform-info">
+                <div class="sm-platform-name">Steam</div>
+                <div class="sm-platform-status" id="sm-steam-status">Не підключено</div>
+              </div>
+              <button class="sm-connect-btn" id="btn-steam-auth-sm" onclick="document.getElementById('btn-steam-auth') && document.getElementById('btn-steam-auth').click()">Підключити</button>
+            </div>
+            <div class="sm-platform-row">
+              <div class="sm-platform-icon roblox">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg" alt="Roblox" style="filter:invert(1)">
+              </div>
+              <div class="sm-platform-info">
+                <div class="sm-platform-name">Roblox</div>
+                <div class="sm-platform-status" id="sm-roblox-status">Не підключено</div>
+              </div>
+              <button class="sm-connect-btn" onclick="startRobloxAuth()">Підключити</button>
+            </div>
+            <div class="sm-platform-row">
+              <div class="sm-platform-icon epic">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Epic_Games_logo.svg" alt="Epic" style="filter:invert(1)">
+              </div>
+              <div class="sm-platform-info">
+                <div class="sm-platform-name">Epic Games</div>
+                <div class="sm-platform-status">Не підключено</div>
+              </div>
+              <button class="sm-connect-btn" onclick="linkPlatform && linkPlatform('Epic Games')">Підключити</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPEARANCE TAB -->
+        <div class="sm-tab" id="sm-tab-appearance">
+          <div class="sm-section-title">Зовнішній вигляд</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Аватар та банер</div>
+                <div class="sm-field-hint">Завантажте фото та банер профілю</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smSwitchToEditorTab('design')">Налаштувати</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Градієнт та фон</div>
+                <div class="sm-field-hint">Налаштуйте кольорову схему профілю</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smSwitchToEditorTab('design')">Налаштувати</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Мова та країна</div>
+                <div class="sm-field-hint">Регіональні налаштування</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smCloseSettings(); setTimeout(openCountryModal, 200)">Налаштувати</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Бейджі</div>
+                <div class="sm-field-hint">Оберіть значки для відображення</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smCloseSettings(); setTimeout(openBadgesModal, 200)">Змінити бейджі</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICATIONS TAB -->
+        <div class="sm-tab" id="sm-tab-notifications">
+          <div class="sm-section-title">Типи сповіщень</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-likes">❤️</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Лайки</div>
+                <div class="sm-field-hint">Коли хтось лайкає ваш пост</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-comments">💬</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Коментарі</div>
+                <div class="sm-field-hint">Нові коментарі до ваших постів</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-follows">👥</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Підписники</div>
+                <div class="sm-field-hint">Коли хтось підписується на вас</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-messages">✉️</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Повідомлення</div>
+                <div class="sm-field-hint">Нові особисті повідомлення</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-system">🔔</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Системні</div>
+                <div class="sm-field-hint">Оновлення платформи та безпека</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRIVACY TAB -->
+        <div class="sm-tab" id="sm-tab-privacy">
+          <div class="sm-section-title">Видимість профілю</div>
+          <div class="sm-card">
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:12px;">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Хто може бачити мій профіль</div>
+              </div>
+              <div class="sm-privacy-bar">
+                <button class="sm-privacy-opt active" onclick="smSelectPrivacy(this)">Всі</button>
+                <button class="sm-privacy-opt" onclick="smSelectPrivacy(this)">Друзі</button>
+                <button class="sm-privacy-opt" onclick="smSelectPrivacy(this)">Тільки я</button>
+              </div>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Показувати онлайн-статус</div>
+                <div class="sm-field-hint">Інші бачитимуть, коли ви в мережі</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Дозволити особисті повідомлення</div>
+              </div>
+              <select class="sm-select">
+                <option>Всі</option>
+                <option>Підписники</option>
+                <option>Ніхто</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end sm-content -->
+
+      <div class="sm-save-footer">
+        <span class="sm-save-hint">Зміни зберігаються автоматично</span>
+        <button class="sm-discard-btn" onclick="smCloseSettings()">Закрити</button>
+      </div>
+    </div><!-- end sm-body -->
+
+  </div><!-- end settings-modal -->
+</div><!-- end overlay -->
+
+<!-- SM Toast -->
+<div class="sm-toast" id="smToast">
+  <div class="sm-toast-dot"></div>
+  <span id="smToastMsg">Зміни збережено!</span>
 </div>
-                            <div class="sidebar-divider"></div>
-                            <div class="integration-row">
-                                <div class="platform-meta">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg" width="24" alt="Roblox" style="filter: invert(1);">
-                                    <span>Roblox</span>
-                                </div>
-                                <button class="btn-platform roblox" onclick="startRobloxAuth()">Підключити</button>
-                            </div>
-                            <div class="sidebar-divider"></div>
-                            <div class="integration-row">
-                                <div class="platform-meta">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Epic_Games_logo.svg" width="24" alt="Epic" style="filter: invert(1);">
-                                    <span>Epic Games</span>
-                                </div>
-                                <button class="btn-platform epic" onclick="linkPlatform('Epic Games')">Підключити</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div id="tab-design" class="editor-tab">
-                    <div class="editor-body-header"><div class="editor-body-header-dot"></div><h2>Дизайн акаунта</h2></div>
-                    <div class="settings-content-right">
-                        <div class="settings-profile-header" style="margin-bottom: 30px;">
-                            <div class="settings-banner">
-                                <img src="default-banner.jpg" id="settings-banner-img" alt="Banner">
-                            </div>
-                            <div class="settings-avatar-wrapper">
-                                <div class="settings-avatar">
-                                    <img src="default-avatar.png" id="settings-avatar-img" alt="Avatar">
-                                </div>
-                            </div>
-                        </div>
+<script>
+// ─── NEW SETTINGS MODAL FUNCTIONS ───
+const smTabTitles = {
+  profile: 'Профіль',
+  security: 'Безпека',
+  integrations: 'Інтеграції',
+  appearance: 'Зовнішній вигляд',
+  notifications: 'Сповіщення',
+  privacy: 'Приватність',
+};
 
-                        <div class="card-content design-card-adjustment">
-                            <h3 class="section-subtitle" style="margin-top: 10px; margin-bottom: 10px;">РЕДАГУВАННЯ ЗОВНІШНЬОГО ВИГЛЯДУ</h3>
-                            
-                            <div class="setting-item">
-                                <label>АВАТАР</label>
-                                <div class="input-wrapper">
-                                    <span class="design-hint">Змініть або видаліть поточне фото</span>
-                                    <div class="design-buttons" style="display: flex; gap: 10px; align-items: center;">
-                                        <button class="action-btn-gray" onclick="document.getElementById('avatar-input').click()">
-    Додати аватар
-</button>
+window.openSettings = function() {
+  const overlay = document.getElementById('settingsOverlay');
+  overlay.classList.add('active');
+  smSyncUserInfo();
+  smSwitchTabById('profile');
+};
 
-<input type="file" id="avatar-input" style="display: none;" accept="image/*">
-                                        <button class="btn-danger-outline" onclick="deleteAvatar()" style="padding: 5px 15px; font-size: 13px; cursor: pointer;">
-    Видалити
-</button>
-                                    </div>
-                                </div>
-                            </div>
+function smCloseSettings() {
+  document.getElementById('settingsOverlay').classList.remove('active');
+}
 
-                            <div class="sidebar-divider"></div>
+function smSwitchTab(btn, tabId) {
+  document.querySelectorAll('.sm-nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  smSwitchTabById(tabId);
+}
 
-                            <div class="setting-item">
-                                <label class="design-label">ПРО МЕНЕ</label>
-                                <div class="input-container-new">
-                                    <span class="design-hint custom-hint-pos">Розкажіть трохи про себе</span>
-                                    <textarea id="user-bio" class="design-textarea" placeholder="Напишіть щось цікаве..." maxlength="231"></textarea>
-                                </div>
-                            </div>
+function smSwitchTabById(tabId) {
+  document.querySelectorAll('.sm-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('sm-tab-' + tabId);
+  if (tab) tab.classList.add('active');
+  const titleEl = document.getElementById('smTabTitle');
+  if (titleEl) titleEl.textContent = smTabTitles[tabId] || tabId;
+}
 
-                            <div class="sidebar-divider"></div>
+// Helper: switch to old editor modal tab (for actions that still use old tabs)
+function smSwitchToEditorTab(tabName) {
+  smCloseSettings();
+  setTimeout(() => {
+    const modal = document.getElementById('editor-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      if (window.switchEditorTab) {
+        // simulate click on the correct sidebar-item
+        const items = document.querySelectorAll('.sidebar-item');
+        items.forEach(item => {
+          if (item.getAttribute('onclick') && item.getAttribute('onclick').includes("'" + tabName + "'")) {
+            item.click();
+          }
+        });
+      }
+    }
+  }, 100);
+}
 
-                            <div class="setting-item">
-                                <label>ПРИКРАСА АВАТАРА</label>
-                                <div class="input-wrapper">
-                                    <span class="design-hint">Додайте унікальну рамку навколо фото</span>
-                                    <div class="design-buttons"  style="padding: 5px 15px; font-size: 13px; cursor: pointer;">
-                                        <button class="inline-btn" id="open-deco-modal-btn"  type="button">Обрати прикрасу</button>
-                                        <button type="button" class="btn-danger-outline" onclick="window.removeDecoration()">Прибрати</button>
-                                        <button type="button" class="premium-lock-btn" onclick="showPremiumModal()" title="Ободок аватарки — тільки для Syncora Premium">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+function smSyncUserInfo() {
+  // Sync from existing profile data if available
+  const dispName = document.querySelector('.profile-display-name, #profile-display-name, .profile-name');
+  const usernameEl = document.querySelector('.profile-username, #profile-username, .username-text');
+  const avatarEl = document.querySelector('.profile-avatar img, #profile-avatar img, .avatar-img');
 
-                            <div class="sidebar-divider"></div>
+  const smName = document.getElementById('sm-username-display');
+  const smTag = document.getElementById('sm-usertag-display');
+  const smNameVal = document.getElementById('sm-display-name-val');
+  const smUsernameVal = document.getElementById('sm-username-val');
+  const smAvatarImg = document.getElementById('sm-user-avatar-img');
+  const smAvatarLetter = document.getElementById('sm-user-avatar-letter');
+  const smPreviewImg = document.getElementById('sm-avatar-preview-img');
+  const smPreviewLetter = document.getElementById('sm-avatar-preview-letter');
 
-                            <div class="setting-item">
-                                <label>ФОТО БАНЕРА</label>
+  // Try to get name from edit-display-name field
+  const editName = document.getElementById('edit-display-name');
+  const editUsername = document.getElementById('edit-username');
+  const mainAvatar = document.getElementById('settings-avatar-img');
 
-                                
-                                <div class="input-wrapper design-column">
-                                    <label for="banner-file-input" class="banner-upload-square custom-long-box" style="cursor: pointer; border: 2px dashed #555; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #222; position: relative; z-index: 9999;">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                                        </svg>
-                                        <input type="file" id="banner-file-input" name="banner" accept="image/*" style="position: absolute; width: 1px; height: 1px; opacity: 0;" onchange="directUpload(this)">
-                                    </label>
-                                    <button id="btn-del-banner" class="btn-danger-outline" onclick="deleteBanner()" style="padding: 5px 15px; font-size: 13px; cursor: pointer; margin-left: 455px; margin-top: -50px;">
-            Видалити
-        </button>
-                                </div>
-                            </div>
+  if (editName && editName.textContent) {
+    const name = editName.textContent.trim();
+    if (smName) smName.textContent = name;
+    if (smNameVal) smNameVal.textContent = name;
+    if (smAvatarLetter) smAvatarLetter.textContent = name[0] || 'U';
+    if (smPreviewLetter) smPreviewLetter.textContent = name[0] || 'U';
+  }
+  if (editUsername && editUsername.textContent) {
+    const uname = editUsername.textContent.trim();
+    if (smTag) smTag.textContent = '@' + uname.replace('@','');
+    if (smUsernameVal) smUsernameVal.textContent = '@' + uname.replace('@','');
+  }
+  if (mainAvatar && mainAvatar.src && !mainAvatar.src.includes('default-avatar')) {
+    if (smAvatarImg) { smAvatarImg.src = mainAvatar.src; smAvatarImg.style.display = 'block'; }
+    if (smAvatarLetter) smAvatarLetter.style.display = 'none';
+    if (smPreviewImg) { smPreviewImg.src = mainAvatar.src; smPreviewImg.style.display = 'block'; }
+    if (smPreviewLetter) smPreviewLetter.style.display = 'none';
+  }
 
-                            <div class="sidebar-divider"></div>
+  // birthday
+  const dayEl = document.getElementById('birth-day');
+  const monthEl = document.getElementById('birth-month');
+  const yearEl = document.getElementById('birth-year');
+  if (dayEl && monthEl && yearEl) {
+    const bval = document.getElementById('sm-birthday-val');
+    if (bval) bval.textContent = dayEl.value + ' / ' + monthEl.value + ' / ' + yearEl.value;
+  }
+}
 
-                            <div class="setting-item">
-                                <label class="design-label-bold">ФОН</label>
-                                <span class="design-hint">Виберіть фото, якщо немає фону</span>
+function smSelectPrivacy(btn) {
+  btn.closest('.sm-privacy-bar').querySelectorAll('.sm-privacy-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
 
-                            
-                                <div class="bg-upload-section" style="margin-top: 15px;">
-                                    <div class="bg-upload-square custom-long-box" onclick="document.getElementById('bg-file-input').click()">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                                        </svg>
-                                    </div>
-                                    <input type="file" id="bg-file-input" style="display: none;" accept="image/*" onchange="uploadBackground(this)">
-                                    <button id="btn-del-bg" class="btn-danger-outline" onclick="deleteBackground()" style="padding: 5px 15px; font-size: 13px; cursor: pointer; margin-left: 455px; margin-top: -50px;">
-            Видалити
-        </button>
-                                </div>
-                            </div>
+function smShowToast(msg) {
+  const toast = document.getElementById('smToast');
+  document.getElementById('smToastMsg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2800);
+}
 
-                            <div class="sidebar-divider"></div>
+// Close on overlay click
+document.getElementById('settingsOverlay').addEventListener('click', function(e) {
+  if (e.target === this) smCloseSettings();
+});
 
-                            <div class="setting-item">
-                                <label class="design-label-bold">ГРАДІЄНТ <button type="button" class="premium-lock-btn" onclick="showPremiumModal()" title="Зміна кольору — тільки для Syncora Premium"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></label>
-                                <span class="design-hint">Створіть власний колірний перехід</span>
+// Close on Escape (add to existing keydown if any)
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') smCloseSettings();
+});
+</script>
 
-                                <div class="gradient-selection-container" style="margin-top: 15px; position: relative; width: fit-content;">
-                                    <div class="color-picker-wrapper tiny-picker" style="top: -10px; left: -10px; position: absolute; z-index: 10;">
-                                        <input type="color" id="color-left" value="#000000" oninput="updateGradientPreview()" style="cursor: pointer;">
-                                    </div>
 
-                                    <div id="gradient-preview-box" class="bg-upload-square custom-long-box" style="background: linear-gradient(135deg, #000, #ffffff); border: 2px solid rgba(255,255,255,0.1); position: relative; cursor: default; margin: 0;">
-                                        <div style="width: 100%; height: 2px; background: rgba(255,255,255,0.3); transform: rotate(-45deg); position: absolute;"></div>
-                                    </div>
-
-                                    <div class="color-picker-wrapper tiny-picker" style="bottom: -10px; right: -10px; position: absolute; z-index: 10;">
-                                        <input type="color" id="color-right" value="#ffffff" oninput="updateGradientPreview()" style="cursor: pointer;">
-                                    </div>
-                                </div>
-
-                                <button class="confirm-btn" onclick="applyGradientToBlock()" style="margin-top: 20px; width: 100%; padding: 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
-                                    Застосувати градієнт
-                                </button>
-                            </div>
-
-                            <h3 class="section-subtitle" style="margin-top: 40px; margin-bottom: 10px;">РЕДАГУВАННЯ ДОДАТКОВИХ ЕЛЕМЕНТІВ</h3>
-
-                            <div class="setting-item">
-                                <label>МОВА ТА КРАЇНА</label>
-                                <div class="input-wrapper">
-                                    <span class="design-hint">Налаштуйте відображення локальних даних</span>
-                                    <button class="inline-btn" onclick="openCountryModal()">Налаштувати</button>
-                                </div>
-                            </div>
-
-                            <div class="sidebar-divider"></div>
-
-                            <div class="setting-item">
-                                <label>ВИБІР БЕЙДЖІВ</label>
-                                <div class="input-wrapper">
-                                    <span class="design-hint">Оберіть значки, які будуть бачити інші</span>
-                                    <button class="inline-btn" onclick="openBadgesModal()">Змінити бейджі</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="tab-devices" class="editor-tab"><div class="editor-body-header"><div class="editor-body-header-dot"></div><h2>Пристрої</h2></div></div>
-                <div id="tab-appearance" class="editor-tab"></div>
-                <div id="tab-language" class="editor-tab"></div>
-                <div id="tab-voice" class="editor-tab"></div>
-
-            </div> 
-        </div> 
-    </div> 
-    <div class="fade-rectangle" style="top: 70px;"></div>
+        <div class="fade-rectangle" style="top: 70px;"></div>
 
     <input type="file" id="avatar-input" style="display: none;" accept="image/*">
     <input type="file" id="banner-input" style="display: none;" accept="image/*">
@@ -779,6 +985,225 @@
   background: rgba(240,4,127,0.1);
   box-shadow: 0 0 16px rgba(240,4,127,0.3);
 }
+
+/* ─── NEW SETTINGS MODAL (from settings-modal.html) ─── */
+.settings-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10, 0, 8, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.settings-overlay.active { display: flex; }
+
+.settings-modal {
+    --accent: #f0047f;
+    --accent-glow: rgba(240,4,127,0.4);
+    --accent-dim: rgba(240,4,127,0.15);
+    --bg-dark: rgba(29,0,22,0.72);
+    --bg-mid: rgba(61,19,41,0.6);
+    --border: rgba(255,255,255,0.07);
+    width: min(960px, 96vw);
+    height: min(640px, 94vh);
+    background: rgba(176,53,106,0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 24px;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(240,4,127,0.1), 0 12px 50px rgba(0,0,0,0.65), 0 0 80px rgba(240,4,127,0.07);
+    animation: smModalIn 0.4s cubic-bezier(0.175,0.885,0.32,1.2) forwards;
+}
+@keyframes smModalIn {
+    from { opacity: 0; transform: scale(0.93) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.sm-sidebar {
+    width: 230px; flex-shrink: 0;
+    background: rgba(29,0,22,0.6);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+}
+.sm-sidebar::after {
+    content: ''; position: absolute; right: 0; top: 0;
+    width: 1px; height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(240,4,127,0.5) 40%, rgba(240,4,127,0.5) 60%, transparent);
+    pointer-events: none;
+}
+.sm-sidebar-top { padding: 28px 20px 10px; border-bottom: 1px solid var(--border); }
+.sm-user-mini {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 14px;
+    background: rgba(240,4,127,0.08); border: 1px solid rgba(240,4,127,0.14);
+    margin-bottom: 6px;
+}
+.sm-user-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #f0047f, #FF25BB);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; color: #fff; flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(240,4,127,0.5); overflow: hidden;
+}
+.sm-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sm-user-info { overflow: hidden; }
+.sm-user-name { font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-user-tag { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.38); letter-spacing: 0.5px; }
+.sm-nav { flex: 1; padding: 14px 0; display: flex; flex-direction: column; overflow-y: auto; }
+.sm-nav::-webkit-scrollbar { width: 0; }
+.sm-nav-group-label {
+    font-size: 9px; font-weight: 800; letter-spacing: 2.5px;
+    text-transform: uppercase; color: rgba(255,255,255,0.28);
+    padding: 10px 20px 6px; margin-top: 6px;
+}
+.sm-nav-item {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    width: 100%; background: transparent; border: none;
+    color: rgba(255,255,255,0.48); text-align: left;
+    padding: 13px 20px 13px 22px;
+    font-size: 12px; font-weight: 800; letter-spacing: 1.2px;
+    text-transform: uppercase; cursor: pointer;
+    transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+    font-family: 'Geologica', sans-serif; overflow: hidden;
+}
+.sm-nav-item::before {
+    content: ''; position: absolute; left: 0; top: 0;
+    width: 3px; height: 100%;
+    background: var(--accent); box-shadow: 0 0 14px rgba(240,4,127,0.8);
+    transform: scaleY(0); opacity: 0; transition: all 0.25s ease;
+}
+.sm-nav-item .sm-nav-icon { width: 16px; height: 16px; opacity: 0.6; transition: opacity 0.2s; flex-shrink: 0; }
+.sm-nav-item:hover { color: #fff; padding-left: 28px; background: linear-gradient(90deg, rgba(29,0,22,0.75) 0%, transparent 80%); }
+.sm-nav-item:hover::before { transform: scaleY(0.65); opacity: 1; }
+.sm-nav-item:hover .sm-nav-icon { opacity: 1; }
+.sm-nav-item.active { color: #fff; padding-left: 32px; background: linear-gradient(90deg, rgba(29,0,22,0.8) 0%, transparent 85%); font-weight: 800; }
+.sm-nav-item.active::before { transform: scaleY(1); opacity: 1; }
+.sm-nav-item.active .sm-nav-icon { opacity: 1; filter: drop-shadow(0 0 4px rgba(240,4,127,0.7)); }
+.sm-nav-item.sm-danger-item { color: rgba(255,100,100,0.6); }
+.sm-nav-item.sm-danger-item::before { background: #ff5555; box-shadow: 0 0 12px rgba(255,85,85,0.8); }
+.sm-nav-item.sm-danger-item:hover { color: #ff8080; background: linear-gradient(90deg, rgba(60,0,0,0.6) 0%, transparent 80%); }
+.sm-nav-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 18px; }
+.sm-body { flex: 1; background: rgba(29,0,22,0.35); display: flex; flex-direction: column; overflow: hidden; }
+.sm-body-header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(29,0,22,0.78); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 28px; display: flex; align-items: center; justify-content: space-between;
+    height: 58px; flex-shrink: 0;
+}
+.sm-body-header-left { display: flex; align-items: center; gap: 10px; }
+.sm-header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px rgba(240,4,127,0.9); }
+.sm-header-title { font-size: 11px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.82); }
+.sm-close-btn {
+    width: 32px; height: 32px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.4); transition: all 0.22s ease;
+}
+.sm-close-btn:hover { background: rgba(240,4,127,0.12); border-color: rgba(240,4,127,0.3); color: var(--accent); transform: rotate(90deg); }
+.sm-close-btn svg { width: 16px; height: 16px; }
+.sm-content { flex: 1; overflow-y: auto; padding: 28px 32px 36px; }
+.sm-content::-webkit-scrollbar { width: 6px; }
+.sm-content::-webkit-scrollbar-track { background: transparent; margin: 10px 0; }
+.sm-content::-webkit-scrollbar-thumb { background: #b0356a; border-radius: 6px; }
+.sm-content::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+.sm-tab { display: none; }
+.sm-tab.active { display: block; animation: smTabIn 0.3s ease; }
+@keyframes smTabIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+.sm-section-title { font-size: 9px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.28); margin-bottom: 16px; margin-top: 30px; }
+.sm-section-title:first-child { margin-top: 0; }
+.sm-card { background: rgba(29,0,22,0.45); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
+.sm-field { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+.sm-field:last-child { border-bottom: none; }
+.sm-field:hover { background: rgba(240,4,127,0.04); }
+.sm-field-label-wrap { flex: 1; min-width: 0; }
+.sm-field-label { font-size: 10px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 3px; }
+.sm-field-value { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-field-hint { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.3); margin-top: 2px; line-height: 1.4; }
+.sm-inline-btn { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'Geologica', sans-serif; transition: all 0.2s ease; }
+.sm-inline-btn:hover { background: rgba(240,4,127,0.15); border-color: rgba(240,4,127,0.35); color: #fff; box-shadow: 0 0 12px rgba(240,4,127,0.2); }
+.sm-inline-btn.accent { background: linear-gradient(135deg, rgba(240,4,127,0.25), rgba(255,37,187,0.15)); border-color: rgba(240,4,127,0.35); color: #fff; }
+.sm-inline-btn.accent:hover { background: linear-gradient(135deg, rgba(240,4,127,0.4), rgba(255,37,187,0.25)); box-shadow: 0 0 18px rgba(240,4,127,0.35); }
+.sm-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.sm-toggle input { opacity: 0; width: 0; height: 0; }
+.sm-toggle-track { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 24px; cursor: pointer; transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.12); }
+.sm-toggle-track::before { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.5); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), background 0.3s; }
+.sm-toggle input:checked + .sm-toggle-track { background: rgba(240,4,127,0.35); border-color: rgba(240,4,127,0.5); box-shadow: 0 0 12px rgba(240,4,127,0.3); }
+.sm-toggle input:checked + .sm-toggle-track::before { transform: translateX(20px); background: var(--accent); box-shadow: 0 0 8px rgba(240,4,127,0.8); }
+.sm-select { background: rgba(29,0,22,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: rgba(255,255,255,0.8); padding: 8px 14px; font-size: 12px; font-weight: 700; font-family: 'Geologica', sans-serif; cursor: pointer; outline: none; transition: border-color 0.2s, box-shadow 0.2s; flex-shrink: 0; }
+.sm-select:focus { border-color: rgba(240,4,127,0.4); box-shadow: 0 0 10px rgba(240,4,127,0.15); }
+.sm-select option { background: #1d0016; }
+.sm-avatar-row { display: flex; align-items: center; gap: 20px; padding: 20px; }
+.sm-avatar-preview { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #f0047f, #FF25BB); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; color: #fff; box-shadow: 0 0 20px rgba(240,4,127,0.5), 0 0 0 3px rgba(240,4,127,0.2); flex-shrink: 0; overflow: hidden; }
+.sm-avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+.sm-avatar-actions { flex: 1; }
+.sm-avatar-actions p { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); margin-top: 8px; line-height: 1.4; }
+.sm-avatar-btns { display: flex; gap: 8px; margin-bottom: 6px; }
+.sm-danger-card { background: rgba(60,0,0,0.3); border: 1px solid rgba(255,80,80,0.15); border-radius: 16px; padding: 18px 20px; margin-top: 8px; }
+.sm-danger-title { font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,100,100,0.5); margin-bottom: 14px; }
+.sm-danger-row { display: flex; gap: 10px; }
+.sm-btn-danger { padding: 10px 20px; border-radius: 12px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; cursor: pointer; font-family: 'Geologica', sans-serif; transition: all 0.2s; }
+.sm-btn-danger.outline { background: transparent; border: 1px solid rgba(255,100,100,0.3); color: rgba(255,150,150,0.7); }
+.sm-btn-danger.outline:hover { border-color: rgba(255,100,100,0.6); color: #ff8080; background: rgba(255,0,0,0.07); }
+.sm-btn-danger.solid { background: rgba(200,0,0,0.3); border: 1px solid rgba(255,80,80,0.2); color: rgba(255,150,150,0.9); }
+.sm-btn-danger.solid:hover { background: rgba(200,0,0,0.45); box-shadow: 0 0 15px rgba(255,0,0,0.2); }
+.sm-platform-row { padding: 16px 20px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+.sm-platform-row:last-child { border-bottom: none; }
+.sm-platform-row:hover { background: rgba(240,4,127,0.04); }
+.sm-platform-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sm-platform-icon.steam { background: #1b2838; }
+.sm-platform-icon.roblox { background: #0080ff; }
+.sm-platform-icon.epic { background: #2a2a2a; }
+.sm-platform-icon img { width: 20px; height: 20px; object-fit: contain; }
+.sm-platform-info { flex: 1; }
+.sm-platform-name { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.85); }
+.sm-platform-status { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.28); margin-top: 1px; }
+.sm-platform-status.connected { color: rgba(80,255,140,0.7); }
+.sm-connect-btn { padding: 8px 18px; border-radius: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; cursor: pointer; font-family: 'Geologica', sans-serif; border: 1px solid rgba(240,4,127,0.25); color: rgba(255,255,255,0.65); background: rgba(240,4,127,0.08); transition: all 0.2s; flex-shrink: 0; }
+.sm-connect-btn:hover { background: rgba(240,4,127,0.2); border-color: rgba(240,4,127,0.5); color: #fff; }
+.sm-connect-btn.connected-btn { background: rgba(80,255,140,0.08); border-color: rgba(80,255,140,0.2); color: rgba(80,255,140,0.8); }
+.sm-connect-btn.connected-btn:hover { background: rgba(255,60,60,0.1); border-color: rgba(255,80,80,0.3); color: rgba(255,140,140,0.9); }
+.sm-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 9px; font-weight: 900; box-shadow: 0 0 8px rgba(240,4,127,0.6); flex-shrink: 0; }
+.sm-theme-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.sm-theme-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; position: relative; }
+.sm-theme-swatch.active::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 0 6px rgba(0,0,0,0.8); }
+.sm-theme-swatch:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.4); }
+.sm-swatch-pink  { background: linear-gradient(135deg, #f0047f, #FF25BB); }
+.sm-swatch-purple { background: linear-gradient(135deg, #7b2fff, #b06fff); }
+.sm-swatch-blue  { background: linear-gradient(135deg, #0080ff, #00c8ff); }
+.sm-swatch-green { background: linear-gradient(135deg, #00d26a, #00ff9d); }
+.sm-swatch-gold  { background: linear-gradient(135deg, #ffbc00, #ff7b00); }
+.sm-privacy-bar { display: flex; gap: 4px; margin-top: 8px; }
+.sm-privacy-opt { flex: 1; padding: 9px 4px; border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.3); text-align: center; font-family: 'Geologica', sans-serif; transition: all 0.2s; }
+.sm-privacy-opt.active { background: rgba(240,4,127,0.15); border-color: rgba(240,4,127,0.35); color: #fff; box-shadow: 0 0 10px rgba(240,4,127,0.2); }
+.sm-privacy-opt:hover:not(.active) { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
+.sm-notif-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.ni-likes    { background: rgba(240,4,127,0.15); }
+.ni-comments { background: rgba(88,101,242,0.15); }
+.ni-follows  { background: rgba(80,255,140,0.12); }
+.ni-messages { background: rgba(255,188,0,0.12); }
+.ni-system   { background: rgba(255,255,255,0.06); }
+.sm-sec-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; }
+.sm-sec-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.sm-sec-dot.on  { background: #50ff8c; box-shadow: 0 0 6px rgba(80,255,140,0.8); }
+.sm-sec-dot.off { background: rgba(255,255,255,0.2); }
+.sm-sec-dot.warn { background: #ffbc00; box-shadow: 0 0 6px rgba(255,188,0,0.7); }
+.sm-save-footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 14px 32px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; background: rgba(29,0,22,0.5); flex-shrink: 0; }
+.sm-save-hint { flex: 1; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.25); }
+.sm-discard-btn { padding: 10px 20px; border-radius: 12px; cursor: pointer; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; font-family: 'Geologica', sans-serif; transition: all 0.2s; }
+.sm-discard-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
+.sm-save-btn { padding: 10px 26px; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, #f0047f, #FF25BB); border: none; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; font-family: 'Geologica', sans-serif; box-shadow: 0 4px 18px rgba(240,4,127,0.4); transition: all 0.2s; }
+.sm-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 26px rgba(240,4,127,0.6); }
+.sm-save-btn:active { transform: translateY(0); }
+.sm-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(29,0,22,0.9); backdrop-filter: blur(16px); border: 1px solid rgba(240,4,127,0.3); border-radius: 14px; padding: 12px 22px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px rgba(240,4,127,0.15); z-index: 999999; font-size: 13px; font-weight: 700; color: #fff; transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.2); }
+.sm-toast.show { transform: translateX(-50%) translateY(0); }
+.sm-toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(240,4,127,0.9); flex-shrink: 0; }
+
 </style>
 
 <script>
