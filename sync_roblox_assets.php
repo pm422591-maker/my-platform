@@ -87,6 +87,7 @@ if (!empty($allBadgeIds)) {
     curl_close($ch);
 
     if (!$curlError && $httpCode === 200) {
+        file_put_contents('roblox_debug.log', $raw);
         $parsed = json_decode($raw, true);
         if (isset($parsed['data']) && is_array($parsed['data'])) {
             foreach ($parsed['data'] as $badgeData) {
