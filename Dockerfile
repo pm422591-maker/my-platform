@@ -9,8 +9,13 @@ RUN apt-get update \
 # Вмикаємо модуль Apache для гарних посилань
 RUN a2enmod rewrite
 
-# Копіюємо всі твої файли в папку сервера всередині Docker
+# Копіюємо всі файли в папку сервера
 COPY . /var/www/html/
 
-# Даємо серверу права на твої файли (це виправить 403 помилки)
-RUN chown -R www-data:www-data /var/www/html
+# Створюємо папки для завантажень заздалегідь (щоб www-data мав права)
+RUN mkdir -p /var/www/html/uploads/avatars \
+             /var/www/html/uploads/banners \
+             /var/www/html/uploads/backgrounds \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/uploads
