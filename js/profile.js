@@ -617,7 +617,7 @@ if (data.steam_id && data.steam_id !== "null") {
             const srcAvatar = avatarPath + '?t=' + timestamp; // timestamp змушує оновити кеш гіфки
 
             const av1 = document.getElementById('top-nav-avatar');
-            const av2 = document.getElementById('sm-avatar-preview-img');
+            const av2 = document.getElementById('settings-avatar-img');
             if (av1) av1.src = srcAvatar;
             if (av2) av2.src = srcAvatar;
 
