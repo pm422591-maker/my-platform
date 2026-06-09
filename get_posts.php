@@ -14,9 +14,10 @@ try {
 
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
-    // ✨ АВТОМАТИЧНЕ ОЧИЩЕННЯ БАЗИ ДАНИХ (Пилосос для заявок)
-    $cleanUpQuery = "DELETE FROM posts WHERE post_type = 'requests' AND created_at <= NOW() - INTERVAL 1 HOUR";
-    $pdo->exec($cleanUpQuery);
+    // Очищення старих заявок — виконується рідко (1% запитів), щоб не гальмувати кожне читання
+    if (rand(1, 100) === 1) {
+        $pdo->exec("DELETE FROM posts WHERE post_type = 'requests' AND created_at <= NOW() - INTERVAL 1 HOUR");
+    }
 
     // --- ПАГИНАЦИЯ (порционная загрузка) ---
     $limit = 10; 

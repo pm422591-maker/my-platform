@@ -1495,7 +1495,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Функція перемикання
     function performSwitch(tabName) {
         console.log("Клік по вкладці:", tabName);
+        // FIX: синхронізуємо обидві глобальні змінні — loadAllPosts читає currentLudoraPage
         window.currentTab = tabName;
+        window.currentLudoraPage = tabName;
 
         // Ховаємо всі блоки контенту
         document.querySelectorAll('.tab-content').forEach(el => {
@@ -1530,12 +1532,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chatWin && chatWin.style.display === 'flex') {
              chatWin.style.display = 'none';
              const postPanel = document.getElementById('create-post-panel');
-             if (postPanel) postPanel.style.display = 'block'; // Повертаємо панель створення постів
+             if (postPanel) postPanel.style.display = 'block';
         }
 
-        // === ФІКС СКРОЛУ: ЗАВЖДИ ПОВЕРТАЄМО ПРОКРУТКУ ===
+        // Відновлюємо скролінг
         if (chatWin && chatWin.parentElement) {
-            chatWin.parentElement.style.overflow = 'auto'; // Відновлюємо скролінг для блогу і стрічки!
+            chatWin.parentElement.style.overflow = 'auto';
+        }
+
+        // FIX: завантажуємо пости для нової вкладки (forceReload=true обходить guard isFirstPostsLoadDone)
+        if (typeof loadAllPosts === 'function' && tabName !== 'streams') {
+            loadAllPosts(true, true);
         }
     }
     // Робимо функцію глобальною, щоб інші скрипти могли її викликати
