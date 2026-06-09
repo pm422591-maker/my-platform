@@ -89,6 +89,7 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
     $raw = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
+    sleep(2);
     curl_close($ch);
 
     $debugRawBadges = $raw ? $raw : "cURL Error: $curlError (HTTP $httpCode)";
