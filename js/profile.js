@@ -2060,26 +2060,35 @@ document.addEventListener('DOMContentLoaded', () => {
 // closeEditor та switchEditorTab визначені в profile.html — не перевизначаємо тут
 async function uploadAvatar(file) {
     let formData = new FormData();
-    formData.append('avatar', file); // Ключ 'avatar', який чекає PHP
+    formData.append('avatar', file);
 
     try {
         const response = await fetch('upload_avatar.php', {
             method: 'POST',
             body: formData,
-            credentials: 'include' // ОБОВ'ЯЗКОВО для Docker/PHP сесій
+            credentials: 'include'
         });
 
-        const data = await response.json();
+        // Спочатку читаємо як текст, щоб побачити помилку якщо PHP віддає HTML
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Сервер повернув не JSON:', text);
+            alert('Помилка сервера. Відповідь: ' + text.slice(0, 200));
+            return;
+        }
 
         if (data.success) {
-            console.log("✅ Аватар успішно збережено!");
-            // Оновлюємо картинки на сторінці без перезавантаження
-            await loadUserData(); 
+            console.log('✅ Аватар успішно збережено!');
+            await loadUserData();
         } else {
-            alert("Помилка БД: " + data.error);
+            alert('Помилка: ' + data.error);
         }
     } catch (err) {
-        console.error("Помилка мережі:", err);
+        console.error('Помилка мережі:', err);
+        alert('Помилка з\'єднання: ' + err.message);
     }
 }
 
@@ -2103,7 +2112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function uploadBanner(file) {
     if (!file) return;
 
-    let formData = new FormData();
+    const formData = new FormData();
     formData.append('banner', file);
 
     try {
@@ -2113,16 +2122,24 @@ async function uploadBanner(file) {
             credentials: 'include'
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch (e) {
+            console.error('Сервер повернув не JSON (banner):', text);
+            alert('Помилка сервера: ' + text.slice(0, 200));
+            return;
+        }
 
         if (data.success) {
-            console.log("✅ Банер оновлено в БД");
+            console.log('✅ Банер оновлено в БД');
             await loadUserData();
         } else {
-            alert("Помилка: " + data.error);
+            alert('Помилка: ' + data.error);
         }
     } catch (err) {
-        console.error("Помилка завантаження банера:", err);
+        console.error('Помилка завантаження банера:', err);
+        alert('Помилка з\'єднання: ' + err.message);
     }
 }
 
@@ -2194,7 +2211,7 @@ async function uploadBackground(inputElement) {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('background', file); 
+    formData.append('background', file);
 
     try {
         const response = await fetch('upload_avatar.php', {
@@ -2203,15 +2220,24 @@ async function uploadBackground(inputElement) {
             credentials: 'include'
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch (e) {
+            console.error('Сервер повернув не JSON (background):', text);
+            alert('Помилка сервера: ' + text.slice(0, 200));
+            return;
+        }
+
         if (data.success) {
-            console.log("✅ Фон оновлено в БД");
+            console.log('✅ Фон оновлено в БД');
             await loadUserData();
         } else {
-            alert("Помилка: " + data.error);
+            alert('Помилка: ' + data.error);
         }
     } catch (err) {
-        console.error("Помилка завантаження фону:", err);
+        console.error('Помилка завантаження фону:', err);
+        alert('Помилка з\'єднання: ' + err.message);
     }
 }
 

@@ -21,8 +21,8 @@ session_set_cookie_params([
 
 session_start();
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+ini_set('display_errors', 0);
+error_reporting(0);
 
 header('Content-Type: application/json; charset=utf-8');
 
