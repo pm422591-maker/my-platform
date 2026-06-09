@@ -52,9 +52,7 @@ $library = [
     ],
 ];
 
-// ==========================================
-// ОПТИМІЗАЦІЯ: Збираємо всі ID бейджів разом
-// ==========================================
+// Збираємо всі ID бейджів разом
 $allBadgeIds = [];
 foreach ($library as $game) {
     foreach ($game['items'] as $item) {
@@ -68,7 +66,7 @@ $allBadgeIds = array_unique($allBadgeIds);
 $awardedBadgesMap = [];
 $errors = [];
 
-// Робимо всього ОДИН масовий запит для перевірки ВСІХ бейджів відразу
+// Масовий запит для перевірки всіх бейджів із фейковим браузерним User-Agent
 if (!empty($allBadgeIds)) {
     $badgesUrl = sprintf(
         'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
@@ -79,7 +77,10 @@ if (!empty($allBadgeIds)) {
     $ch = curl_init($badgesUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Accept: application/json',
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    ]);
     $raw = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
@@ -90,7 +91,6 @@ if (!empty($allBadgeIds)) {
         if (isset($parsed['data']) && is_array($parsed['data'])) {
             foreach ($parsed['data'] as $badgeData) {
                 if (isset($badgeData['badgeId'])) {
-                    // Якщо бейдж є у відповіді від Roblox — користувач його отримав
                     $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
                 }
             }
@@ -104,7 +104,7 @@ if (!empty($allBadgeIds)) {
     }
 }
 
-// Функція для поштучної перевірки GamePass (їх мало, ліміти не замістять)
+// Функція для поштучної перевірки GamePass із додаванням User-Agent
 function roblox_gamepass_is_owned(string $robloxId, string $gamepassId): array {
     $url = sprintf(
         'https://inventory.roblox.com/v1/users/%s/items/GamePass/%s/is-owned',
@@ -115,7 +115,10 @@ function roblox_gamepass_is_owned(string $robloxId, string $gamepassId): array {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Accept: application/json',
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    ]);
     $raw = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
@@ -151,7 +154,6 @@ foreach ($library as $game) {
         $seen[$key] = true;
 
         if ($item['type'] === 'Badge') {
-            // Перевіряємо, чи є ID бейджа в нашому масовому списку отриманих
             if (isset($awardedBadgesMap[$item['id']])) {
                 $ownedAssets[] = [
                     'id' => $item['id'],
@@ -162,7 +164,6 @@ foreach ($library as $game) {
                 ];
             }
         } else {
-            // Перевірка GamePass
             $result = roblox_gamepass_is_owned($robloxId, $item['id']);
             if (!$result['success']) {
                 $errors[] = [
