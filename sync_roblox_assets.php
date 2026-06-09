@@ -87,16 +87,23 @@ if (!empty($allBadgeIds)) {
     curl_close($ch);
 
     if (!$curlError && $httpCode === 200) {
-        file_put_contents('roblox_debug.log', $raw);
-        $parsed = json_decode($raw, true);
-        if (isset($parsed['data']) && is_array($parsed['data'])) {
-            foreach ($parsed['data'] as $badgeData) {
-                if (isset($badgeData['badgeId'])) {
-                    $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
-                }
+    $parsed = json_decode($raw, true);
+    
+    // ПЕРЕВІРКА НА ВНУТРІШНІ ПОМИЛКИ ROBLOX
+    if (isset($parsed['errors'])) {
+        $errors[] = [
+            'type' => 'RobloxBadgeApiError',
+            'status' => $httpCode,
+            'message' => $parsed['errors'][0]['message'] ?? 'Unknown API Error',
+        ];
+    } elseif (isset($parsed['data']) && is_array($parsed['data'])) {
+        foreach ($parsed['data'] as $badgeData) {
+            if (isset($badgeData['badgeId'])) {
+                $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
             }
         }
-    } else {
+    }
+} else {
         $errors[] = [
             'type' => 'AllBadgesBulk',
             'status' => $httpCode,
