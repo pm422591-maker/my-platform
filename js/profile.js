@@ -514,8 +514,18 @@ async function loadUserData() {
             // тому sync ніколи не оновлювався. Тепер sync запускається завжди, щоб підтягнути актуальні
             // бейджі з Roblox API і перезаписати застарілі дані в БД.
             if (isRobloxLinked && data.is_own_profile) {
-                await syncRobloxInventoryFromServer(data.roblox_id);
-            }
+    await syncRobloxInventoryFromServer(data.roblox_id);
+    
+    // ← ДОДАЙ ЦЕ: оновлюємо selectedItems зі свіжими owned-прапорцями
+    if (selectedItems.length > 0) {
+        selectedItems = selectedItems.map(savedGame => {
+            const libGame = myGamesLibrary.find(g => g.name === savedGame.game);
+            if (!libGame) return savedGame;
+            const mode = libGame.modes.find(m => normalizeAssetId(m.id) === normalizeAssetId(savedGame.id));
+            return { ...savedGame, owned: mode ? mode.owned : false };
+        });
+    }
+}
 
             if (isRobloxLinked || isSteamLinked) {
                 console.log("✅ Знайдено підключені ігрові акаунти");
@@ -2872,9 +2882,10 @@ function displayRobloxData(data) {
 
     const groups = {};
     data.stats.forEach(item => {
-        if (!groups[item.game]) groups[item.game] = [];
-        groups[item.game].push(item);
-    });
+    if (item.owned !== true) return; // ← ДОДАЙ ЦЕ
+    if (!groups[item.game]) groups[item.game] = [];
+    groups[item.game].push(item);
+});
 
     for (const gameName in groups) {
         const allGamesList = [...(typeof myGamesLibrary !== 'undefined' ? myGamesLibrary : []), ...(typeof mySteamLibrary !== 'undefined' ? mySteamLibrary : [])];
