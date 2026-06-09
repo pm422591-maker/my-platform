@@ -66,12 +66,12 @@ $allBadgeIds = array_unique($allBadgeIds);
 $awardedBadgesMap = [];
 $errors = [];
 
-// 2. Виконуємо один масовий запит до API бейджів з імітацією браузера
+// 2. Виконуємо запит до публічного API списку бейджів користувача
 if (!empty($allBadgeIds)) {
+    // Отримуємо останні 100 бейджів користувача (цього зазвичай достатньо)
     $badgesUrl = sprintf(
-        'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
-        rawurlencode($robloxId),
-        implode(',', $allBadgeIds)
+        'https://badges.roblox.com/v1/users/%s/badges?limit=100&sortOrder=Desc',
+        rawurlencode($robloxId)
     );
 
     $ch = curl_init($badgesUrl);
@@ -87,27 +87,20 @@ if (!empty($allBadgeIds)) {
     curl_close($ch);
 
     if (!$curlError && $httpCode === 200) {
-    $parsed = json_decode($raw, true);
-    
-    // ПЕРЕВІРКА НА ВНУТРІШНІ ПОМИЛКИ ROBLOX
-    if (isset($parsed['errors'])) {
-        $errors[] = [
-            'type' => 'RobloxBadgeApiError',
-            'status' => $httpCode,
-            'message' => $parsed['errors'][0]['message'] ?? 'Unknown API Error',
-        ];
-    } elseif (isset($parsed['data']) && is_array($parsed['data'])) {
-        foreach ($parsed['data'] as $badgeData) {
-            if (isset($badgeData['badgeId'])) {
-                $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
+        $parsed = json_decode($raw, true);
+        if (isset($parsed['data']) && is_array($parsed['data'])) {
+            foreach ($parsed['data'] as $badgeData) {
+                if (isset($badgeData['id'])) {
+                    // УВАГА: у цьому ендпоінті ключ називається 'id', а не 'badgeId'
+                    $awardedBadgesMap[(string)$badgeData['id']] = true;
+                }
             }
         }
-    }
-} else {
+    } else {
         $errors[] = [
-            'type' => 'AllBadgesBulk',
+            'type' => 'AllBadgesPublicList',
             'status' => $httpCode,
-            'message' => "Bulk Badge API failed: $curlError",
+            'message' => "Public Badge API failed: $curlError",
         ];
     }
 }
