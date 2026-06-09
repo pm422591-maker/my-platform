@@ -497,6 +497,7 @@ async function loadUserData() {
             }
 
             // 2. ОНОВЛЮЄМО ГЛОБАЛЬНИЙ МАСИВ (Саме це поверне галочки в модалці після рефрешу!)
+            // Парсимо інвентар рівно ОДИН раз тут — дублюючий блок нижче прибрано
             userInventoryFromDB = normalizeInventoryItems(data.roblox_inventory);
             syncOwnedFlagsFromInventory();
             selectedItems = Array.isArray(savedGames)
@@ -508,7 +509,11 @@ async function loadUserData() {
             const isSteamLinked = data.steam_id && data.steam_id !== "null";
             window.isRobloxConnected = Boolean(isRobloxLinked);
 
-            if (isRobloxLinked && data.is_own_profile && userInventoryFromDB.length === 0) {
+            // ВИПРАВЛЕННЯ: sync викликаємо ЗАВЖДИ для свого профілю, коли Roblox підключено.
+            // Умова "length === 0" була хибна — userInventoryFromDB вже заповнений зі старого запису БД,
+            // тому sync ніколи не оновлювався. Тепер sync запускається завжди, щоб підтягнути актуальні
+            // бейджі з Roblox API і перезаписати застарілі дані в БД.
+            if (isRobloxLinked && data.is_own_profile) {
                 await syncRobloxInventoryFromServer(data.roblox_id);
             }
 
@@ -557,20 +562,6 @@ async function loadUserData() {
     return `img/${path}`;
 };
 
-
-// Всередині loadUserData, там де data.success === true:
-if (data.roblox_inventory && userInventoryFromDB.length === 0) {
-    try {
-        // Перетворюємо рядок з бази у масив об'єктів
-        userInventoryFromDB = normalizeInventoryItems(data.roblox_inventory);
-        syncOwnedFlagsFromInventory();
-            
-        console.log("🎒 Інвентар завантажено з бази:", userInventoryFromDB);
-    } catch (e) {
-        console.error("Помилка парсингу інвентаря:", e);
-        userInventoryFromDB = [];
-    }
-}
 
 // === РОБОТА ЗІ STEAM ===
 if (data.steam_id && data.steam_id !== "null") {
