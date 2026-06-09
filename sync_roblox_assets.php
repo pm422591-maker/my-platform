@@ -66,12 +66,15 @@ $allBadgeIds = array_unique($allBadgeIds);
 $awardedBadgesMap = [];
 $errors = [];
 
-// 2. Виконуємо запит до публічного API списку бейджів користувача
+// 2. Виконуємо запит до API перевірки конкретних бейджів
 if (!empty($allBadgeIds)) {
-    // Отримуємо останні 100 бейджів користувача (цього зазвичай достатньо)
+    // Об'єднуємо всі ID бейджів через кому (наприклад: "2128167319,2128167321...")
+    $badgeIdsParam = implode(',', $allBadgeIds);
+    
     $badgesUrl = sprintf(
-        'https://badges.roblox.com/v1/users/%s/badges?limit=100&sortOrder=Desc',
-        rawurlencode($robloxId)
+        'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
+        rawurlencode($robloxId),
+        rawurlencode($badgeIdsParam)
     );
 
     $ch = curl_init($badgesUrl);
@@ -90,17 +93,17 @@ if (!empty($allBadgeIds)) {
         $parsed = json_decode($raw, true);
         if (isset($parsed['data']) && is_array($parsed['data'])) {
             foreach ($parsed['data'] as $badgeData) {
-                if (isset($badgeData['id'])) {
-                    // УВАГА: у цьому ендпоінті ключ називається 'id', а не 'badgeId'
-                    $awardedBadgesMap[(string)$badgeData['id']] = true;
+                // УВАГА: у цьому ендпоінті ключ називається 'badgeId', а не 'id'
+                if (isset($badgeData['badgeId'])) {
+                    $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
                 }
             }
         }
     } else {
         $errors[] = [
-            'type' => 'AllBadgesPublicList',
+            'type' => 'SpecificBadgesList',
             'status' => $httpCode,
-            'message' => "Public Badge API failed: $curlError",
+            'message' => "Badge API failed: $curlError",
         ];
     }
 }
