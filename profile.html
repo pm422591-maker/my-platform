@@ -500,17 +500,17 @@
           <div class="sm-card">
             <div class="sm-field">
               <div class="sm-field-label-wrap">
-                <div class="sm-field-label">Аватар та банер</div>
-                <div class="sm-field-hint">Завантажте фото та банер профілю</div>
-              </div>
-              <button class="sm-inline-btn accent" onclick="document.getElementById('avatar-input').click()">Змінити аватар</button>
-            </div>
-            <div class="sm-field">
-              <div class="sm-field-label-wrap">
                 <div class="sm-field-label">Банер профілю</div>
                 <div class="sm-field-hint">Зображення у шапці профілю</div>
               </div>
-              <button class="sm-inline-btn" onclick="document.getElementById('banner-input').click()">Змінити банер</button>
+              <button class="sm-inline-btn accent" onclick="document.getElementById('banner-input').click()">Змінити банер</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Фон сторінки</div>
+                <div class="sm-field-hint">Фонове зображення всього сайту</div>
+              </div>
+              <button class="sm-inline-btn" onclick="document.getElementById('background-input').click()">Змінити фон</button>
             </div>
             <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:12px;">
               <div class="sm-field-label-wrap">
@@ -970,6 +970,7 @@ document.addEventListener('keydown', function(e) {
 
     <input type="file" id="avatar-input" style="display: none;" accept="image/*">
     <input type="file" id="banner-input" style="display: none;" accept="image/*">
+    <input type="file" id="background-input" style="display: none;" accept="image/*">
     <div class="modal-overlay" id="region-modal" style="display: none;">
         <div class="modal-content country-modal-size">
             <div class="modal-header-center">

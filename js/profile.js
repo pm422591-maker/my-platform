@@ -442,7 +442,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const nameInput = document.getElementById('edit-display-name');
     const topNameBlock = document.getElementById('userName');
-    const bannerInput = document.getElementById('banner-file-input');
+    const bannerInput = document.getElementById('banner-input');
+    const backgroundInput = document.getElementById('background-input');
     const trigger = document.getElementById('activityTrigger');
     const grid = document.getElementById('timeGrid');
 
@@ -454,6 +455,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bannerInput) {
         bannerInput.addEventListener('change', function() {
             if (this.files[0]) uploadBanner(this.files[0]);
+        });
+    }
+
+    // Слухач фону
+    if (backgroundInput) {
+        backgroundInput.addEventListener('change', function() {
+            if (this.files[0]) uploadBackground({ files: this.files });
         });
     }
 
@@ -1135,16 +1143,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Запуск при повному завантаженні сторінки
 window.addEventListener('load', loadUserData);
-
-async function uploadBanner(file) {
-    let formData = new FormData();
-    formData.append('banner', file);
-    try {
-        const r = await fetch('upload_avatar.php', { method: 'POST', body: formData });
-        const data = await r.json();
-        if (data.success) loadUserData(); // Перезавантажуємо, щоб оновити картинки
-    } catch (e) { console.error("Помилка завантаження банера:", e); }
-}
 
 async function saveBioToServer(text) {
     try {
@@ -2192,7 +2190,7 @@ async function directUpload(inputElement) {
     }
 }
 async function uploadBackground(inputElement) {
-    const file = inputElement.files[0];
+    const file = inputElement instanceof File ? inputElement : inputElement.files[0];
     if (!file) return;
 
     const formData = new FormData();
