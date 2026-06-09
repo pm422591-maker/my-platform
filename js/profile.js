@@ -407,7 +407,6 @@ function syncOwnedFlagsFromInventory() {
         }
     });
 }
-
 async function syncRobloxInventoryFromServer(robloxId) {
     if (!robloxId || robloxId === 'null') return false;
 
@@ -427,14 +426,31 @@ async function syncRobloxInventoryFromServer(robloxId) {
 
         userInventoryFromDB = normalizeInventoryItems(syncData.owned);
         syncOwnedFlagsFromInventory();
+
+        // ✅ ФІКС: автоматично додаємо owned-бейджі в selectedItems
+        userInventoryFromDB
+            .filter(inv => inv.owned && inv.type === 'badge')
+            .forEach(inv => {
+                const alreadySelected = selectedItems.some(
+                    s => normalizeAssetId(s.id) === normalizeAssetId(inv.id)
+                );
+                if (!alreadySelected) {
+                    selectedItems.push({
+                        id: inv.id,
+                        name: inv.name,
+                        game: inv.game,
+                        type: 'badge',
+                        owned: true
+                    });
+                }
+            });
+
         return true;
     } catch (e) {
         console.error('Roblox inventory sync request failed:', e);
         return false;
     }
 }
-
-
 // --- 2. INITIALIZATION ---
 // --- 2. INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', function() {
