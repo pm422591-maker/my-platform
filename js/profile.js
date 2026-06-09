@@ -526,6 +526,30 @@ async function loadUserData() {
         });
     }
 }
+if (isRobloxLinked && data.is_own_profile) {
+    await syncRobloxInventoryFromServer(data.roblox_id);
+    
+    if (selectedItems.length > 0) {
+        selectedItems = selectedItems.map(savedGame => {
+            const libGame = myGamesLibrary.find(g => g.name === savedGame.game);
+            if (!libGame) return savedGame;
+            const mode = libGame.modes.find(m => normalizeAssetId(m.id) === normalizeAssetId(savedGame.id));
+            return { ...savedGame, owned: mode ? mode.owned : false };
+        });
+    } else {
+        // ← НОВЕ: якщо roblox_data пустий — будуємо selectedItems з інвентаря
+        selectedItems = userInventoryFromDB
+            .filter(item => item.owned !== false)
+            .map(item => ({
+                id: item.id,
+                game: item.game || 'Evade',
+                name: item.name || '',
+                img: myGamesLibrary
+                    .flatMap(g => g.modes)
+                    .find(m => normalizeAssetId(m.id) === normalizeAssetId(item.id))?.img || ''
+            }));
+    }
+}
 
             if (isRobloxLinked || isSteamLinked) {
                 console.log("✅ Знайдено підключені ігрові акаунти");
