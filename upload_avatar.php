@@ -44,6 +44,12 @@ if ($fileError !== UPLOAD_ERR_OK) {
 // 2. Перевірка розширення
 $extension = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
 if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+    // Перевірка розміру — максимум 15 МБ
+$maxSize = 15 * 1024 * 1024; // 15 MB в байтах
+if ($_FILES[$fileKey]['size'] > $maxSize) {
+    echo json_encode(['success' => false, 'error' => 'Файл занадто великий. Максимум 15 МБ']);
+    exit;
+}
     echo json_encode(['success' => false, 'error' => 'Дозволені тільки зображення: jpg, png, gif, webp']);
     exit;
 }

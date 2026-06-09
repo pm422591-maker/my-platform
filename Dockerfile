@@ -16,4 +16,8 @@ RUN chmod +x /var/www/html/entrypoint.sh
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
+# Ліміт завантаження файлів
+RUN echo "upload_max_filesize = 15M" >> /usr/local/etc/php/php.ini \
+ && echo "post_max_size = 16M" >> /usr/local/etc/php/php.ini
+
 ENTRYPOINT ["/var/www/html/entrypoint.sh"]

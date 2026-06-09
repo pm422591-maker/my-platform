@@ -2111,6 +2111,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function uploadBanner(file) {
     if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+    alert('Файл занадто великий. Максимум 15 МБ');
+    return;
+}
 
     const formData = new FormData();
     formData.append('banner', file);
@@ -2146,6 +2150,10 @@ async function uploadBanner(file) {
 async function directUpload(inputElement) {
     const file = inputElement.files[0];
     if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+    alert('Файл занадто великий. Максимум 15 МБ');
+    return;
+}
 
     const statusText = document.getElementById('upload-status-text');
     if (statusText) statusText.innerText = "⏳ Завантаження...";
@@ -2209,6 +2217,10 @@ async function directUpload(inputElement) {
 async function uploadBackground(inputElement) {
     const file = inputElement instanceof File ? inputElement : inputElement.files[0];
     if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+    alert('Файл занадто великий. Максимум 15 МБ');
+    return;
+}
 
     const formData = new FormData();
     formData.append('background', file);
