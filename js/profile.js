@@ -98,61 +98,7 @@ document.addEventListener('click', function(e) {
     }
 }, true); // true - перехоплює клік найпершим, обходячи будь-які інші скрипти!
 
-document.addEventListener('DOMContentLoaded', () => {
-    const emailBtn = document.getElementById('btn-save-email');
-    const emailSpan = document.getElementById('edit-secondary-email');
-
-    // 1. Завантаження збереженого email (спочатку з БД через PHP, якщо є, або з localStorage)
-    // Краще, щоб PHP при завантаженні сторінки вже вставив email у цей span, 
-    // але якщо ви хочете залишити localStorage як резерв:
-    const savedLocal = localStorage.getItem('user_secondary_email');
-    if (savedLocal && emailSpan.innerText.includes('@') === false) {
-        emailSpan.innerText = savedLocal;
-    }
-
-    // 2. Логіка збереження при кліку
-    if (emailBtn && emailSpan) {
-        emailBtn.addEventListener('click', function() {
-            // ДЛЯ SPAN ВИКОРИСТОВУЄМО innerText, А НЕ value!
-            const newEmail = emailSpan.innerText.trim();
-
-            if (!newEmail || !newEmail.includes('@')) {
-                alert("Введіть коректну пошту!");
-                return;
-            }
-
-            // Змінюємо текст кнопки, щоб видно було процес
-            const originalText = emailBtn.innerText;
-            emailBtn.innerText = "Зберігаю...";
-
-            // Відправка на сервер
-            fetch('update_email.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email: newEmail })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Успіх: зберігаємо і в локальне сховище про всяк випадок
-                    localStorage.setItem('user_secondary_email', newEmail);
-                    alert("Пошту успішно збережено в базі даних!");
-                } else {
-                    alert("Помилка сервера: " + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Сталася помилка з'єднання.");
-            })
-            .finally(() => {
-                emailBtn.innerText = originalText;
-            });
-        });
-    }
-});
+// Збереження email — обробляється через smSaveEmail() в profile.html
 
 
 
@@ -299,89 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(window.loadNotifications, 10000);
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    const userBtn = document.getElementById('btn-save-username');
-    const userSpan = document.getElementById('edit-username');
+// Збереження юзернейму — обробляється через smSaveUsername() в profile.html
 
-    if (userBtn && userSpan) {
-        userBtn.onclick = async () => {
-            // Отримуємо текст саме через innerText
-            const newName = userSpan.innerText.trim();
-
-            if (!newName) {
-                alert("Ім'я не може бути порожнім");
-                return;
-            }
-
-            const originalText = userBtn.innerText;
-            userBtn.innerText = "Зберігаю...";
-
-            try {
-                const response = await fetch('update_username.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: newName })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert("Ім'я оновлено в БД!");
-                    // Оновлюємо відображення імені в шапці, якщо треба
-                    const topName = document.querySelector('.user-info h2'); 
-                    if (topName) topName.innerText = newName;
-                } else {
-                    alert("Помилка: " + data.message);
-                }
-            } catch (error) {
-                console.error("Помилка запиту:", error);
-                alert("Не вдалося зв'язатися з сервером");
-            } finally {
-                userBtn.innerText = originalText;
-            }
-        };
-    }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    const birthdayBtn = document.getElementById('btn-save-birthday');
-
-    if (birthdayBtn) {
-        birthdayBtn.onclick = async () => {
-            // Зчитуємо значення, які зараз стоять в інпутах
-            const day = document.getElementById('birth-day').value;
-            const month = document.getElementById('birth-month').value;
-            const year = document.getElementById('birth-year').value;
-
-            birthdayBtn.innerText = "Зберігаю...";
-
-            try {
-                const response = await fetch('update_birthday.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        day: day, 
-                        month: month, 
-                        year: year 
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert("Дату народження збережено!");
-                } else {
-                    alert("Помилка: " + data.message);
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                alert("Помилка зв'язку з сервером");
-            } finally {
-                birthdayBtn.innerText = "Підтвердити";
-            }
-        };
-    }
-});
+// Збереження дати народження — обробляється через smSaveBirthday() в profile.html
 
 function applyDecoration(videoUrl) {
     const square = document.querySelector('.transparent-square');
@@ -1244,53 +1110,11 @@ async function handleRobloxCallback() {
         console.log("Отримано код Roblox:", code);
     }
 }
-// 
-// Функція для оновлення імені
-async function updateUserName() {
-    const nameSpan = document.getElementById('edit-display-name');
-    const saveBtn = document.getElementById('save-name-btn');
-    const newName = nameSpan.textContent.trim();
-
-    if (!newName || newName === "Завантаження...") {
-        alert("Будь ласка, введіть коректне ім'я");
-        return;
-    }
-
-    saveBtn.textContent = "Зберігання...";
-    saveBtn.disabled = true;
-
-    try {
-        const response = await fetch('update_user.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `new_name=${encodeURIComponent(newName)}`
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // Оновлюємо ім'я всюди на сторінці
-            const nameHeader = document.getElementById('userName');
-            if (nameHeader) nameHeader.textContent = newName;
-            alert("Ім'я успішно змінено!");
-        } else {
-            alert("Помилка: " + result.message);
-        }
-    } catch (err) {
-        console.error("Помилка при оновленні імені:", err);
-        alert("Помилка сервера");
-    } finally {
-        saveBtn.textContent = "Змінити";
-        saveBtn.disabled = false;
-    }
-}
+// updateUserName видалено — замінено на smSaveDisplayName() в profile.html
 
 // Прив'язуємо функцію до кнопки після завантаження сторінки
 document.addEventListener('DOMContentLoaded', () => {
-    const saveBtn = document.getElementById('save-name-btn');
-    if (saveBtn) {
-        saveBtn.onclick = updateUserName;
-    }
+    // save-name-btn тепер має onclick="smSaveDisplayName()" напряму в HTML
 
     const modal = document.getElementById('deco-modal');
     if (modal) {
@@ -2218,42 +2042,9 @@ document.addEventListener('DOMContentLoaded', () => {
         newBtn.onclick = updateDisplayName;
     }
 });
-window.openSettings = function() {
-    const overlay = document.getElementById('settingsOverlay');
-    if (overlay) {
-        overlay.classList.add('active');
-        if (typeof smSyncUserInfo === 'function') smSyncUserInfo();
-        if (typeof smSwitchTabById === 'function') smSwitchTabById('profile');
-    }
-};
-function closeEditor() {
-    const overlay = document.getElementById('settingsOverlay');
-    if (overlay) overlay.classList.remove('active');
-}
-
-// switchEditorTab — тепер перемикає вкладки нового модалу
-function switchEditorTab(tabName) {
-    // Маппінг старих назв вкладок на нові
-    const tabMap = {
-        'profile': 'profile',
-        'design': 'appearance',
-        'integrations': 'integrations',
-        'devices': 'security',
-        'appearance': 'appearance',
-        'language': 'appearance',
-        'voice': 'appearance',
-    };
-    const newTab = tabMap[tabName] || tabName;
-    if (typeof smSwitchTabById === 'function') {
-        smSwitchTabById(newTab);
-        // також оновити активну кнопку в боковій панелі
-        document.querySelectorAll('.sm-nav-item').forEach(btn => {
-            btn.classList.remove('active');
-            const onclick = btn.getAttribute('onclick') || '';
-            if (onclick.includes("'" + newTab + "'")) btn.classList.add('active');
-        });
-    }
-}
+// openSettings визначена в profile.html — не перевизначаємо тут
+// window.openSettings залишається з profile.html
+// closeEditor та switchEditorTab визначені в profile.html — не перевизначаємо тут
 async function uploadAvatar(file) {
     let formData = new FormData();
     formData.append('avatar', file); // Ключ 'avatar', який чекає PHP
@@ -2498,42 +2289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('user_decoration');
     if (saved) window.applyDecoration(saved);
 });
-
-// Функція для збереження додаткового email
-function saveSecondaryEmail() {
-    const emailInput = document.getElementById('edit-secondary-email');
-    const newEmail = emailInput.innerText.trim();
-
-    if (newEmail && !validateEmail(newEmail)) {
-        alert("Будь ласка, введіть коректний email.");
-        return;
-    }
-
-    // Зберігаємо в локальне сховище (поки немає сервера)
-    localStorage.setItem('user_secondary_email', newEmail);
-    
-    alert("Додатковий email збережено!");
-}
-
-// Допоміжна функція валідації
-function validateEmail(email) {
-    return String(email)
-        .toLowerCase()
-        .match(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
-}
-
-// Додай це всередину функції loadUserData, щоб email підтягувався при вході
-function loadSecondaryEmail() {
-    const savedEmail = localStorage.getItem('user_secondary_email');
-    const emailInput = document.getElementById('edit-secondary-email');
-    if (savedEmail && emailInput) {
-        emailInput.value = savedEmail;
-    }
-}
-
-// Виклич loadSecondaryEmail() при завантаженні сторінки
-document.addEventListener('DOMContentLoaded', loadSecondaryEmail);
-
+// saveSecondaryEmail / loadSecondaryEmail — замінено на smSaveEmail() в profile.html
 function displayUserFlags(countryCode, languagesIconsString) {
     const flagsContainer = document.getElementById('userFlags');
     if (!flagsContainer) return;
