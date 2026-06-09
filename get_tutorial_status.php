@@ -38,12 +38,16 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT tutorial_done FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT tutorial_done, quiz_done FROM users WHERE id = ?");
     $stmt->execute([$userId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $done = $row && isset($row['tutorial_done']) && $row['tutorial_done'] == 1;
 
-    echo json_encode(['success' => true, 'tutorial_done' => $done, 'user_id' => $userId]);
+    echo json_encode([
+    'success' => true,
+    'tutorial_done' => $done,
+    'quiz_done' => (bool)($row['quiz_done'] ?? false),
+]);
 } catch (Exception $e) {
     error_log("[get_tutorial_status] DB error: " . $e->getMessage());
     echo json_encode(['success' => false, 'tutorial_done' => false, 'message' => $e->getMessage()]);

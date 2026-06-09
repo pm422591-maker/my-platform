@@ -88,13 +88,13 @@ if (formRegister) {
 
             const result = await response.json();
 
-            if (result.success) {
-    // ← ДОДАТИ ЦЕ:
-    localStorage.removeItem('syncora_tutorial_done');
-    localStorage.removeItem('syncora_quiz_done');
-    
-    localStorage.setItem('user_name', result.username || email.split('@')[0]);
-    sessionStorage.setItem('syncora_new_login', '1');
+            // script.js — LOGIN (строка ~143)
+if (result.success) {
+    localStorage.setItem('user_name', result.username);
+    if(result.avatar) localStorage.setItem('user_avatar', result.avatar);
+    if(result.banner) localStorage.setItem('user_banner', result.banner);
+    // ❌ УБЕРИ ЭТУ СТРОКУ:
+    // sessionStorage.setItem('syncora_new_login', '1');
     window.location.href = "home.html";
             } else {
                 alert("Помилка: " + result.message);
