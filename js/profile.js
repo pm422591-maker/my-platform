@@ -305,8 +305,7 @@ const myGamesLibrary = [
             // Example Gamepass
             { id: "1045160877", name: "Crystalline Set", type: "pass", img: "img/Crystalline Set.jpeg" },
             { id: "1637578813", name: "Dog Set", type: "pass", img: "img/Dog Set.jpeg" },
-            { id: "1419753648", name: "Retro Cosmetics Set", type: "pass", img: "img/Retro Cosmetics Set.jpeg" },
-            { id: "1045160877", name: "Crystalline Set", type: "pass", img: "img/Crystalline Set.jpeg" }
+            { id: "1419753648", name: "Retro Cosmetics Set", type: "pass", img: "img/Retro Cosmetics Set.jpeg" }
         ]
     },
     {
@@ -317,8 +316,7 @@ const myGamesLibrary = [
             { id: "2491852490394472", name: "20 days", type: "badge", img: "img/20 days.jpeg" },
             { id: "2419608566642291", name: "30 days", type: "badge", img: "img/30 days.jpeg" },
             { id: "554308544894889", name: "40 days", type: "badge", img: "img/40 days.jpeg" },
-            { id: "3412064596604231", name: "50 days", type: "badge", img: "img/50 days.jpeg" },
-            { id: "2491852490394472", name: "60 days", type: "badge", img: "img/20 days.jpeg" }
+            { id: "3412064596604231", name: "50 days", type: "badge", img: "img/50 days.jpeg" }
         ]
     }
 ];
@@ -1106,8 +1104,13 @@ async function handleRobloxCallback() {
     const code = urlParams.get('code');
     if (code) {
         window.history.replaceState({}, document.title, window.location.pathname);
-        // Тут має бути твоя логіка авторизації, якщо потрібна
-        console.log("Отримано код Roblox:", code);
+        console.log("🔄 Отримано код Roblox, обмін на токен...");
+        // FIX: викликаємо реальну авторизацію замість простого console.log
+        if (typeof window.exchangeCodeForData === 'function') {
+            await window.exchangeCodeForData(code);
+        } else {
+            console.error("❌ exchangeCodeForData не знайдено — перевір порядок скриптів");
+        }
     }
 }
 // updateUserName видалено — замінено на smSaveDisplayName() в profile.html
@@ -1185,9 +1188,11 @@ async function handleRobloxCallback() {
 
 window.exchangeCodeForData = async function(authCode) {
     try {
+        // FIX: credentials:'include' обов'язковий — без нього PHP не бачить сесію
         const response = await fetch('roblox_auth.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ code: authCode })
         });
         const result = await response.json();
@@ -1195,30 +1200,38 @@ window.exchangeCodeForData = async function(authCode) {
         if (result.success) {
             const robloxId = result.data.sub;
 
-            // 1. Зберігаємо ID в базу
+            // 1. Зберігаємо ID в базу (roblox_auth.php вже це робить,
+            //    але залишаємо save_roblox_id.php як запасний варіант)
             await fetch('save_roblox_id.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // FIX: теж потрібен credentials
                 body: JSON.stringify({ roblox_id: robloxId })
             });
 
-            // 2. ФОНОВА СИНХРОНІЗАЦІЯ (Новий крок!)
+            // 2. Фонова синхронізація інвентаря
             console.log("⏳ Починаю фонову синхронізацію інвентаря...");
             const syncRes = await fetch('sync_roblox_assets.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // FIX: теж потрібен credentials
                 body: JSON.stringify({ roblox_id: robloxId })
             });
             const syncData = await syncRes.json();
-            
+
             if (syncData.success) {
                 console.log("✅ Інвентар синхронізовано!", syncData.owned);
-                // Оновлюємо сторінку, щоб ігри підтягнулися з бази
-                loadUserData(); 
+                loadUserData();
+            } else {
+                console.warn("⚠️ Синхронізація не вдалася:", syncData.message, syncData.errors || []);
+                loadUserData(); // Все одно оновлюємо профіль
             }
+        } else {
+            console.error("❌ Roblox авторизація відхилена:", result.message, result.details || '');
+            alert("Помилка авторизації Roblox: " + result.message);
         }
     } catch (err) {
-        console.error("Помилка авторизації:", err);
+        console.error("Помилка авторизації Roblox:", err);
     }
 };
 // UNIVERSAL ASSET CHECKER (Badges + GamePasses)
