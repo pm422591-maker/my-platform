@@ -52,23 +52,65 @@ $library = [
     ],
 ];
 
-function roblox_item_is_owned(string $robloxId, string $itemType, string $itemId): array
-{
-    // Для бейджів і геймпасів — різні API endpoints
-    if ($itemType === 'Badge') {
-        $url = sprintf(
-            'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
-            rawurlencode($robloxId),
-            rawurlencode($itemId)
-        );
-    } else {
-        // GamePass
-        $url = sprintf(
-            'https://inventory.roblox.com/v1/users/%s/items/GamePass/%s/is-owned',
-            rawurlencode($robloxId),
-            rawurlencode($itemId)
-        );
+// ==========================================
+// ОПТИМІЗАЦІЯ: Збираємо всі ID бейджів разом
+// ==========================================
+$allBadgeIds = [];
+foreach ($library as $game) {
+    foreach ($game['items'] as $item) {
+        if ($item['type'] === 'Badge') {
+            $allBadgeIds[] = $item['id'];
+        }
     }
+}
+$allBadgeIds = array_unique($allBadgeIds);
+
+$awardedBadgesMap = [];
+$errors = [];
+
+// Робимо всього ОДИН масовий запит для перевірки ВСІХ бейджів відразу
+if (!empty($allBadgeIds)) {
+    $badgesUrl = sprintf(
+        'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
+        rawurlencode($robloxId),
+        implode(',', $allBadgeIds)
+    );
+
+    $ch = curl_init($badgesUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+    $raw = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if (!$curlError && $httpCode === 200) {
+        $parsed = json_decode($raw, true);
+        if (isset($parsed['data']) && is_array($parsed['data'])) {
+            foreach ($parsed['data'] as $badgeData) {
+                if (isset($badgeData['badgeId'])) {
+                    // Якщо бейдж є у відповіді від Roblox — користувач його отримав
+                    $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
+                }
+            }
+        }
+    } else {
+        $errors[] = [
+            'type' => 'AllBadgesBulk',
+            'status' => $httpCode,
+            'message' => "Bulk Badge API failed: $curlError",
+        ];
+    }
+}
+
+// Функція для поштучної перевірки GamePass (їх мало, ліміти не замістять)
+function roblox_gamepass_is_owned(string $robloxId, string $gamepassId): array {
+    $url = sprintf(
+        'https://inventory.roblox.com/v1/users/%s/items/GamePass/%s/is-owned',
+        rawurlencode($robloxId),
+        rawurlencode($gamepassId)
+    );
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -88,30 +130,18 @@ function roblox_item_is_owned(string $robloxId, string $itemType, string $itemId
         ];
     }
 
-    $parsed = json_decode($raw, true);
-
-    if ($itemType === 'Badge') {
-        // badges API повертає {"data": [...]} — якщо масив не порожній, бейдж є
-        $owned = isset($parsed['data']) && count($parsed['data']) > 0;
-    } else {
-        // GamePass is-owned повертає просто true або false
-        $owned = $parsed === true;
-    }
-
     return [
         'success' => true,
-        'owned'   => $owned,
+        'owned'   => json_decode($raw, true) === true,
         'message' => '',
         'status'  => $httpCode,
     ];
 }
 
 $ownedAssets = [];
-$errors = [];
-$checked = 0;
-$failed = 0;
 $seen = [];
 
+// Формуємо фінальний інвентар
 foreach ($library as $game) {
     foreach ($game['items'] as $item) {
         $key = $item['type'] . ':' . $item['id'];
@@ -119,42 +149,45 @@ foreach ($library as $game) {
             continue;
         }
         $seen[$key] = true;
-        $checked++;
 
-        $result = roblox_item_is_owned($robloxId, $item['type'], $item['id']);
-        if (!$result['success']) {
-            $failed++;
-            $errors[] = [
-                'id' => $item['id'],
-                'type' => $item['type'],
-                'status' => $result['status'],
-                'message' => $result['message'],
-            ];
-            continue;
-        }
+        if ($item['type'] === 'Badge') {
+            // Перевіряємо, чи є ID бейджа в нашому масовому списку отриманих
+            if (isset($awardedBadgesMap[$item['id']])) {
+                $ownedAssets[] = [
+                    'id' => $item['id'],
+                    'type' => 'badge',
+                    'owned' => true,
+                    'game' => $game['game'],
+                    'name' => $item['name'],
+                ];
+            }
+        } else {
+            // Перевірка GamePass
+            $result = roblox_gamepass_is_owned($robloxId, $item['id']);
+            if (!$result['success']) {
+                $errors[] = [
+                    'id' => $item['id'],
+                    'type' => $item['type'],
+                    'status' => $result['status'],
+                    'message' => $result['message'],
+                ];
+                continue;
+            }
 
-        if ($result['owned']) {
-            $ownedAssets[] = [
-                'id' => $item['id'],
-                'type' => $item['type'] === 'GamePass' ? 'pass' : 'badge',
-                'owned' => true,
-                'game' => $game['game'],
-                'name' => $item['name'],
-            ];
+            if ($result['owned']) {
+                $ownedAssets[] = [
+                    'id' => $item['id'],
+                    'type' => 'pass',
+                    'owned' => true,
+                    'game' => $game['game'],
+                    'name' => $item['name'],
+                ];
+            }
         }
     }
 }
 
-if ($checked > 0 && $failed === $checked) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Roblox Inventory API failed for every checked item. Existing inventory was not overwritten.',
-        'owned' => [],
-        'errors' => $errors,
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
+// Запис результату в базу даних
 try {
     $pdo = get_pdo('utf8mb4');
     $inventoryJson = json_encode($ownedAssets, JSON_UNESCAPED_UNICODE);
