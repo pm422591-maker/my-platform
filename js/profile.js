@@ -1259,6 +1259,7 @@ window.exchangeCodeForData = async function(authCode) {
                 body: JSON.stringify({ roblox_id: robloxId })
             });
             const syncData = await syncRes.json();
+            console.log('🔍 RAW SYNC RESPONSE:', JSON.stringify(syncData));
 
             if (syncData.success) {
                 console.log("✅ Інвентар синхронізовано!", syncData.owned);
