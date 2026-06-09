@@ -840,22 +840,26 @@ async function smSaveUsername() {
 async function smSaveBio() {
   const input = document.getElementById('sm-bio-input');
   const text  = input ? input.value.trim() : '';
-  if (typeof saveBioToServer === 'function') {
-    const ok = await saveBioToServer(text);
-    if (ok) {
-      // Sync to the visible bio block on the page
-      const bioDisplay = document.getElementById('userBioDisplay');
-      const bioTextEl  = document.getElementById('userBioText');
-      const bioInput   = document.getElementById('user-bio');
-      if (bioDisplay) bioDisplay.textContent = text || 'Про себе нічого не вказано';
-      if (bioTextEl)  bioTextEl.innerText    = text || 'Опис відсутній';
-      if (bioInput)   bioInput.value         = text;
-      if (window._profileData) window._profileData.bio = text;
-      if (input) delete input.dataset.dirty;
-      smShowToast('Біо збережено ✓');
-    } else {
-      smShowToast('Не вдалося зберегти біо');
-    }
+
+  if (typeof saveBioToServer !== 'function') {
+    smShowToast('Помилка: скрипт не завантажено, оновіть сторінку');
+    return;
+  }
+
+  const ok = await saveBioToServer(text);
+  if (ok) {
+    // Sync to the visible bio block on the page
+    const bioDisplay = document.getElementById('userBioDisplay');
+    const bioTextEl  = document.getElementById('userBioText');
+    const bioInput   = document.getElementById('user-bio');
+    if (bioDisplay) bioDisplay.textContent = text || 'Про себе нічого не вказано';
+    if (bioTextEl)  bioTextEl.innerText    = text || 'Опис відсутній';
+    if (bioInput)   bioInput.value         = text;
+    if (window._profileData) window._profileData.bio = text;
+    if (input) delete input.dataset.dirty;
+    smShowToast('Біо збережено ✓');
+  } else {
+    smShowToast('Не вдалося зберегти біо');
   }
 }
 

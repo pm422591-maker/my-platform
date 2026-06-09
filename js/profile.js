@@ -407,6 +407,7 @@ function syncOwnedFlagsFromInventory() {
         }
     });
 }
+
 async function syncRobloxInventoryFromServer(robloxId) {
     if (!robloxId || robloxId === 'null') return false;
 
@@ -426,35 +427,14 @@ async function syncRobloxInventoryFromServer(robloxId) {
 
         userInventoryFromDB = normalizeInventoryItems(syncData.owned);
         syncOwnedFlagsFromInventory();
-
-        // ✅ ФІКС: автоматично додаємо owned-бейджі в selectedItems
-        userInventoryFromDB
-            .filter(inv => inv.owned && inv.type === 'badge')
-            .forEach(inv => {
-                const alreadySelected = selectedItems.some(
-                    s => normalizeAssetId(s.id) === normalizeAssetId(inv.id)
-                );
-                if (!alreadySelected) {
-                    selectedItems.push({
-                        id: inv.id,
-                        name: inv.name,
-                        game: inv.game,
-                        type: 'badge',
-                        owned: true
-                    });
-                }
-            });
-// Перерисовываем профиль со свежими данными
-if (selectedItems.length > 0) {
-    displayRobloxData({ stats: selectedItems });
-}
-
         return true;
     } catch (e) {
         console.error('Roblox inventory sync request failed:', e);
         return false;
     }
 }
+
+
 // --- 2. INITIALIZATION ---
 // --- 2. INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', function() {
@@ -544,30 +524,6 @@ async function loadUserData() {
             const mode = libGame.modes.find(m => normalizeAssetId(m.id) === normalizeAssetId(savedGame.id));
             return { ...savedGame, owned: mode ? mode.owned : false };
         });
-    }
-}
-if (isRobloxLinked && data.is_own_profile) {
-    await syncRobloxInventoryFromServer(data.roblox_id);
-    
-    if (selectedItems.length > 0) {
-        selectedItems = selectedItems.map(savedGame => {
-            const libGame = myGamesLibrary.find(g => g.name === savedGame.game);
-            if (!libGame) return savedGame;
-            const mode = libGame.modes.find(m => normalizeAssetId(m.id) === normalizeAssetId(savedGame.id));
-            return { ...savedGame, owned: mode ? mode.owned : false };
-        });
-    } else {
-        // ← НОВЕ: якщо roblox_data пустий — будуємо selectedItems з інвентаря
-        selectedItems = userInventoryFromDB
-            .filter(item => item.owned !== false)
-            .map(item => ({
-                id: item.id,
-                game: item.game || 'Evade',
-                name: item.name || '',
-                img: myGamesLibrary
-                    .flatMap(g => g.modes)
-                    .find(m => normalizeAssetId(m.id) === normalizeAssetId(item.id))?.img || ''
-            }));
     }
 }
 
@@ -1195,7 +1151,8 @@ async function saveBioToServer(text) {
         const res = await fetch('update_bio.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `bio=${encodeURIComponent(text)}`
+            body: `bio=${encodeURIComponent(text)}`,
+            credentials: 'include'
         });
         const result = await res.json();
         if (result.success) {
@@ -1263,7 +1220,6 @@ window.exchangeCodeForData = async function(authCode) {
                 body: JSON.stringify({ roblox_id: robloxId })
             });
             const syncData = await syncRes.json();
-            console.log('🔍 RAW SYNC RESPONSE:', JSON.stringify(syncData));
 
             if (syncData.success) {
                 console.log("✅ Інвентар синхронізовано!", syncData.owned);

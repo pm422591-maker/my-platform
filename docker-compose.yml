@@ -24,7 +24,7 @@ services:
     container_name: my-pma
     restart: always
     environment:
-      PMA_HOST: db
+      PMA_HOST: my-mysql
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "8888:80"
