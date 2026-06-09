@@ -52,7 +52,7 @@ $library = [
     ],
 ];
 
-// 1. Збираємо всі унікальні ID бейджів для ОДНОГО масового запиту
+// 1. Збираємо всі унікальні ID бейджів для точкового запиту
 $allBadgeIds = [];
 foreach ($library as $game) {
     foreach ($game['items'] as $item) {
@@ -65,14 +65,13 @@ $allBadgeIds = array_unique($allBadgeIds);
 
 $awardedBadgesMap = [];
 $errors = [];
+$debugRawBadges = 'No request made'; // Для діагностики
 
-// 2. Виконуємо запит до точкового API перевірки конкретних бейджів
+// 2. Запит до точкового API перевірки бейджів (awarded-dates)
 if (!empty($allBadgeIds)) {
-    // Збираємо всі ID через звичайну кому
+    // Об'єднуємо через сиру кому, БЕЗ rawurlencode, бо сервери Roblox її вимагають
     $badgeIdsParam = implode(',', $allBadgeIds);
     
-    // УВАГА: $badgeIdsParam передаємо ОРЕНДОВАНО, без rawurlencode!
-    // Roblox вимагає саме символ коми (,), а %2C ламає йому парсер.
     $badgesUrl = sprintf(
         'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
         rawurlencode($robloxId),
@@ -91,28 +90,28 @@ if (!empty($allBadgeIds)) {
     $curlError = curl_error($ch);
     curl_close($ch);
 
+    $debugRawBadges = $raw ? $raw : "cURL Error: $curlError (HTTP $httpCode)";
+
     if (!$curlError && $httpCode === 200) {
         $parsed = json_decode($raw, true);
         if (isset($parsed['data']) && is_array($parsed['data'])) {
             foreach ($parsed['data'] as $badgeData) {
-                // Переконуємося, що ключ приводиться до string для суворої перевірки
                 if (isset($badgeData['badgeId'])) {
+                    // Примусово перетворюємо в string для суворого порівняння ключів
                     $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
                 }
             }
         }
     } else {
-        // Якщо раптом знову пусті дані, ми побачимо причину в масиві errors
         $errors[] = [
             'type' => 'SpecificBadgesAwardedDates',
             'status' => $httpCode,
             'message' => "Badge API failed: $curlError",
-            'raw_response' => $raw
         ];
     }
 }
 
-// 3. Функція для поштучної перевірки GamePass (теж додаємо User-Agent)
+// 3. Функція перевірки GamePass
 function roblox_gamepass_is_owned(string $robloxId, string $gamepassId): array {
     $url = sprintf(
         'https://inventory.roblox.com/v1/users/%s/items/GamePass/%s/is-owned',
@@ -144,7 +143,6 @@ function roblox_gamepass_is_owned(string $robloxId, string $gamepassId): array {
     return [
         'success' => true,
         'owned'   => json_decode($raw, true) === true,
-        'message' => '',
         'status'  => $httpCode,
     ];
 }
@@ -152,7 +150,7 @@ function roblox_gamepass_is_owned(string $robloxId, string $gamepassId): array {
 $ownedAssets = [];
 $seen = [];
 
-// 4. Формуємо фінальний масив на основі отриманих даних
+// 4. Формуємо фінальний масив
 foreach ($library as $game) {
     foreach ($game['items'] as $item) {
         $key = $item['type'] . ':' . $item['id'];
@@ -162,18 +160,18 @@ foreach ($library as $game) {
         $seen[$key] = true;
 
         if ($item['type'] === 'Badge') {
-            // Перевіряємо, чи є ID бейджа в нашій мапі успішно знайдених
-            if (isset($awardedBadgesMap[$item['id']])) {
-        $ownedAssets[] = [
-            'id' => $item['id'],
-            'type' => 'badge',
-            'owned' => true,
-            'game' => $game['game'],
-            'name' => $item['name'],
-        ];
+            // Перевіряємо за строковим ключем ID
+            if (isset($awardedBadgesMap[(string)$item['id']])) {
+                $ownedAssets[] = [
+                    'id' => $item['id'],
+                    'type' => 'badge',
+                    'owned' => true,
+                    'game' => $game['game'],
+                    'name' => $item['name'],
+                ];
             }
         } else {
-            // Перевірка GamePass
+            // Перевірка геймпасів
             $result = roblox_gamepass_is_owned($robloxId, $item['id']);
             if (!$result['success']) {
                 $errors[] = [
@@ -198,7 +196,7 @@ foreach ($library as $game) {
     }
 }
 
-// 5. Запис результату в базу даних
+// 5. Запис в БД та вивід результату з дебаг-полями
 try {
     $pdo = get_pdo('utf8mb4');
     $inventoryJson = json_encode($ownedAssets, JSON_UNESCAPED_UNICODE);
@@ -209,6 +207,7 @@ try {
         'success' => true,
         'owned' => $ownedAssets,
         'errors' => $errors,
+        'debug_roblox_response' => $debugRawBadges // Сюди запишеться відповідь від Roblox
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     echo json_encode([
@@ -216,5 +215,6 @@ try {
         'message' => 'DB Error: ' . $e->getMessage(),
         'owned' => $ownedAssets,
         'errors' => $errors,
+        'debug_roblox_response' => $debugRawBadges
     ], JSON_UNESCAPED_UNICODE);
 }
