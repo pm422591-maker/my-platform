@@ -68,14 +68,15 @@ $errors = [];
 
 // 2. Виконуємо запит до точкового API перевірки конкретних бейджів
 if (!empty($allBadgeIds)) {
-    // Об'єднуємо всі ID бейджів з нашої бібліотеки через кому
+    // Збираємо всі ID через звичайну кому
     $badgeIdsParam = implode(',', $allBadgeIds);
     
-    // Використовуємо перевірений ендпоінт awarded-dates
+    // УВАГА: $badgeIdsParam передаємо ОРЕНДОВАНО, без rawurlencode!
+    // Roblox вимагає саме символ коми (,), а %2C ламає йому парсер.
     $badgesUrl = sprintf(
         'https://badges.roblox.com/v1/users/%s/badges/awarded-dates?badgeIds=%s',
         rawurlencode($robloxId),
-        rawurlencode($badgeIdsParam)
+        $badgeIdsParam
     );
 
     $ch = curl_init($badgesUrl);
@@ -94,17 +95,19 @@ if (!empty($allBadgeIds)) {
         $parsed = json_decode($raw, true);
         if (isset($parsed['data']) && is_array($parsed['data'])) {
             foreach ($parsed['data'] as $badgeData) {
-                // УВАГА: у цьому ендпоінті ключ називається 'badgeId', а не 'id'
+                // Переконуємося, що ключ приводиться до string для суворої перевірки
                 if (isset($badgeData['badgeId'])) {
                     $awardedBadgesMap[(string)$badgeData['badgeId']] = true;
                 }
             }
         }
     } else {
+        // Якщо раптом знову пусті дані, ми побачимо причину в масиві errors
         $errors[] = [
             'type' => 'SpecificBadgesAwardedDates',
             'status' => $httpCode,
-            'message' => "Awarded Dates API failed: $curlError",
+            'message' => "Badge API failed: $curlError",
+            'raw_response' => $raw
         ];
     }
 }
@@ -161,13 +164,13 @@ foreach ($library as $game) {
         if ($item['type'] === 'Badge') {
             // Перевіряємо, чи є ID бейджа в нашій мапі успішно знайдених
             if (isset($awardedBadgesMap[$item['id']])) {
-                $ownedAssets[] = [
-                    'id' => $item['id'],
-                    'type' => 'badge',
-                    'owned' => true,
-                    'game' => $game['game'],
-                    'name' => $item['name'],
-                ];
+        $ownedAssets[] = [
+            'id' => $item['id'],
+            'type' => 'badge',
+            'owned' => true,
+            'game' => $game['game'],
+            'name' => $item['name'],
+        ];
             }
         } else {
             // Перевірка GamePass
