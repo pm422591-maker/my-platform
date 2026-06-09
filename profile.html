@@ -744,16 +744,21 @@ function smSyncUserInfo() {
   }
 
   // Avatar sync
-  if (mainAvatar && mainAvatar.src && !mainAvatar.src.includes('default_avatar')) {
-    if (smAvatarImg)    { smAvatarImg.src = mainAvatar.src; smAvatarImg.style.display = 'block'; }
+  // СТАЛО:
+const navAvatar = document.getElementById('top-nav-avatar');
+const avatarSrc = navAvatar?.src;
+const hasAvatar = avatarSrc && !avatarSrc.includes('default_avatar') && !avatarSrc.includes('profile.html');
+
+if (hasAvatar) {
+    if (smAvatarImg)    { smAvatarImg.src = avatarSrc; smAvatarImg.style.display = 'block'; }
     if (smAvatarLetter)   smAvatarLetter.style.display = 'none';
-    if (smPreviewImg)   { smPreviewImg.src = mainAvatar.src; smPreviewImg.style.display = 'block'; }
+    if (smPreviewImg)   { smPreviewImg.src = avatarSrc; smPreviewImg.style.display = 'block'; }
     if (smPreviewLetter)  smPreviewLetter.style.display = 'none';
-  } else {
+} else {
     const letter = (displayName || username || 'U')[0].toUpperCase();
     if (smAvatarLetter)  smAvatarLetter.textContent = letter;
     if (smPreviewLetter) smPreviewLetter.textContent = letter;
-  }
+}
 
   // Mark inputs as "touched" when user types so we don't overwrite on re-sync
   [inputDisplayName, inputUsername, inputEmail, inputBio].forEach(el => {
