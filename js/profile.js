@@ -444,6 +444,10 @@ async function syncRobloxInventoryFromServer(robloxId) {
                     });
                 }
             });
+// Перерисовываем профиль со свежими данными
+if (selectedItems.length > 0) {
+    displayRobloxData({ stats: selectedItems });
+}
 
         return true;
     } catch (e) {
