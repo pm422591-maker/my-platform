@@ -1,41 +1,76 @@
-const clientId = "3297832364838545643"; 
-const clientSecret = "RBX-z6LMMDaBo0ydp7J9OFOkXrw_DkNWsQmUm4UEKbyCST2jdA3Hpx3885ljFCsSv0ky";
+// ⚠️ clientSecret ВИДАЛЕНО З ФРОНТЕНДУ — обмін коду має відбуватись на бекенді (PHP)
+const clientId = "3297832364838545643";
 const redirectUri = "https://syncora.cyou/profile.html";
 
-// Элементы интерфейса
+// Елементи інтерфейсу
 const trigger = document.getElementById('activityTrigger');
 const picker = document.getElementById('timePicker');
 const grid = document.getElementById('timeGrid');
 const textDisplay = document.getElementById('activityText');
 const iconDisplay = document.getElementById('statusIcon');
 
-let tempProfileData = null; 
-let selectedItems = []; 
+let tempProfileData = null;
+let selectedItems = [];
 let userInventoryFromDB = [];
 let startHour = null;
 let endHour = null;
 let firstClick = null;
 let isDragging = false;
-let selectedCountry = ""; // Тут будет храниться код страны (напр. "UA")
+let selectedCountry = "";
 let selectedLanguages = [];
 let lastFollowerId = null;
+let lastSeenFollowerId = null;
 
 // --- ГЛОБАЛЬНІ ФУНКЦІЇ МОДАЛКИ ---
 window.toggleDecoModal = function(show) {
     const modal = document.getElementById('deco-modal');
     if (modal) {
         modal.style.display = show ? 'flex' : 'none';
-        console.log(show ? "✅ Модалка відкрита" : "✅ Модалка закрита");
     } else {
         console.error("❌ Модалка #deco-modal не знайдена в HTML");
     }
 };
 
+// --- ФУНКЦІЯ ПРИКРАСИ (оголошена до DOMContentLoaded, щоб window.applyDecoration була доступна одразу) ---
+window.applyDecoration = function(videoUrl) {
+    const square = document.querySelector('.transparent-square');
+    const openBtn = document.getElementById('open-deco-modal-btn');
+
+    if (!square || !videoUrl) return;
+
+    square.innerHTML = `
+        <video src="${videoUrl}" autoplay loop muted playsinline
+               style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+        </video>
+    `;
+    square.style.display = 'block';
+
+    if (openBtn) {
+        openBtn.innerHTML = 'Прикрасу встановлено';
+    }
+
+    localStorage.setItem('user_decoration', videoUrl);
+};
+
+window.removeDecoration = function() {
+    const square = document.querySelector('.transparent-square');
+    const openBtn = document.getElementById('open-deco-modal-btn');
+
+    if (square) {
+        square.innerHTML = '';
+        square.style.display = 'none';
+    }
+
+    if (openBtn) {
+        openBtn.innerHTML = 'Обрати прикрасу';
+    }
+
+    localStorage.removeItem('user_decoration');
+};
+
 // --- ОСНОВНА ІНІЦІАЛІЗАЦІЯ ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 Скрипт ініціалізовано!");
-
-    // 1. Кнопка відкриття модалки (Шукаємо за ID)
+    // 1. Кнопка відкриття модалки
     const openBtn = document.getElementById('open-deco-modal-btn');
     if (openBtn) {
         openBtn.onclick = (e) => {
@@ -45,11 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2. Кнопка видалення прикраси
-    const removeDecoBtn = document.querySelector('.btn-danger-outline[onclick*="remove"]'); // або додай їй ID
+    const removeDecoBtn = document.querySelector('.btn-danger-outline[onclick*="remove"]');
     if (removeDecoBtn) {
         removeDecoBtn.onclick = () => {
-            if (openBtn) openBtn.innerHTML = 'Обрати прикрасу';
-            localStorage.removeItem('user_decoration');
+            window.removeDecoration();
         };
     }
 
@@ -65,30 +99,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. Завантаження даних та Roblox
+    // 4. Завантаження даних
     loadUserData();
     handleRobloxCallback();
     handleSteamCallback();
-    
-    // Перевірка збереженої прикраси
+
+    // 5. Сповіщення
+    window.loadNotifications();
+    setInterval(window.loadNotifications, 10000);
+
+    // 6. Перевірка збереженої прикраси
     const savedDeco = localStorage.getItem('user_decoration');
     if (savedDeco) window.applyDecoration(savedDeco);
-}); 
 
-// ==========================================
-// БРОНЕБІЙНИЙ ЗАПУСК STEAM
-// ==========================================
+    // 7. Тема
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    window.setTheme(savedTheme);
+
+    // 8. Онлайн-статус
+    const urlParams = new URLSearchParams(window.location.search);
+    const profileId = urlParams.get('id');
+    if (profileId) {
+        loadProfileStatus(profileId);
+    } else {
+        setOnlineStatus(true);
+    }
+
+    // 9. Ініціалізація сітки та сторінки
+    const gridEl = document.getElementById('timeGrid');
+    initTimeGrid(gridEl);
+
+    const bannerInput = document.getElementById('banner-input');
+    if (bannerInput) {
+        bannerInput.addEventListener('change', function() {
+            if (this.files[0]) uploadBanner(this.files[0]);
+        });
+    }
+
+    const backgroundInput = document.getElementById('background-input');
+    if (backgroundInput) {
+        backgroundInput.addEventListener('change', function() {
+            if (this.files[0]) uploadBackground({ files: this.files });
+        });
+    }
+
+    setInterval(checkStatus, 60000);
+});
+
+// --- ПЕРЕХОПЛЕННЯ КЛІКУ STEAM ---
 document.addEventListener('click', function(e) {
-    // Шукаємо, чи клік був по кнопці з id="btn-steam-auth"
     const steamBtn = e.target.closest('#btn-steam-auth');
-    
     if (steamBtn) {
         e.preventDefault();
         e.stopPropagation();
-        
-        console.log("🚂 Перехоплено клік по кнопці Steam!");
-        
-        // Викликаємо авторизацію
         if (typeof window.startSteamAuth === 'function') {
             window.startSteamAuth();
         } else {
@@ -96,13 +159,9 @@ document.addEventListener('click', function(e) {
             alert("Помилка: Скрипт Steam не підключено.");
         }
     }
-}, true); // true - перехоплює клік найпершим, обходячи будь-які інші скрипти!
+}, true);
 
-// Збереження email — обробляється через smSaveEmail() в profile.html
-
-
-
-// Закриття вікна при кліку в будь-якому іншому місці сторінки
+// --- Закриття dropdown сповіщень при кліку поза ним ---
 document.addEventListener('click', function(e) {
     const dropdown = document.getElementById('notif-dropdown');
     const btn = document.querySelector('.notif-btn');
@@ -111,17 +170,16 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// --- СИСТЕМА ПІДПИСОК (ПЕРЕНЕСЕНО ВГОРУ) ---
+// --- СИСТЕМА ПІДПИСОК ---
 window.followUser = async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const targetId = urlParams.get('id');
-
     if (!targetId) return;
 
     const btn = document.querySelector('.subscribe-btn');
     const countSpan = document.getElementById('followers-count');
-
     if (!btn) return;
+
     btn.disabled = true;
 
     try {
@@ -142,7 +200,6 @@ window.followUser = async function() {
                 btn.classList.remove('active');
                 btn.querySelector('span').innerText = 'Підписатися';
             }
-            
             if (countSpan && result.new_count !== undefined) {
                 countSpan.innerText = result.new_count;
             }
@@ -154,9 +211,7 @@ window.followUser = async function() {
     }
 };
 
-// --- 🔔 СИСТЕМА СПОВІЩЕНЬ (ПОВНЕ ВИПРАВЛЕННЯ) ---
-let lastSeenFollowerId = null; 
-
+// --- СИСТЕМА СПОВІЩЕНЬ ---
 window.toggleNotifDropdown = function(event) {
     if (event) event.stopPropagation();
     const dropdown = document.getElementById('notif-dropdown');
@@ -165,7 +220,7 @@ window.toggleNotifDropdown = function(event) {
     const isHidden = window.getComputedStyle(dropdown).display === 'none';
     if (isHidden) {
         dropdown.style.display = 'block';
-        window.loadNotifications(); 
+        window.loadNotifications();
     } else {
         dropdown.style.display = 'none';
     }
@@ -181,19 +236,20 @@ window.loadNotifications = async function() {
         const data = await response.json();
 
         if (data.success && data.followers && data.followers.length > 0) {
-            list.innerHTML = ''; 
+            list.innerHTML = '';
 
             data.followers.forEach(user => {
-                let avatar = user.avatar_url ? (user.avatar_url.startsWith('uploads') ? user.avatar_url : 'img/' + user.avatar_url) : 'img/default_avatar.png';
+                const avatar = user.avatar_url
+                    ? (user.avatar_url.startsWith('uploads') ? user.avatar_url : 'img/' + user.avatar_url)
+                    : 'img/default_avatar.png';
 
-                // Створюємо елемент, де ім'я — це посилання на профіль
                 const item = `
                     <div class="notif-item" style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #252525;">
                         <a href="profile.html?id=${user.id}">
                             <img src="${avatar}" style="width: 38px; height: 38px; border-radius: 50%; margin-right: 12px; object-fit: cover; border: 1px solid #444;">
                         </a>
                         <div class="notif-text" style="font-size: 13px; color: #ccc;">
-                            <a href="profile.html?id=${user.id}" class="notif-user-link">${user.username}</a> 
+                            <a href="profile.html?id=${user.id}" class="notif-user-link">${user.username}</a>
                             підписався на вас
                         </div>
                     </div>
@@ -214,15 +270,16 @@ window.loadNotifications = async function() {
     }
 };
 
-// Функція для спливаючого повідомлення (Toast)
 function showToastNotification(user) {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
     const toast = document.createElement('div');
-    toast.className = 'notif-toast-pop'; // Переконайся, що в CSS є стилі для цього класу
-    
-    let avatar = user.avatar_url ? (user.avatar_url.startsWith('uploads') ? user.avatar_url : 'img/' + user.avatar_url) : 'img/default_avatar.png';
+    toast.className = 'notif-toast-pop';
+
+    const avatar = user.avatar_url
+        ? (user.avatar_url.startsWith('uploads') ? user.avatar_url : 'img/' + user.avatar_url)
+        : 'img/default_avatar.png';
 
     toast.innerHTML = `
         <img src="${avatar}" style="width:34px; height:34px; border-radius:50%; border: 1px solid #ff4500;">
@@ -231,7 +288,6 @@ function showToastNotification(user) {
 
     container.appendChild(toast);
 
-    // Видаляємо через 5 секунд з анімацією
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(50px)';
@@ -239,59 +295,59 @@ function showToastNotification(user) {
     }, 5000);
 }
 
-// Запускаємо перевірку відразу і потім кожні 10 секунд
-document.addEventListener('DOMContentLoaded', () => {
-    window.loadNotifications(); 
-    setInterval(window.loadNotifications, 10000);
-});
-
-// Збереження юзернейму — обробляється через smSaveUsername() в profile.html
-
-// Збереження дати народження — обробляється через smSaveBirthday() в profile.html
-
-function applyDecoration(videoUrl) {
-    const square = document.querySelector('.transparent-square');
-    // ВИПРАВЛЕНО: беремо кнопку саме для прикрас за її ID
-    const openBtn = document.getElementById('open-deco-modal-btn'); 
-
-    if (!square || !videoUrl) return;
-
-    square.innerHTML = `
-        <video src="${videoUrl}" autoplay loop muted playsinline 
-               style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-        </video>
-    `;
-    square.style.display = 'block';
-
-    if (openBtn) {
-        openBtn.innerHTML = 'Прикрасу встановлено';
+// --- ТЕМА (одна функція) ---
+window.setTheme = function(theme) {
+    localStorage.setItem('theme', theme);
+    if (theme === 'light') {
+        document.body.classList.add('light-theme');
+        document.getElementById('theme-light')?.classList.add('active');
+        document.getElementById('theme-dark')?.classList.remove('active');
+    } else {
+        document.body.classList.remove('light-theme');
+        document.getElementById('theme-dark')?.classList.add('active');
+        document.getElementById('theme-light')?.classList.remove('active');
     }
+};
 
-    localStorage.setItem('user_decoration', videoUrl);
+// --- МОВА (виправлено: event передається як параметр) ---
+function setLanguage(lang, event) {
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+    if (event && event.target) event.target.classList.add('active');
+    console.log("Мова змінена на:", lang);
 }
 
-// Функція ПРИМУСОВОГО видалення
-console.log("✅ profile.js успішно завантажений!");
-
-// Функція видалення
-window.removeDecoration = function() {
-    const square = document.querySelector('.transparent-square');
-    // ВИПРАВЛЕНО: беремо кнопку саме для прикрас за її ID
-    const openBtn = document.getElementById('open-deco-modal-btn');
-
-    if (square) {
-        square.innerHTML = ''; 
-        square.style.display = 'none';
+// --- ОНЛАЙН СТАТУС ---
+function setOnlineStatus(isOnline) {
+    const statusDot = document.getElementById('status-dot');
+    if (!statusDot) return;
+    if (isOnline) {
+        statusDot.classList.remove('status-offline');
+        statusDot.classList.add('status-online');
+    } else {
+        statusDot.classList.remove('status-online');
+        statusDot.classList.add('status-offline');
     }
+}
 
-    if (openBtn) {
-        openBtn.innerHTML = 'Обрати прикрасу';
+async function loadProfileStatus(profileUserId) {
+    try {
+        const response = await fetch(`get_online_status.php?user_id=${profileUserId}`);
+        const text = await response.text();
+        const data = JSON.parse(text);
+        setOnlineStatus(data.online);
+    } catch (error) {
+        console.error("❌ Помилка перевірки онлайн-статусу:", error);
+        setOnlineStatus(false);
     }
+}
 
-    localStorage.removeItem('user_decoration');
-};
-//GAMES LIBRARY ---
-// type: "badge" for badges, type: "pass" for gamepasses
+// Пульс онлайну — надсилаємо сигнал кожні 2 хвилини
+fetch('update_online_status.php').catch(() => {});
+setInterval(() => {
+    fetch('update_online_status.php').catch(() => {});
+}, 120000);
+
+// --- БІБЛІОТЕКА ІГОР ---
 const myGamesLibrary = [
     {
         name: "Evade",
@@ -302,7 +358,6 @@ const myGamesLibrary = [
             { id: "2128167324", name: "75 lvl", type: "badge", img: "img/75 evade.jpeg" },
             { id: "2128167328", name: "100 lvl", type: "badge", img: "img/100 evade.jpeg" },
             { id: "2128167329", name: "125 lvl", type: "badge", img: "img/125 evade.jpeg" },
-            // Example Gamepass
             { id: "1045160877", name: "Crystalline Set", type: "pass", img: "img/Crystalline Set.jpeg" },
             { id: "1637578813", name: "Dog Set", type: "pass", img: "img/Dog Set.jpeg" },
             { id: "1419753648", name: "Retro Cosmetics Set", type: "pass", img: "img/Retro Cosmetics Set.jpeg" }
@@ -315,12 +370,13 @@ const myGamesLibrary = [
             { id: "2310366779580636", name: "10 days", type: "badge", img: "img/10 days.jpeg" },
             { id: "2491852490394472", name: "20 days", type: "badge", img: "img/20 days.jpeg" },
             { id: "2419608566642291", name: "30 days", type: "badge", img: "img/30 days.jpeg" },
-            { id: "554308544894889", name: "40 days", type: "badge", img: "img/40 days.jpeg" },
+            { id: "554308544894889",  name: "40 days", type: "badge", img: "img/40 days.jpeg" },
             { id: "3412064596604231", name: "50 days", type: "badge", img: "img/50 days.jpeg" }
         ]
     }
 ];
 
+console.log("✅ profile.js успішно завантажений!");
 // STEAM GAMES LIBRARY ---
 const mySteamLibrary = [
     {
@@ -3194,22 +3250,11 @@ window.checkSteamGamesOwnership = async function(steamId) {
 };
 
 
-function setLanguage(lang) {
+function setLanguage(lang, event) {
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     console.log("Мова змінена на:", lang);
     // Тут логіка зміни мови
-}
-
-function setTheme(theme) {
-    document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
-    if (theme === 'dark') {
-        document.getElementById('theme-dark').classList.add('active');
-    } else {
-        document.getElementById('theme-light').classList.add('active');
-    }
-    console.log("Тема змінена на:", theme);
-    // Тут логіка зміни теми (наприклад, додавання класу до body)
 }
 
 // === 1. ЛОГИКА ТЕМЫ (Оставляем как было) ===
