@@ -621,6 +621,7 @@ const av2 = document.getElementById('settings-avatar-img');
 if (av1) av1.src = srcAvatar;
 if (av2) av2.src = srcAvatar;
 window._currentAvatarSrc = srcAvatar;  // ← синхронизирует smSyncUserInfo()
+if (typeof smSyncUserInfo === 'function') smSyncUserInfo();
 
             // 2. БАНЕР (banner_url)
             let rawBanner = data.banner_url || data.banner;
