@@ -2758,7 +2758,7 @@ async function deleteAvatar() {
             if (navAvatar) navAvatar.src = defaultSrc;
 
             // Аватар у налаштуваннях (великий)
-            const settingsAvatar = document.getElementById('sm-avatar-preview-img');
+            const settingsAvatar = document.getElementById('sm-avatar-preview');
             if (settingsAvatar) settingsAvatar.src = defaultSrc;
 
             // Аватар у профілі (якщо є)
