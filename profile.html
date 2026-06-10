@@ -745,7 +745,7 @@ function smSyncUserInfo() {
 
   // Avatar sync — читаємо з глобальної змінної (встановлюється в loadUserData)
   const avatarSrc = window._currentAvatarSrc;
-  const hasAvatar = !!avatarSrc;
+  const hasAvatar = !!avatarSrc && !avatarSrc.includes('default_avatar.png');
 
   if (hasAvatar) {
     if (smAvatarImg)     { smAvatarImg.src = avatarSrc; smAvatarImg.style.display = 'block'; }

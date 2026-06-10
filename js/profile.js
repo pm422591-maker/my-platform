@@ -620,8 +620,16 @@ if (data.steam_id && data.steam_id !== "null") {
 const av2 = document.getElementById('settings-avatar-img');
 if (av1) av1.src = srcAvatar;
 if (av2) av2.src = srcAvatar;
-window._currentAvatarSrc = srcAvatar;  // ← синхронизирует smSyncUserInfo()
-if (typeof smSyncUserInfo === 'function') smSyncUserInfo();
+window._currentAvatarSrc = srcAvatar;
+// Вызвать после гарантированной загрузки DOM
+if (typeof smSyncUserInfo === 'function') {
+    smSyncUserInfo();
+} else {
+    // Если DOM ещё не готов — ждём
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof smSyncUserInfo === 'function') smSyncUserInfo();
+    });
+}
 
             // 2. БАНЕР (banner_url)
             let rawBanner = data.banner_url || data.banner;
@@ -2760,6 +2768,11 @@ async function deleteAvatar() {
             // Аватар у налаштуваннях (великий)
             const settingsAvatar = document.getElementById('sm-avatar-preview-img');
             if (settingsAvatar) settingsAvatar.src = defaultSrc;
+
+            const miniAvatar = document.getElementById('sm-user-avatar-img');
+const miniLetter = document.getElementById('sm-user-avatar-letter');
+if (miniAvatar) { miniAvatar.src = ''; miniAvatar.style.display = 'none'; }
+if (miniLetter) miniLetter.style.display = '';
 
             // Аватар у профілі (якщо є)
             const profileAvatar = document.querySelector('.profile-avatar');
