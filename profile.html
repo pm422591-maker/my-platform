@@ -329,9 +329,9 @@
             <div class="sm-avatar-row">
               <div class="sm-avatar-preview" id="sm-avatar-preview">
                 <img id="sm-avatar-preview-img" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
-                <img id="settings-avatar-img" src="" alt="" style="display:none;">
                 <span id="sm-avatar-preview-letter">U</span>
               </div>
+              <img id="settings-avatar-img" src="" alt="" style="display:none; position:absolute; pointer-events:none;">
               <div class="sm-avatar-actions">
                 <div class="sm-avatar-btns">
                   <button class="sm-inline-btn accent" onclick="document.getElementById('avatar-input').click()">Змінити фото</button>
@@ -743,13 +743,9 @@ function smSyncUserInfo() {
     }
   }
 
-  // Avatar sync — читаємо з settings-avatar-img (надійніший джерело після loadUserData)
-  const avatarSrc = mainAvatar?.src;
-  const hasAvatar = avatarSrc
-    && avatarSrc !== ''
-    && !avatarSrc.includes('default_avatar')
-    && !avatarSrc.endsWith('/profile.html')
-    && !avatarSrc.endsWith('/');
+  // Avatar sync — читаємо з глобальної змінної (встановлюється в loadUserData)
+  const avatarSrc = window._currentAvatarSrc;
+  const hasAvatar = !!avatarSrc;
 
   if (hasAvatar) {
     if (smAvatarImg)     { smAvatarImg.src = avatarSrc; smAvatarImg.style.display = 'block'; }

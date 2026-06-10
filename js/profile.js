@@ -616,10 +616,13 @@ if (data.steam_id && data.steam_id !== "null") {
             let avatarPath = fixPath(rawAvatar, 'default_avatar.png');
             const srcAvatar = avatarPath + '?t=' + timestamp; // timestamp змушує оновити кеш гіфки
 
+            // Зберігаємо у глобальній змінній для надійного доступу з smSyncUserInfo
+            window._currentAvatarSrc = (rawAvatar && !rawAvatar.includes('default_avatar')) ? srcAvatar : null;
+
             const av1 = document.getElementById('top-nav-avatar');
             const av2 = document.getElementById('settings-avatar-img');
             if (av1) av1.src = srcAvatar;
-            if (av2) { av2.src = srcAvatar; av2.style.display = 'block'; }
+            if (av2) { av2.src = srcAvatar; }
 
             // --- ВИПРАВЛЕННЯ: одразу оновлюємо рожеві кружки в сайдбарі та налаштуваннях ---
             const isDefault = !rawAvatar || rawAvatar.includes('default_avatar');
@@ -632,6 +635,11 @@ if (data.steam_id && data.steam_id !== "null") {
                 if (smAvatarLetter)   smAvatarLetter.style.display = 'none';
                 if (smPreviewImg)   { smPreviewImg.src = srcAvatar; smPreviewImg.style.display = 'block'; }
                 if (smPreviewLetter)  smPreviewLetter.style.display = 'none';
+            } else {
+                const smAvatarImg    = document.getElementById('sm-user-avatar-img');
+                const smPreviewImg   = document.getElementById('sm-avatar-preview-img');
+                if (smAvatarImg)  smAvatarImg.style.display = 'none';
+                if (smPreviewImg) smPreviewImg.style.display = 'none';
             }
 
             // 2. БАНЕР (banner_url)
