@@ -619,7 +619,7 @@ if (data.steam_id && data.steam_id !== "null") {
             const av1 = document.getElementById('top-nav-avatar');
             const av2 = document.getElementById('settings-avatar-img');
             if (av1) av1.src = srcAvatar;
-            if (av2) av2.src = srcAvatar;
+            if (av2) { av2.src = srcAvatar; av2.style.display = 'block'; }
 
             // 2. БАНЕР (banner_url)
             let rawBanner = data.banner_url || data.banner;
@@ -994,6 +994,11 @@ if (subBtn) {
         }
     } catch (err) { 
         console.error("❌ Помилка завантаження даних:", err); 
+    }
+
+    // Синхронізуємо аватар у сайдбарі та налаштуваннях після кожного оновлення даних
+    if (typeof smSyncUserInfo === 'function') {
+        smSyncUserInfo();
     }
 }
 

@@ -304,8 +304,18 @@ window.getSafeAvatarUrl = function(rawPath) {
         return DEFAULT_IMG; 
     }
 
-    let finalPath = cleanPath.startsWith('uploads/') ? cleanPath : 'uploads/' + cleanPath;
-    return '/' + finalPath;
+    // Якщо шлях вже правильний (uploads/...) — повертаємо без зміни
+    if (cleanPath.startsWith('uploads/')) {
+        return cleanPath;
+    }
+
+    // Якщо шлях до img/ (старі записи або дефолтні картинки)
+    if (cleanPath.startsWith('img/')) {
+        return cleanPath;
+    }
+
+    // Для інших відносних шляхів — припускаємо що це avatars/
+    return 'uploads/' + cleanPath;
 };
 // 4. ФУНКЦИИ РЕДАКТОРА
 function togglePostEditor() {
