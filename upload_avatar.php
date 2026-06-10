@@ -1,8 +1,8 @@
 <?php
-// Вимикаємо HTML-помилки ДО будь-якого виводу
 error_reporting(0);
 ini_set('display_errors', 0);
 
+require_once __DIR__ . '/cors_session.php';
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
@@ -11,14 +11,14 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
+$userId = (int)$_SESSION['user_id'];
 
 // 1. Визначаємо тип файлу та папку
 $fileKey   = null;
 $subFolder = '';
 
-if (isset($_FILES['banner']))     { $fileKey = 'banner';     $subFolder = 'banners'; }
-elseif (isset($_FILES['avatar'])) { $fileKey = 'avatar';     $subFolder = 'avatars'; }
+if (isset($_FILES['banner']))         { $fileKey = 'banner';     $subFolder = 'banners'; }
+elseif (isset($_FILES['avatar']))     { $fileKey = 'avatar';     $subFolder = 'avatars'; }
 elseif (isset($_FILES['background'])) { $fileKey = 'background'; $subFolder = 'backgrounds'; }
 
 if (!$fileKey) {
@@ -41,33 +41,31 @@ if ($fileError !== UPLOAD_ERR_OK) {
     exit;
 }
 
-// 2. Перевірка розширення
-$extension = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
-if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-    // Перевірка розміру — максимум 15 МБ
-$maxSize = 15 * 1024 * 1024; // 15 MB в байтах
+// 2. СПОЧАТКУ перевірка розміру (до 15 МБ)
+$maxSize = 15 * 1024 * 1024;
 if ($_FILES[$fileKey]['size'] > $maxSize) {
     echo json_encode(['success' => false, 'error' => 'Файл занадто великий. Максимум 15 МБ']);
     exit;
 }
+
+// 3. Потім перевірка розширення
+$extension = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
+if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
     echo json_encode(['success' => false, 'error' => 'Дозволені тільки зображення: jpg, png, gif, webp']);
     exit;
 }
 
-// 3. Шляхи — uploads/ відносно кореня сайту (/var/www/html)
+// 4. Шляхи
 $uploadBase = 'uploads/' . $subFolder . '/';
 $serverPath = __DIR__ . '/' . $uploadBase;
 
-// Створюємо папку якщо немає
 if (!is_dir($serverPath)) {
-    if (!mkdir($serverPath, 0777, true)) {
+    if (!mkdir($serverPath, 0775, true)) {
         echo json_encode(['success' => false, 'error' => 'Не вдалося створити папку: ' . $serverPath]);
         exit;
     }
-    chmod($serverPath, 0777);
 }
 
-// Перевіряємо права на запис
 if (!is_writable($serverPath)) {
     echo json_encode(['success' => false, 'error' => 'Папка недоступна для запису: ' . $serverPath]);
     exit;
@@ -75,30 +73,34 @@ if (!is_writable($serverPath)) {
 
 $fileName   = $subFolder . '_' . $userId . '_' . time() . '.' . $extension;
 $targetFile = $serverPath . $fileName;
-$dbUrl      = $uploadBase . $fileName; // uploads/banners/banners_1_xxx.jpg
+$dbUrl      = $uploadBase . $fileName;
 
-// 4. Переміщення файлу
+// 5. Переміщення файлу
 if (!move_uploaded_file($_FILES[$fileKey]['tmp_name'], $targetFile)) {
-    echo json_encode(['success' => false, 'error' => 'move_uploaded_file не вдався. tmp=' . $_FILES[$fileKey]['tmp_name'] . ' target=' . $targetFile]);
+    echo json_encode(['success' => false, 'error' => 'move_uploaded_file не вдався']);
     exit;
 }
 
 chmod($targetFile, 0644);
 
-// 5. Запис в БД
+// 6. Запис в БД
 try {
-    $pdo = new PDO('mysql:host=my-mysql;dbname=mywebsite;charset=utf8', 'root', 'root', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
+    require_once __DIR__ . '/db_connect.php';
 
+    // Захист: дозволяємо тільки відомі колонки
+    $allowedColumns = ['avatar_url', 'banner_url', 'background_url'];
     $column = $fileKey . '_url';
+    if (!in_array($column, $allowedColumns)) {
+        echo json_encode(['success' => false, 'error' => 'Невідома колонка']);
+        exit;
+    }
+
     $stmt = $pdo->prepare("UPDATE users SET `$column` = ? WHERE id = ?");
     $stmt->execute([$dbUrl, $userId]);
 
     echo json_encode(['success' => true, 'url' => $dbUrl]);
 
 } catch (Exception $e) {
-    // Файл вже завантажено, але БД не вдалось — повідомляємо детально
     echo json_encode(['success' => false, 'error' => 'Файл збережено, але помилка БД: ' . $e->getMessage()]);
 }
 ?>
