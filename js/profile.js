@@ -621,9 +621,32 @@ const av2 = document.getElementById('settings-avatar-img');
 if (av1) av1.src = srcAvatar;
 if (av2) av2.src = srcAvatar;
 window._currentAvatarSrc = srcAvatar;
-setTimeout(() => {
-    if (typeof smSyncUserInfo === 'function') smSyncUserInfo();
-}, 0);
+
+// Sync small avatar previews (settings modal)
+function smSyncUserInfo() {
+    const src = window._currentAvatarSrc;
+    if (!src) return;
+
+    // Large preview circle in settings
+    const previewImg = document.getElementById('sm-avatar-preview-img');
+    const previewLetter = document.getElementById('sm-avatar-preview-letter');
+    if (previewImg) {
+        previewImg.src = src;
+        previewImg.style.display = 'block';
+    }
+    if (previewLetter) previewLetter.style.display = 'none';
+
+    // Mini avatar (header or sidebar)
+    const miniImg = document.getElementById('sm-user-avatar-img');
+    const miniLetter = document.getElementById('sm-user-avatar-letter');
+    if (miniImg) {
+        miniImg.src = src;
+        miniImg.style.display = 'block';
+    }
+    if (miniLetter) miniLetter.style.display = 'none';
+}
+window.smSyncUserInfo = smSyncUserInfo;
+setTimeout(smSyncUserInfo, 0);
 
             // 2. БАНЕР (banner_url)
             let rawBanner = data.banner_url || data.banner;
