@@ -621,6 +621,19 @@ if (data.steam_id && data.steam_id !== "null") {
             if (av1) av1.src = srcAvatar;
             if (av2) { av2.src = srcAvatar; av2.style.display = 'block'; }
 
+            // --- ВИПРАВЛЕННЯ: одразу оновлюємо рожеві кружки в сайдбарі та налаштуваннях ---
+            const isDefault = !rawAvatar || rawAvatar.includes('default_avatar');
+            if (!isDefault) {
+                const smAvatarImg    = document.getElementById('sm-user-avatar-img');
+                const smAvatarLetter = document.getElementById('sm-user-avatar-letter');
+                const smPreviewImg   = document.getElementById('sm-avatar-preview-img');
+                const smPreviewLetter = document.getElementById('sm-avatar-preview-letter');
+                if (smAvatarImg)    { smAvatarImg.src = srcAvatar; smAvatarImg.style.display = 'block'; }
+                if (smAvatarLetter)   smAvatarLetter.style.display = 'none';
+                if (smPreviewImg)   { smPreviewImg.src = srcAvatar; smPreviewImg.style.display = 'block'; }
+                if (smPreviewLetter)  smPreviewLetter.style.display = 'none';
+            }
+
             // 2. БАНЕР (banner_url)
             let rawBanner = data.banner_url || data.banner;
             let bannerPath = fixPath(rawBanner, 'default_banner.png');
@@ -2753,16 +2766,31 @@ async function deleteAvatar() {
         const result = await response.json();
 
         if (result.success) {
-            // 3. МИТТЄВО змінюємо картинки на дефолтні
-            const defaultSrc = "img/default_avatar.png"; // Перевір, чи є у тебе ця картинка в папці img!
-            
+            // 3. МИТТЄВО скидаємо аватар — ховаємо зображення і показуємо літеру
+            const defaultSrc = "img/default_avatar.png";
+            const displayName = document.getElementById('userName')?.textContent.trim() || '';
+            const username    = document.getElementById('userHandle')?.textContent.replace('@','').trim() || '';
+            const letter      = (displayName || username || 'U')[0].toUpperCase();
+
             // Аватар у шапці
             const navAvatar = document.getElementById('top-nav-avatar');
             if (navAvatar) navAvatar.src = defaultSrc;
 
-            // Аватар у налаштуваннях (великий)
-            const settingsAvatar = document.getElementById('sm-avatar-preview-img');
-            if (settingsAvatar) settingsAvatar.src = defaultSrc;
+            // Аватар у налаштуваннях (великий preview img)
+            const settingsAvatar = document.getElementById('settings-avatar-img');
+            if (settingsAvatar) { settingsAvatar.src = defaultSrc; settingsAvatar.style.display = 'none'; }
+
+            // Рожевий кружок mini (сайдбар)
+            const smAvatarImg    = document.getElementById('sm-user-avatar-img');
+            const smAvatarLetter = document.getElementById('sm-user-avatar-letter');
+            if (smAvatarImg)    smAvatarImg.style.display = 'none';
+            if (smAvatarLetter) { smAvatarLetter.textContent = letter; smAvatarLetter.style.display = ''; }
+
+            // Рожевий кружок preview (налаштування)
+            const smPreviewImg    = document.getElementById('sm-avatar-preview-img');
+            const smPreviewLetter = document.getElementById('sm-avatar-preview-letter');
+            if (smPreviewImg)    smPreviewImg.style.display = 'none';
+            if (smPreviewLetter) { smPreviewLetter.textContent = letter; smPreviewLetter.style.display = ''; }
 
             // Аватар у профілі (якщо є)
             const profileAvatar = document.querySelector('.profile-avatar');
