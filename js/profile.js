@@ -620,7 +620,11 @@ if (data.steam_id && data.steam_id !== "null") {
 const av2 = document.getElementById('settings-avatar-img');
 if (av1) av1.src = srcAvatar;
 if (av2) av2.src = srcAvatar;
+// Строка 623-624 — заменить на:
 window._currentAvatarSrc = srcAvatar;
+setTimeout(() => {
+    if (typeof smSyncUserInfo === 'function') smSyncUserInfo();
+}, 0);
 // Вызвать после гарантированной загрузки DOM
 if (typeof smSyncUserInfo === 'function') {
     smSyncUserInfo();
