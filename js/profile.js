@@ -2128,6 +2128,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const file = this.files[0];
             if (file) {
                 console.log("📸 Файл вибрано, починаю завантаження аватара...");
+
+                // ── МИТТЄВИЙ PREVIEW до відповіді сервера ──
+                const localUrl = URL.createObjectURL(file);
+                window._currentAvatarSrc = localUrl;
+
+                const setImg = (id, letterId) => {
+                    const img = document.getElementById(id);
+                    const letter = document.getElementById(letterId);
+                    if (img)    { img.src = localUrl; img.style.display = 'block'; }
+                    if (letter)   letter.style.display = 'none';
+                };
+                setImg('sm-user-avatar-img',   'sm-user-avatar-letter');
+                setImg('sm-avatar-preview-img', 'sm-avatar-preview-letter');
+                setImg('top-nav-avatar',        null);
+                // ────────────────────────────────────────────
+
                 uploadAvatar(file); // Викликаємо нашу функцію завантаження
             }
         });
