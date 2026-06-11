@@ -11,8 +11,8 @@ $host = 'my-mysql';
 // Ім'я бази, яку ми вказали в environment (рядок 20)
 $db   = 'mywebsite';
 // Пароль root, який ми вказали (рядок 19)
-$user = 'root';
-$pass = 'root'; 
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: ''; 
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);

@@ -9,8 +9,8 @@ ini_set('display_errors', 0);
 // --- НАЛАШТУВАННЯ ПІДКЛЮЧЕННЯ (DOCKER) ---
 $host = 'my-mysql';
 $db   = 'mywebsite';
-$user = 'root';
-$pass = 'root';
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';
 
 // 1. СТВОРЮЄМО ФАКТИЧНЕ ПІДКЛЮЧЕННЯ ДО БД
 $conn = new mysqli($host, $user, $pass, $db);

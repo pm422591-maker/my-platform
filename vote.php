@@ -3,7 +3,7 @@ require_once __DIR__ . '/cors_session.php';
 header('Content-Type: application/json; charset=utf-8');
 session_start();
 
-$host = 'my-mysql'; $db = 'mywebsite'; $user = 'root'; $pass = 'root'; 
+$host = 'my-mysql'; $db = 'mywebsite'; $user = getenv('DB_USER') ?: 'appuser'; $pass = getenv('DB_PASS') ?: ''; 
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);

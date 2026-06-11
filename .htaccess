@@ -1,0 +1,48 @@
+# .htaccess — ЗАХИСТ APACHE
+# Розмісти в кореневій папці сайту
+
+# ── Заборона прямого доступу до PHP-бекенду з браузера (якщо фронт і бек на одному домені)
+# ── Захист від перегляду директорій
+Options -Indexes
+
+# ── Заборона виконання PHP у папці uploads (КРИТИЧНО!)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^uploads/.*\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$ - [F,L]
+</IfModule>
+
+# ── Заборона доступу до чутливих файлів
+<FilesMatch "(db_connect\.php|debug_log\.txt|log\.txt|log_steam\.txt|\.env|docker-compose\.yml|Dockerfile|entrypoint\.sh|active_calls\.json)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# ── Заборона доступу до .git
+<DirectoryMatch "^/.git/">
+    Order Allow,Deny
+    Deny from all
+</DirectoryMatch>
+
+# ── Безпечні заголовки
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    
+    # Прибираємо "PHP/8.x" з заголовків
+    Header unset X-Powered-By
+    
+    # HSTS — примусово HTTPS на 1 рік
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+
+# ── Прибираємо версію PHP з заголовків
+<IfModule mod_php.c>
+    php_flag expose_php Off
+</IfModule>
+
+# ── Ліміт розміру тіла запиту
+LimitRequestBody 16777216
+ 

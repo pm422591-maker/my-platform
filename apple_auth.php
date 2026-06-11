@@ -19,8 +19,8 @@ session_start();
 
 $host = 'my-mysql';
 $db   = 'mywebsite';
-$user = 'root';
-$pass = 'root';
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password);

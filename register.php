@@ -1,24 +1,64 @@
 <?php
+// register.php — ЗАХИЩЕНА ВЕРСІЯ
 require_once __DIR__ . '/cors_session.php';
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
+// ── Rate limit: 5 реєстрацій / 10 хвилин на IP
+if (!checkRateLimit('register', 5, 600)) {
+    http_response_code(429);
+    echo json_encode(['success' => false, 'message' => 'Забагато спроб. Зачекайте 10 хвилин.']);
+    exit;
+}
+
 require_once __DIR__ . '/db_connect.php';
 
-$data     = json_decode(file_get_contents('php://input'), true) ?? [];
-$email    = trim($data['email'] ?? '');
-$password = $data['password'] ?? '';
-$inputName = $data['username'] ?? (explode('@', $email)[0]);
-$provider = $data['provider'] ?? 'email';
-$uid      = $data['uid'] ?? $email;
+$data      = json_decode(file_get_contents('php://input'), true) ?? [];
+$email     = trim($data['email'] ?? '');
+$password  = $data['password'] ?? '';
+$inputName = trim($data['username'] ?? (explode('@', $email)[0]));
+$provider  = $data['provider'] ?? 'email';
+$uid       = $data['uid'] ?? $email;
 
-if (!$email) {
-    echo json_encode(['success' => false, 'message' => "Email обов'язковий"]);
+// ── Валідація
+if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(['success' => false, 'message' => "Невірний email"]);
+    exit;
+}
+
+if (strlen($email) > 255) {
+    echo json_encode(['success' => false, 'message' => "Email занадто довгий"]);
+    exit;
+}
+
+// Валідація імені користувача
+$inputName = preg_replace('/[^\p{L}\p{N}_\- ]/u', '', $inputName);
+$inputName = substr(trim($inputName), 0, 30);
+if (strlen($inputName) < 2) {
+    $inputName = 'User' . rand(1000, 9999);
+}
+
+// Для email-реєстрації перевіряємо пароль
+if ($provider === 'email' && !isset($data['isLogin'])) {
+    if (strlen($password) < 8) {
+        echo json_encode(['success' => false, 'message' => 'Пароль мінімум 8 символів']);
+        exit;
+    }
+    if (strlen($password) > 200) {
+        echo json_encode(['success' => false, 'message' => 'Пароль занадто довгий']);
+        exit;
+    }
+}
+
+// ── provider whitelist
+$allowedProviders = ['email', 'google', 'apple', 'roblox', 'steam'];
+if (!in_array($provider, $allowedProviders, true)) {
+    echo json_encode(['success' => false, 'message' => 'Невідомий провайдер']);
     exit;
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, username, password, avatar_url, banner_url FROM users WHERE email = ?");
+    $stmt = $pdo->prepare("SELECT id, username, password, avatar_url, banner_url FROM users WHERE email = ? LIMIT 1");
     $stmt->execute([$email]);
     $existingUser = $stmt->fetch();
 
@@ -28,13 +68,11 @@ try {
         $avatar    = $existingUser['avatar_url'];
         $banner    = $existingUser['banner_url'];
 
-        // Email-реєстрація з вже зайнятою поштою (не логін)
         if ($provider === 'email' && !isset($data['isLogin'])) {
             echo json_encode(['success' => false, 'message' => 'Ця пошта вже зайнята']);
             exit;
         }
 
-        // Email-логін — перевіряємо пароль
         if ($provider === 'email' && isset($data['isLogin'])) {
             if (!password_verify($password, $existingUser['password'])) {
                 echo json_encode(['success' => false, 'message' => 'Невірний пароль']);
@@ -42,18 +80,20 @@ try {
             }
         }
     } else {
-        // Реєстрація нового користувача
         $pdo->beginTransaction();
 
         $hashedPassword = password_hash(
-            $password ?: bin2hex(random_bytes(8)),
-            PASSWORD_DEFAULT
+            $password ?: bin2hex(random_bytes(16)),
+            PASSWORD_BCRYPT,
+            ['cost' => 12]  // вища ціна = більш захищений хеш
         );
 
         $stmt1 = $pdo->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
         $stmt1->execute([$inputName, $email, $hashedPassword]);
-        $userId = $pdo->lastInsertId();
+        $userId = (int)$pdo->lastInsertId();
 
+        // uid обрізаємо до 255 символів
+        $uid = substr($uid, 0, 255);
         $stmt2 = $pdo->prepare("INSERT INTO user_auth (user_id, provider, provider_key) VALUES (?, ?, ?)");
         $stmt2->execute([$userId, $provider, $uid]);
 
@@ -64,7 +104,10 @@ try {
         $banner    = null;
     }
 
-    $_SESSION['user_id']   = $userId;
+    // ── Регенерація session ID
+    session_regenerate_id(true);
+
+    $_SESSION['user_id']   = (int)$userId;
     $_SESSION['user_name'] = $finalName;
     session_write_close();
 
@@ -73,11 +116,11 @@ try {
         'username' => $finalName,
         'avatar'   => $avatar,
         'banner'   => $banner,
-        'email'    => $email,
+        // НЕ повертаємо email у відповіді — не потрібно клієнту
     ]);
 
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
-    echo json_encode(['success' => false, 'message' => 'Помилка: ' . $e->getMessage()]);
+    error_log('Register error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера']);
 }
-?>

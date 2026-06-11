@@ -9,8 +9,8 @@ ini_set('display_errors', 0);
 // --- НАЛАШТУВАННЯ ПІДКЛЮЧЕННЯ (DOCKER) ---
 $host = 'my-mysql';  // БУЛО 'db', СТАЛО 'my-mysql'
 $db   = 'mywebsite'; // Переконайся, що в phpMyAdmin база називається саме так
-$user = 'root';
-$pass = 'root';      // Стандартний пароль
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';      // Стандартний пароль
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass, [

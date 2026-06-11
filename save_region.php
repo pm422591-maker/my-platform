@@ -9,8 +9,8 @@ ini_set('display_errors', 0);
 // --- НАЛАШТУВАННЯ ПІДКЛЮЧЕННЯ (DOCKER) ---
 $host = 'my-mysql'; // В Docker використовуємо назву контейнера, а не 127.0.0.1
 $db   = 'mywebsite'; // Перевір у phpMyAdmin: можливо тут має бути 'gamer_db'?
-$user = 'root';      
-$pass = 'root';      // У Docker пароль зазвичай 'root'
+$user = getenv('DB_USER') ?: 'appuser';      
+$pass = getenv('DB_PASS') ?: '';      // У Docker пароль зазвичай 'root'
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass, [

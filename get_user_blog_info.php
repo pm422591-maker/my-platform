@@ -6,8 +6,8 @@ ini_set('display_errors', 0);
 
 $host = 'my-mysql';
 $db   = 'mywebsite';
-$user = 'root';
-$pass = 'root';
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';
 
 // РОЗУМНА ПЕРЕВІРКА: 
 // 1. Беремо ID з URL (якщо дивимось чужий профіль)

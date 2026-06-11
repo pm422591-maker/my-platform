@@ -9,8 +9,8 @@ ini_set('display_errors', 0);
 // --- НАЛАШТУВАННЯ ПІДКЛЮЧЕННЯ (DOCKER) ---
 $host = 'my-mysql';  // ВИПРАВЛЕНО: було 'db', стало 'my-mysql'
 $db   = 'mywebsite'; // Перевір назву бази
-$user = 'root';
-$pass = 'root';      // Пароль root
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';      // Пароль root
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass, [

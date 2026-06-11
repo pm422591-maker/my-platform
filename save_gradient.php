@@ -5,8 +5,8 @@ header('Content-Type: application/json');
 // --- НАЛАШТУВАННЯ ПІДКЛЮЧЕННЯ (DOCKER) ---
 $host = 'my-mysql';  // Виправлено з 127.0.0.1
 $db   = 'mywebsite'; // Перевір: якщо помилка, спробуй 'gamer_db'
-$user = 'root';
-$pass = 'root';      // Виправлено з "" на "root"
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';      // Виправлено з "" на "root"
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Not authorized']);

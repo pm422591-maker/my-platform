@@ -7,8 +7,8 @@ ini_set('display_errors', 0);
 
 $host = 'my-mysql';
 $db   = 'mywebsite';
-$user = 'root';
-$pass = 'root';
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';
 
 // Отримуємо дані з JavaScript (POST запит)
 $data = json_decode(file_get_contents("php://input"), true);

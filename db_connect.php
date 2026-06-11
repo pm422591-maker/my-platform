@@ -1,11 +1,11 @@
 <?php
-// Ми НЕ викликаємо тут session_start(), бо цей файл будемо інклюдити в інші скрипти
-// Ми НЕ вимикаємо помилки тут (error_reporting), щоб у разі проблем бачити їх у консолі
+// db_connect.php — ЗАХИЩЕНА ВЕРСІЯ
+// Credentials читаються з environment variables, НЕ з коду
 
-$host = 'my-mysql'; // Назва сервісу в Docker
-$db   = 'mywebsite';
-$user = 'root';
-$pass = 'root'; // Згідно з вашим прикладом, тут пароль 'root'
+$host    = getenv('DB_HOST')    ?: 'my-mysql';
+$db      = getenv('DB_NAME')    ?: 'mywebsite';
+$user    = getenv('DB_USER')    ?: 'appuser';      // НЕ root!
+$pass    = getenv('DB_PASS')    ?: '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -19,12 +19,9 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
-    // Якщо підключення не вдалося, віддаємо JSON, щоб JS не "падав"
+    // НІКОЛИ не показуємо деталі помилки клієнту!
+    error_log('DB connection failed: ' . $e->getMessage());
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode([
-        'success' => false, 
-        'message' => 'Помилка підключення: ' . $e->getMessage()
-    ]);
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера. Спробуйте пізніше.']);
     exit;
 }
-?>

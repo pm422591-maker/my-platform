@@ -7,8 +7,8 @@ ini_set('display_errors', 0);
 // --- ЄДИНЕ НАЛАШТУВАННЯ ПІДКЛЮЧЕННЯ ---
 $host = 'my-mysql';
 $db   = 'mywebsite';
-$user = 'root';
-$pass = 'root';
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';
 
 if(isset($_GET['user_id'])) {
     try {

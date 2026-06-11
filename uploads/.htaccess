@@ -1,0 +1,23 @@
+# uploads/.htaccess — ЗАБОРОНА ВИКОНАННЯ БУДЬ-ЯКОГО КОДУ
+# Розмісти в папці uploads/
+
+# Забороняємо виконання PHP та скриптів
+<FilesMatch "\.php$|\.php3$|\.php4$|\.php5$|\.phtml$|\.pl$|\.py$|\.cgi$|\.sh$|\.asp$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Дозволяємо тільки зображення і медіа
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|mp4|webm|avif)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Все інше — забороняємо
+<FilesMatch "^(?!.*\.(jpg|jpeg|png|gif|webp|mp4|webm|avif)$)">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+Options -Indexes -ExecCGI
+AddType text/plain .php .php3 .php4 .php5 .phtml

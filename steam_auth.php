@@ -24,8 +24,8 @@ if (!isset($_SESSION['user_id'])) {
 
 $host = 'my-mysql';
 $db   = 'mywebsite';
-$user = 'root';
-$pass = 'root';
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';
 
 // -------------------------------------------------------
 // 1. Перевіряємо що Steam взагалі повернув дані

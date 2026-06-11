@@ -7,8 +7,8 @@ ini_set('display_errors', 0);
 
 $host = 'my-mysql';
 $db   = 'mywebsite';
-$user = 'root';
-$pass = 'root';
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';
 
 $data = json_decode(file_get_contents("php://input"), true);
 $target_id = isset($data['target_id']) ? (int)$data['target_id'] : 0;

@@ -9,8 +9,8 @@ ini_set('display_errors', 0);
 // --- НАЛАШТУВАННЯ ПІДКЛЮЧЕННЯ (DOCKER) ---
 $host = 'my-mysql';   // Виправлено з 127.0.0.1
 $db   = 'mywebsite';  // Ім'я твоєї бази
-$user = 'root';
-$pass = 'root';       // Пароль для Docker
+$user = getenv('DB_USER') ?: 'appuser';
+$pass = getenv('DB_PASS') ?: '';       // Пароль для Docker
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'Не авторизовано']);

@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
-$host = 'my-mysql'; $db = 'mywebsite'; $user = 'root'; $pass = 'root'; 
+$host = 'my-mysql'; $db = 'mywebsite'; $user = getenv('DB_USER') ?: 'appuser'; $pass = getenv('DB_PASS') ?: ''; 
 
 try {
     // Використовуємо utf8mb4 для підтримки емодзі в текстах!

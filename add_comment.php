@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 session_start();
 if (!isset($_SESSION['user_id'])) die(json_encode(['success' => false, 'message' => 'Login required']));
 
-$host = 'my-mysql'; $db = 'mywebsite'; $user = 'root'; $pass = 'root';
+$host = 'my-mysql'; $db = 'mywebsite'; $user = getenv('DB_USER') ?: 'appuser'; $pass = getenv('DB_PASS') ?: '';
 $data = json_decode(file_get_contents('php://input'), true);
 
 try {

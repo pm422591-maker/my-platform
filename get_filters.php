@@ -3,7 +3,7 @@
 header("Content-Type: application/json");
 session_start();
 
-$host = 'my-mysql'; $db = 'mywebsite'; $user = 'root'; $pass = 'root';
+$host = 'my-mysql'; $db = 'mywebsite'; $user = getenv('DB_USER') ?: 'appuser'; $pass = getenv('DB_PASS') ?: '';
 
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false]);
