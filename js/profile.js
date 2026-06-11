@@ -24,11 +24,7 @@ let lastSeenFollowerId = null;
 // --- ГЛОБАЛЬНІ ФУНКЦІЇ МОДАЛКИ ---
 window.toggleDecoModal = function(show) {
     const modal = document.getElementById('deco-modal');
-    if (modal) {
-        modal.style.display = show ? 'flex' : 'none';
-    } else {
-        console.error("❌ Модалка #deco-modal не знайдена в HTML");
-    }
+    if (modal) modal.style.display = show ? 'flex' : 'none';
 };
 
 // --- ФУНКЦІЯ ПРИКРАСИ (оголошена до DOMContentLoaded, щоб window.applyDecoration була доступна одразу) ---
@@ -101,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Завантаження даних
     loadUserData();
-    handleRobloxCallback();
-    handleSteamCallback();
+    window.handleRobloxCallback();
+    window.handleSteamCallback();
 
     // 5. Сповіщення
     window.loadNotifications();
@@ -303,7 +299,6 @@ function showToastNotification(user) {
 function setLanguage(lang, event) {
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
     if (event && event.target) event.target.classList.add('active');
-    console.log("Мова змінена на:", lang);
 }
 
 // --- ОНЛАЙН СТАТУС ---
@@ -366,7 +361,6 @@ const myGamesLibrary = [
     }
 ];
 
-console.log("✅ profile.js успішно завантажений!");
 // STEAM GAMES LIBRARY ---
 const mySteamLibrary = [
     {
@@ -481,53 +475,16 @@ async function syncRobloxInventoryFromServer(robloxId) {
 }
 
 
-// --- 2. ІНІЦІАЛІЗАЦІЯ ---
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 Скрипт ініціалізовано!");
-
-    const nameInput = document.getElementById('edit-display-name');
-    const topNameBlock = document.getElementById('userName');
-    const bannerInput = document.getElementById('banner-input');
-    const backgroundInput = document.getElementById('background-input');
-    const trigger = document.getElementById('activityTrigger');
-    const grid = document.getElementById('timeGrid');
-
-    // Завантаження даних при старті
-    loadUserData();
-    initTimeGrid(grid);
-
-    // Слухач банера
-    if (bannerInput) {
-        bannerInput.addEventListener('change', function() {
-            if (this.files[0]) uploadBanner(this.files[0]);
-        });
-    }
-
-    // Слухач фону
-    if (backgroundInput) {
-        backgroundInput.addEventListener('change', function() {
-            if (this.files[0]) uploadBackground({ files: this.files });
-        });
-    }
-
-    // Roblox OAuth обробляється в DOMContentLoaded головного блоку
-
-    // Оновлення статусу кожну хвилину
-    setInterval(checkStatus, 60000);
-});
 // --- ФУНКЦІЇ ПРОФІЛЮ ---
 async function loadUserData() {
-    console.log("🔄 Завантаження даних профілю...");
-    
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('id');
     const fetchUrl = userId ? `get_user.php?id=${userId}` : 'get_user.php';
 
     try {
         const response = await fetch(fetchUrl, { credentials: 'include' });
-        const text = await response.text(); // Зчитуємо як текст спочатку
-        console.log("Отримано від сервера:", text); // Дивимось, що там (JSON чи помилка)
-        const data = JSON.parse(text); // Потім перетворюємо на об'єкт
+        const text = await response.text();
+        const data = JSON.parse(text);
 
         if (data.success) {
             window._profileData = data; // Store for premium check
@@ -578,7 +535,6 @@ async function loadUserData() {
 }
 
             if (isRobloxLinked || isSteamLinked) {
-                console.log("✅ Знайдено підключені ігрові акаунти");
                 
                 if (selectedItems.length > 0) {
                     displayRobloxData({ stats: selectedItems });
@@ -625,9 +581,6 @@ async function loadUserData() {
 
 // === РОБОТА ЗІ STEAM ===
 if (data.steam_id && data.steam_id !== "null") {
-    console.log("🚂 Знайдено Steam ID:", data.steam_id);
-    
-    // ДОДАЄМО ГЛОБАЛЬНИЙ ФЛАГ
     window.isSteamConnected = true; 
     
     const steamBtn = document.getElementById('btn-steam-auth');
@@ -795,7 +748,6 @@ const activityTrigger = document.getElementById('activityTrigger'); // Блок,
 const isOwner = (data.is_own_profile === true || data.is_own_profile === "true");
 
 if (isOwner) {
-    console.log("🛠️ Режим власника");
     if (editBtn) editBtn.style.setProperty('display', 'inline-flex', 'important');
     if (visitorBlock) visitorBlock.style.setProperty('display', 'none', 'important');
     
@@ -809,7 +761,6 @@ if (isOwner) {
     if (activityTrigger) activityTrigger.style.cursor = 'pointer';
 
 } else {
-    console.log("👤 Режим відвідувача");
     if (editBtn) editBtn.style.setProperty('display', 'none', 'important');
     if (visitorBlock) visitorBlock.style.setProperty('display', 'flex', 'important');
     
@@ -1075,9 +1026,6 @@ window.linkPlatform = function(platform) {
 
 // 2. Формуємо URL та відправляємо користувача на сторінку логіну Steam
 window.startSteamAuth = function() {
-    console.log("🚂 Запуск авторизації Steam...");
-    
-    // ЗАПОМИНАЕМ, что нужно открыть настройки после возврата
     try { localStorage.setItem('reopen_integrations', 'true'); } catch(_) {}
 
     const realm = window.location.origin; 
@@ -1099,8 +1047,6 @@ window.handleSteamCallback = async function() {
     const urlParams = new URLSearchParams(window.location.search);
 
     if (urlParams.has('openid.mode') && urlParams.get('openid.mode') === 'id_res') {
-        console.log("🔄 Отримано дані від Steam, перевірка на сервері...");
-        
         const steamQueryString = window.location.search;
         window.history.replaceState({}, document.title, window.location.pathname);
 
@@ -1113,9 +1059,6 @@ window.handleSteamCallback = async function() {
             const result = await response.json();
 
             if (result.success) {
-                console.log("✅ Steam підключено!");
-                
-                // Проверяем игры
                 if (typeof window.checkSteamGamesOwnership === 'function') {
                     window.checkSteamGamesOwnership(result.steam_id);
                 }
@@ -1156,46 +1099,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-window.toggleDecoModal = function(show) {
-    const modal = document.getElementById('deco-modal');
-    if (modal) modal.style.display = show ? 'flex' : 'none';
-};
-
-async function handleRobloxCallback() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    if (code) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        console.log("🔄 Отримано код Roblox, обмін на токен...");
-        // FIX: викликаємо реальну авторизацію замість простого console.log
-        if (typeof window.exchangeCodeForData === 'function') {
-            await window.exchangeCodeForData(code);
-        } else {
-            console.error("❌ exchangeCodeForData не знайдено — перевір порядок скриптів");
-        }
-    }
-}
+// toggleDecoModal оголошено вгорі файлу
+// handleRobloxCallback оголошено нижче як window.handleRobloxCallback
 // updateUserName видалено — замінено на smSaveDisplayName() в profile.html
-
-// Прив'язуємо функцію до кнопки після завантаження сторінки
-document.addEventListener('DOMContentLoaded', () => {
-    // save-name-btn тепер має onclick="smSaveDisplayName()" напряму в HTML
-
-    const modal = document.getElementById('deco-modal');
-    if (modal) {
-        const items = modal.querySelectorAll('.deco-item');
-        items.forEach(item => {
-            const v = item.querySelector('video');
-            item.onmouseenter = () => v.play();
-            item.onmouseleave = () => {
-                v.pause();
-                v.currentTime = 0;
-            };
-        });
-    }
-});
-// Запуск при повному завантаженні сторінки
-window.addEventListener('load', loadUserData);
+// Запуск при повному завантаженні сторінки — вже викликається в DOMContentLoaded
 
 async function saveBioToServer(text) {
     try {
@@ -1207,7 +1114,6 @@ async function saveBioToServer(text) {
         });
         const result = await res.json();
         if (result.success) {
-            console.log("✅ Біо успішно збережено в БД");
             return true;
         }
         return false;
@@ -1243,7 +1149,6 @@ window.exchangeCodeForData = async function(authCode) {
             });
 
             // 2. Фонова синхронізація інвентаря
-            console.log("⏳ Починаю фонову синхронізацію інвентаря...");
             const syncRes = await fetch('sync_roblox_assets.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1253,10 +1158,8 @@ window.exchangeCodeForData = async function(authCode) {
             const syncData = await syncRes.json();
 
             if (syncData.success) {
-                console.log("✅ Інвентар синхронізовано!", syncData.owned);
                 loadUserData();
             } else {
-                console.warn("⚠️ Синхронізація не вдалася:", syncData.message, syncData.errors || []);
                 loadUserData(); // Все одно оновлюємо профіль
             }
         } else {
@@ -1272,36 +1175,27 @@ async function checkAssetsOwnership(userId) {
     const loadingText = document.querySelector('.status-text');
     if (loadingText) loadingText.innerText = "⏳ Перевірка інвентаря Roblox...";
 
-    console.log("🎒 Починаємо перевірку речей через наш сервер...");
-
-    // Перевіряємо кожну гру
     for (let game of myGamesLibrary) {
-        // Перевіряємо кожну річ
         for (let mode of game.modes) {
-            mode.owned = false; // За замовчуванням речі немає
+            mode.owned = false;
             
             try {
                 const assetType = mode.type === 'pass' ? 'GamePass' : 'Badge';
-                
-                // Звертаємося до НАШОГО PHP-файлу замість сторонніх проксі
                 const url = `check_roblox_assets.php?user_id=${userId}&type=${assetType}&id=${mode.id}`;
                 const res = await fetch(url);
                 
                 if (res.ok) {
                     const data = await res.json();
-                    // Якщо Roblox повернув масив data і він не порожній - річ є!
                     if (data && (data.owned === true || (data.data && data.data.length > 0))) {
                         mode.owned = true; 
-                        console.log(`✅ Знайдено: ${mode.name}`);
                     }
                 }
             } catch (e) {
-                console.warn(`❌ Помилка перевірки ${mode.id}`);
+                // silent
             }
         }
     }
 
-    console.log("✅ Всі перевірки інвентаря завершено!");
     if (loadingText) loadingText.innerText = "Підключено!";
 }
 
@@ -1370,7 +1264,6 @@ window.loadMainLibrary = function() {
 // Виносимо цю функцію на самий верхній рівень файлу
 // 1. Обов'язково оголоси цю змінну на самому початку файлу profile.js
 window.openGameModes = function(gameName) {
-    console.log("📂 Відкриваю гру:", gameName);
     const grid = document.getElementById('media-grid');
     const title = document.getElementById('modal-games-main-title');
     const backBtn = document.getElementById('modal-back-button');
@@ -1516,7 +1409,6 @@ window.toggleModeSelection = function(gameName, mode, isSelecting) {
     } else {
         selectedItems = selectedItems.filter(i => normalizeAssetId(i.id) !== normalizeAssetId(mode.id));
     }
-    console.log("📦 Поточні вибрані речі:", selectedItems);
 };
 
 
@@ -1528,7 +1420,6 @@ function closeEditor() {
 
 // --- ГЛОБАЛЬНА НАВІГАЦІЯ ---
 window.switchEditorTab = function(tabName) {
-    console.log("📂 Перехід до вкладки:", tabName);
     const tabMap = { 'profile':'profile', 'design':'appearance', 'integrations':'integrations', 'devices':'security', 'appearance':'appearance', 'language':'appearance', 'voice':'appearance' };
     const newTab = tabMap[tabName] || tabName;
     if (typeof smSwitchTabById === 'function') {
@@ -1541,7 +1432,6 @@ window.switchEditorTab = function(tabName) {
 };
 
 window.openIntegrationsTab = function() {
-    console.log("🔗 Виклик openIntegrationsTab...");
     const overlay = document.getElementById('settingsOverlay');
     if (overlay) overlay.classList.add('active');
 
@@ -1738,7 +1628,6 @@ function renderLists() {
 // Логика выбора ОДНОЙ страны (радио-кнопка)
 function selectCountry(code) {
     selectedCountry = code; // Записываем в глобальную переменную
-    console.log("Выбрана страна:", selectedCountry);
     renderLists(); // Перерисовываем, чтобы появилась подсветка
 }
 // Логика выбора НЕСКОЛЬКИХ языков (чекбокс)
@@ -1773,7 +1662,6 @@ async function saveRegionSettings() {
         languages: selectedLanguages.join(',') // "UA,EN"
     };
 
-    console.log("💾 Отправка на сервер:", payload);
 
     try {
         const response = await fetch('save_region.php', {
@@ -1850,7 +1738,6 @@ async function saveTime() {
         checkStatus(); // Оновлюємо іконку (💤 або 🎮)
 
         // 2. ВІДПРАВКА НА СЕРВЕР (Цього не вистачало!)
-        console.log("💾 Зберігаю час активності:", startHour, endHour);
 
         try {
             const response = await fetch('update_status.php', {
@@ -1866,7 +1753,6 @@ async function saveTime() {
             const result = await response.json();
             
             if (result.success) {
-                console.log("✅ Час успішно записано в БД!");
             } else {
                 console.error("Помилка сервера:", result.message);
             }
@@ -1919,10 +1805,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-// Обновляем статус каждую минуту
-setInterval(checkStatus, 60000);
-
 
 // Функція для отримання імені з Бази Даних (PHP)
 
@@ -2007,7 +1889,6 @@ async function updateDisplayName() {
     }
 
     try {
-        console.log("📤 Відправляю ім'я:", newName);
 
         // [ВИПРАВЛЕНО] 
         // 1. Правильне ім'я файлу (як ми створювали раніше)
@@ -2082,8 +1963,7 @@ async function uploadAvatar(file) {
         }
 
         if (data.success) {
-            console.log('✅ Аватар успішно збережено!');
-            await loadUserData();
+                await loadUserData();
         } else {
             alert('Помилка: ' + data.error);
         }
@@ -2102,8 +1982,7 @@ document.addEventListener('DOMContentLoaded', () => {
         avatarInput.addEventListener('change', function() {
             const file = this.files[0];
             if (file) {
-                console.log("📸 Файл вибрано, починаю завантаження аватара...");
-                uploadAvatar(file); // Викликаємо нашу функцію завантаження
+                    uploadAvatar(file); // Викликаємо нашу функцію завантаження
             }
         });
     }
@@ -2137,8 +2016,7 @@ async function uploadBanner(file) {
         }
 
         if (data.success) {
-            console.log('✅ Банер оновлено в БД');
-            await loadUserData();
+                await loadUserData();
         } else {
             alert('Помилка: ' + data.error);
         }
@@ -2159,7 +2037,6 @@ async function directUpload(inputElement) {
     const statusText = document.getElementById('upload-status-text');
     if (statusText) statusText.innerText = "⏳ Завантаження...";
     
-    console.log("📤 Відправка файлу:", file.name);
 
     const formData = new FormData();
     formData.append('banner', file);
@@ -2173,7 +2050,6 @@ async function directUpload(inputElement) {
         });
 
         const data = await response.json();
-        console.log("📥 Відповідь сервера:", data);
 
         if (data.success) {
             if (statusText) statusText.innerText = "✅ Готово!";
@@ -2184,7 +2060,6 @@ async function directUpload(inputElement) {
             let finalUrl = data.url;
             finalUrl += (finalUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
 
-            console.log("🔗 Нова адреса банера:", finalUrl);
 
             // 1. Оновлюємо фон банера (використовуємо твій ID)
             const profileCard = document.getElementById('profile-banner-bg');
@@ -2243,8 +2118,7 @@ async function uploadBackground(inputElement) {
         }
 
         if (data.success) {
-            console.log('✅ Фон оновлено в БД');
-            await loadUserData();
+                await loadUserData();
         } else {
             alert('Помилка: ' + data.error);
         }
@@ -2563,7 +2437,6 @@ function toggleBadge(element) {
 }
 
 async function saveBadgesSelection() {
-    console.log("💾 Починаємо збереження бейджів...");
 
     const badgeItems = document.querySelectorAll('.badge-item');
     let selectedBadges = [];
@@ -2576,7 +2449,6 @@ async function saveBadgesSelection() {
         }
     });
 
-    console.log("Масив для відправки:", selectedBadges);
 
     // 1. Спочатку оновлюємо вигляд на сторінці (щоб було миттєво)
     renderBadgesOnProfile(selectedBadges);
@@ -2596,7 +2468,6 @@ async function saveBadgesSelection() {
         const result = await response.json();
         
         if (result.success) {
-            console.log("✅ Успішно збережено в базі:", result.saved);
         } else {
             console.error("❌ Помилка сервера:", result.message);
             alert("Помилка збереження: " + result.message);
@@ -2933,40 +2804,6 @@ function displayRobloxData(data) {
         container.appendChild(gameCard);
     }
 }
-function initProfile() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetId = urlParams.get('id');
-    if (!targetId) return;
-    
-    fetch(`get_profile_data.php?id=${targetId}`, { credentials: 'include' })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const elFollowers = document.getElementById('followers-count');
-                const elFollowing = document.getElementById('following-count');
-                const elRep = document.getElementById('reputation-val');
-                const subBtn = document.querySelector('.subscribe-btn');
-
-                if (elFollowers) elFollowers.innerText = data.followers_count || 0;
-                if (elFollowing) elFollowing.innerText = data.following_count || 0;
-                if (elRep) elRep.innerText = data.reputation || 0;
-
-                if (subBtn) {
-                    if (data.is_own_profile) {
-                        subBtn.style.display = 'none';
-                    } else {
-                        if (data.is_following) {
-                            subBtn.classList.add('active');
-                            subBtn.querySelector('span').innerText = 'Відписатися';
-                        } else {
-                            subBtn.classList.remove('active');
-                            subBtn.querySelector('span').innerText = 'Підписатися';
-                        }
-                    }
-                }
-            }
-        }).catch(err => console.error("Помилка ініціалізації профілю:", err));
-}
 
 async function checkChatAccess() {
     // Отримуємо ID користувача, чий профіль ми відвідали, з URL
@@ -2993,7 +2830,6 @@ async function checkChatAccess() {
 }
 
 window.startRobloxAuth = function() {
-    console.log("🚀 Запуск авторизації Roblox...");
     const authUrl = `https://apis.roblox.com/oauth/v1/authorize?` + 
                     `client_id=${clientId}&` +
                     `redirect_uri=${encodeURIComponent(redirectUri)}&` +
@@ -3007,13 +2843,8 @@ window.handleRobloxCallback = async function() {
     const code = urlParams.get('code');
 
     if (code) {
-        // Видаляємо код з URL відразу, щоб при рефреші не було повтору
         window.history.replaceState({}, document.title, window.location.pathname);
-        
-        console.log("🔄 Обмін коду на дані...");
         await window.exchangeCodeForData(code);
-        
-        // Після успішної авторизації - примусово оновити дані
         await loadUserData(); 
     }
 };
@@ -3040,7 +2871,6 @@ async function confirmSelection() {
             
             // Оновлюємо локальну копію
             localStorage.setItem('roblox_user', JSON.stringify({stats: selectedItems}));
-            console.log("✅ Збережено в БД та оновлено візуально");
         } else {
             // ДОДАНО: Якщо БД не зберегла, ми побачимо чому!
             alert("❌ Помилка БД: " + result.message);
@@ -3051,25 +2881,15 @@ async function confirmSelection() {
 }
 
 window.checkSteamGamesOwnership = async function(steamId) {
-    console.log("🎮 Начинаю детальную проверку библиотеки Steam для ID:", steamId);
-    
     try {
         const response = await fetch(`check_steam_games.php?steam_id=${steamId}`);
         const result = await response.json();
 
-        if (result.private) {
-            console.warn(result.message || "Steam did not return owned games.");
-        }
-
         if (result.success && result.owned_games) {
-            console.log("--- [РЕЗУЛЬТАТЫ ПРОВЕРКИ STEAM] ---");
             let foundCount = 0;
 
             mySteamLibrary.forEach(game => {
                 const appIdStr = String(game.appId);
-                
-                // ШУКАЄМО ГРУ: Тепер очікуємо, що owned_games - це масив об'єктів {appid, playtime_forever}
-                // (Але залишаємо сумісність, якщо сервер віддасть просто масив ID)
                 const steamGameData = result.owned_games.find(g => 
                     String(g.appid || g) === appIdStr
                 );
@@ -3077,32 +2897,21 @@ window.checkSteamGamesOwnership = async function(steamId) {
                 if (steamGameData) {
                     game.owned = true;
                     foundCount++;
-
-                    // РОЗРАХУНОК ГОДИН (playtime_forever повертається Steam у хвилинах)
                     const playtime = steamGameData.playtime_forever ?? steamGameData.playtime ?? 0;
                     const hours = Math.floor(Number(playtime) / 60);
-
-                    // ОНОВЛЮЄМО ТЕКСТ (Замість "Гра в бібліотеці" пишемо години)
                     if (game.modes && game.modes.length > 0) {
                         game.modes[0].name = `${hours} год. зіграно`;
                         game.modes[0].owned = true;
                     }
-
-                    console.log(`✅ Найдено: ${game.name} (${hours} часов)`);
-                    
                     const steamModeId = "steam_" + appIdStr;
                     if (!userInventoryFromDB.some(item => String(item.id) === steamModeId)) {
                         userInventoryFromDB.push({ id: steamModeId, owned: true, type: 'steam', game: game.name });
                     }
                 } else {
-                    console.warn(`❌ Игра не найдена: ${game.name}`);
                     game.owned = false;
                     if (game.modes && game.modes[0]) game.modes[0].owned = false;
                 }
             });
-
-            console.log(`-----------------------------------`);
-            console.log(`Итого найдено игр: ${foundCount} из ${mySteamLibrary.length}`);
 
             const modal = document.getElementById('games-modal');
             if (modal && modal.classList.contains('active')) {
@@ -3110,10 +2919,8 @@ window.checkSteamGamesOwnership = async function(steamId) {
                     window.loadMainLibrary(); 
                 }
             }
-        } else {
-            console.error("❌ Steam API не вернул список игр.");
         }
     } catch (err) {
-        console.error("❌ Ошибка (Steam Check):", err);
+        console.error("Помилка перевірки Steam:", err);
     }
 };
