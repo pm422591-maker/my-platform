@@ -1,5 +1,5 @@
 <?php
-// 1. Налаштування CORS (дуже важливо для сесій!)
+// save_post.php — ВИПРАВЛЕНА ВЕРСІЯ
 require_once __DIR__ . '/cors_session.php';
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -10,66 +10,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 session_start();
 header('Content-Type: application/json; charset=utf-8');
 
-$host = 'my-mysql'; $db = 'mywebsite'; $user = getenv('DB_USER') ?: 'appuser'; $pass = getenv('DB_PASS') ?: ''; 
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Не авторизовано']);
+    exit;
+}
+
+// ── Rate limit для постів
+if (!checkRateLimit('save_post', 10, 60)) {
+    http_response_code(429);
+    echo json_encode(['success' => false, 'message' => 'Забагато постів. Зачекайте хвилину.']);
+    exit;
+}
+
+require_once __DIR__ . '/db_connect.php';
+
+$userId = (int)$_SESSION['user_id'];
 
 try {
-    // Використовуємо utf8mb4 для підтримки емодзі в текстах!
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
-
     $data = json_decode(file_get_contents("php://input"), true);
-    
-    // ПЕРЕВІРКА СЕСІЇ: беремо ID суворо як число
-    $userId = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
-
-    if (!$userId) {
-        echo json_encode(['success' => false, 'message' => 'Помилка: Ви не авторизовані. Сесія не знайдена.']);
+    if (!$data) {
+        echo json_encode(['success' => false, 'message' => 'Немає даних']);
         exit;
     }
 
-    if ($data) {
-        // ✨ ОНОВЛЕНО: додано нові колонки замість filter_style
-        $sql = "INSERT INTO posts 
-                (user_id, author_name, avatar_url, post_image, title, body, group_name, post_type, 
-                 song_title, song_artist, song_img, song_url, mention_user, 
-                 filter_age, filter_comm, filter_level, filter_lang, post_color) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    // ── Валідація та обрізка всіх рядкових полів
+    $title     = mb_substr(trim($data['title'] ?? ''), 0, 200);
+    $body      = mb_substr(trim($data['body'] ?? ''), 0, 5000);
+    $group     = mb_substr(trim($data['group'] ?? 'all'), 0, 50);
+    $type      = mb_substr(trim($data['type'] ?? 'default'), 0, 30);
+    $mention   = isset($data['mention']) ? mb_substr(trim($data['mention']), 0, 50) : null;
+    $songTitle  = isset($data['songTitle'])  ? mb_substr(trim($data['songTitle']), 0, 200) : null;
+    $songArtist = isset($data['songArtist']) ? mb_substr(trim($data['songArtist']), 0, 200) : null;
+    $songImg    = isset($data['songImg'])    ? mb_substr(trim($data['songImg']), 0, 500) : null;
+    $songUrl    = isset($data['songUrl'])    ? mb_substr(trim($data['songUrl']), 0, 500) : null;
 
-        $stmt = $pdo->prepare($sql);
+    // Whitelist для фільтрів
+    $allowedAges  = ['any', '13+', '16+', '18+'];
+    $allowedComms = ['any', 'casual', 'serious'];
+    $allowedLevels = ['any', 'beginner', 'intermediate', 'advanced'];
+    $allowedColors = ['pink', 'blue', 'green', 'purple', 'orange', 'red', 'yellow'];
 
-        // Виконуємо запит
-        $stmt->execute([
-            $userId,                       // Вже точно число, не порожньо!
-            $data['author'] ?? 'Анонім',
-            $data['avatar'] ?? 'img/default_avatar.png',
-            $data['image'] ?? null,        // Твоє фото в Base64
-            $data['title'] ?? '',
-            $data['body'] ?? '',
-            $data['group'] ?? 'all',
-            $data['type'] ?? 'default',
-            $data['songTitle'] ?? null,
-            $data['songArtist'] ?? null,
-            $data['songImg'] ?? null,
-            $data['songUrl'] ?? null,
-            $data['mention'] ?? null,
-            
-            // ✨ ОНОВЛЕНО: беремо нові ключі з JSON, які ми надсилаємо з JS
-            $data['filter_age'] ?? 'any',
-            $data['filter_comm'] ?? 'any',
-            $data['filter_level'] ?? 'any',
-            $data['filter_lang'] ?? 'any',
-            
-            $data['color'] ?? 'pink'
-        ]);
+    $filter_age  = in_array($data['filter_age'] ?? '', $allowedAges, true)   ? $data['filter_age']  : 'any';
+    $filter_comm = in_array($data['filter_comm'] ?? '', $allowedComms, true)  ? $data['filter_comm'] : 'any';
+    $filter_level = in_array($data['filter_level'] ?? '', $allowedLevels, true) ? $data['filter_level'] : 'any';
+    $filter_lang = mb_substr(trim($data['filter_lang'] ?? 'any'), 0, 10);
+    $color       = in_array($data['color'] ?? '', $allowedColors, true) ? $data['color'] : 'pink';
 
-        echo json_encode(['success' => true, 'post_id' => $pdo->lastInsertId()]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Немає даних для збереження']);
+    // ── КРИТИЧНО: НЕ зберігаємо Base64 зображення в БД!
+    // Base64 картинки в БД — це неправильно: роздуває базу, уповільнює запити.
+    // Замість цього post_image має бути URL до файлу в uploads/.
+    // Якщо image передається як Base64 — ігноруємо або обробляємо окремо.
+    $post_image = null;
+    if (!empty($data['image'])) {
+        $imgVal = $data['image'];
+        // Якщо це URL (не Base64) — зберігаємо
+        if (!str_starts_with($imgVal, 'data:')) {
+            $post_image = mb_substr($imgVal, 0, 500);
+        }
+        // Base64 — ігноруємо. Для завантаження зображень використовуй окремий upload endpoint.
     }
 
+    // Отримуємо реальні дані автора з БД (не довіряємо даним від клієнта!)
+    $stmtUser = $pdo->prepare("SELECT username, avatar_url FROM users WHERE id = ?");
+    $stmtUser->execute([$userId]);
+    $userRow = $stmtUser->fetch();
+    $authorName = $userRow['username'] ?? 'Анонім';
+    $avatarUrl  = $userRow['avatar_url'] ?? 'img/default_avatar.png';
+
+    $sql = "INSERT INTO posts 
+            (user_id, author_name, avatar_url, post_image, title, body, group_name, post_type, 
+             song_title, song_artist, song_img, song_url, mention_user, 
+             filter_age, filter_comm, filter_level, filter_lang, post_color) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $userId,
+        $authorName, // З БД, не від клієнта!
+        $avatarUrl,  // З БД, не від клієнта!
+        $post_image,
+        $title,
+        $body,
+        $group,
+        $type,
+        $songTitle,
+        $songArtist,
+        $songImg,
+        $songUrl,
+        $mention,
+        $filter_age,
+        $filter_comm,
+        $filter_level,
+        $filter_lang,
+        $color,
+    ]);
+
+    echo json_encode(['success' => true, 'post_id' => (int)$pdo->lastInsertId()]);
+
 } catch (Exception $e) {
+    error_log('Save post error: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Помилка БД: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера']);
 }
-?>
