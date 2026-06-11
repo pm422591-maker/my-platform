@@ -617,6 +617,17 @@ if (av1) av1.src = srcAvatar;
 if (av2) av2.src = srcAvatar;
 window._currentAvatarSrc = srcAvatar;
 
+            // Load avatar frame
+            if (data.avatar_frame) {
+              window._currentAvatarFrame = data.avatar_frame;
+              window._selectedAvatarFrame = data.avatar_frame;
+              if (typeof applyAvatarFrameToUI === 'function') applyAvatarFrameToUI(data.avatar_frame);
+              // Mark selected frame in grid
+              document.querySelectorAll('#avatar-frame-grid .sm-frame-item').forEach(function(item) {
+                item.classList.toggle('selected', item.dataset.frame === data.avatar_frame);
+              });
+            }
+
 // Sync avatar previews in settings modal — called after avatar changes
 function smSyncUserInfo() {
     const src = window._currentAvatarSrc;

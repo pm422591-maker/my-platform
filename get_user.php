@@ -25,7 +25,7 @@ try {
     if ($targetId) {
         $isOwnProfile = ($currentUserId && $targetId == $currentUserId);
 
-        $sql = "SELECT username, `user`, avatar_url, banner_url, background_url, created_at, bio, country_code, languages_icons, secondary_email, grad_color_left, grad_color_right, status_start_hour, status_end_hour, status_last_updated, badges, roblox_id, roblox_data, roblox_inventory, steam_id, premium_until FROM users WHERE id = ?";
+        $sql = "SELECT username, `user`, avatar_url, banner_url, background_url, avatar_frame, created_at, bio, country_code, languages_icons, secondary_email, grad_color_left, grad_color_right, status_start_hour, status_end_hour, status_last_updated, badges, roblox_id, roblox_data, roblox_inventory, steam_id, premium_until FROM users WHERE id = ?";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$targetId]);
@@ -74,6 +74,7 @@ try {
                 'user'               => $res['user'],
                 'created_at'         => $res['created_at'],
                 'avatar_url'         => $res['avatar_url'],
+                'avatar_frame'       => $res['avatar_frame'] ?? '',
                 'banner_url'         => $res['banner_url'],
                 'background_url'     => $res['background_url'],
                 'bio'                => $res['bio'],
