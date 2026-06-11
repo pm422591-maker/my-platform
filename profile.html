@@ -146,7 +146,7 @@
         <span id="userName">Завантаження...</span>
     </div>
 
-    <div id="userHandle" class="user-handle-text" style="font-size: 13px; color: #666; margin-top: -2px; margin-bottom: 4px;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">@username</div>
+    <div id="userHandle" class="user-handle-text" style="font-size: 13px; color: #666; margin-top: -2px; margin-bottom: 4px; font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">@username</div>
 
     <div style="display: flex; align-items: center; gap: 10px; pointer-events: none;">
     
@@ -157,7 +157,6 @@
 </div>
 
         <div id="userBioDisplay" class="user-bio-display" style="min-height: 20px; gap: 20px;">
-            гшрврашруа...
         </div>
         <div style="height: 20px; min-height: 20px;"></div>
 
@@ -196,7 +195,7 @@
     <span>Редагувати профіль</span>
 </button>
 
-    <div id="visitor-actions" style="display: none; gap: 8px;">
+    <div id="visitor-actions" style="display: none; gap: 8px; align-items: center;">
         <button class="settings-btn subscribe-btn" onclick="followUser()">
             <span>Підписатися</span>
         </button>
@@ -470,7 +469,7 @@
                 <div class="sm-platform-name">Steam</div>
                 <div class="sm-platform-status" id="sm-steam-status">Не підключено</div>
               </div>
-              <button class="sm-connect-btn" id="btn-steam-auth-sm" onclick="document.getElementById('btn-steam-auth') && document.getElementById('btn-steam-auth').click()">Підключити</button>
+              <button class="sm-connect-btn" id="btn-steam-auth-sm" onclick="var b = document.getElementById('btn-steam-auth'); if(b) b.click();">Підключити</button>
             </div>
             <div class="sm-platform-row">
               <div class="sm-platform-icon roblox">
@@ -490,7 +489,7 @@
                 <div class="sm-platform-name">Epic Games</div>
                 <div class="sm-platform-status">Не підключено</div>
               </div>
-              <button class="sm-connect-btn" onclick="linkPlatform && linkPlatform('Epic Games')">Підключити</button>
+              <button class="sm-connect-btn" onclick="if(typeof linkPlatform === 'function') linkPlatform('Epic Games')">Підключити</button>
             </div>
           </div>
         </div>
@@ -692,12 +691,11 @@ function smSwitchToEditorTab(tabName) {
   const tabMap = { 'profile': 'profile', 'design': 'appearance', 'integrations': 'integrations' };
   const target = tabMap[tabName] || tabName;
   smSwitchTabById(target);
-  // Підсвітити потрібний пункт бокового меню
+  // Highlight the correct sidebar nav item
   document.querySelectorAll('.sm-nav-item').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + target + "'")) {
-      btn.classList.add('active');
-    }
+    const onclickAttr = btn.getAttribute('onclick') || '';
+    const isActive = onclickAttr.includes("'" + target + "'") || onclickAttr.includes('"' + target + '"');
+    btn.classList.toggle('active', isActive);
   });
 }
 
@@ -797,6 +795,7 @@ async function smSaveDisplayName() {
       body: JSON.stringify({ new_name: newName }),
       credentials: 'include'
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.success) {
       // Оновити шапку профілю
@@ -828,6 +827,7 @@ async function smSaveUsername() {
       body: JSON.stringify({ username: newName }),
       credentials: 'include'
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.success) {
       const handleEl = document.getElementById('userHandle');
@@ -848,7 +848,7 @@ async function smSaveBio() {
   const text  = input ? input.value.trim() : '';
 
   if (typeof saveBioToServer !== 'function') {
-    smShowToast('Помилка: скрипт не завантажено, оновіть сторінку');
+    smShowToast('Помилка: скрипт не завантажено — оновіть сторінку');
     return;
   }
 
@@ -870,21 +870,25 @@ async function smSaveBio() {
 }
 
 async function smSaveBirthday() {
-  const day   = document.getElementById('birth-day')   ? document.getElementById('birth-day').value   : '';
-  const month = document.getElementById('birth-month') ? document.getElementById('birth-month').value : '';
-  const year  = document.getElementById('birth-year')  ? document.getElementById('birth-year').value  : '';
+  const day   = document.getElementById('birth-day')   ? parseInt(document.getElementById('birth-day').value)   : 0;
+  const month = document.getElementById('birth-month') ? parseInt(document.getElementById('birth-month').value) : 0;
+  const year  = document.getElementById('birth-year')  ? parseInt(document.getElementById('birth-year').value)  : 0;
   const btn   = document.getElementById('btn-save-birthday');
 
   if (!day || !month || !year) { smShowToast('Заповніть всі поля дати'); return; }
+  if (day < 1 || day > 31)     { smShowToast('Невірний день (1–31)'); return; }
+  if (month < 1 || month > 12) { smShowToast('Невірний місяць (1–12)'); return; }
+  if (year < 1900 || year > new Date().getFullYear()) { smShowToast('Невірний рік'); return; }
 
   const orig = btn.textContent; btn.textContent = 'Збереження...'; btn.disabled = true;
   try {
     const res  = await fetch('update_birthday.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ day: parseInt(day), month: parseInt(month), year: parseInt(year) }),
+      body: JSON.stringify({ day, month, year }),
       credentials: 'include'
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.success) {
       smShowToast('Дату народження збережено ✓');
@@ -900,7 +904,8 @@ async function smSaveEmail() {
   const btn   = document.getElementById('btn-save-email');
   const email = input ? input.value.trim() : '';
 
-  if (!email || !email.includes('@')) { smShowToast('Введіть коректну пошту'); return; }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) { smShowToast('Введіть коректну пошту'); return; }
 
   const orig = btn.textContent; btn.textContent = 'Збереження...'; btn.disabled = true;
   try {
@@ -910,9 +915,10 @@ async function smSaveEmail() {
       body: JSON.stringify({ email }),
       credentials: 'include'
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.success) {
-      localStorage.setItem('user_secondary_email', email);
+      try { localStorage.setItem('user_secondary_email', email); } catch(_) {}
       if (window._profileData) window._profileData.secondary_email = email;
       if (input) delete input.dataset.dirty;
       smShowToast('Пошту збережено ✓');
@@ -941,6 +947,7 @@ async function smSaveGradient() {
       body: JSON.stringify({ color_left: l, color_right: r }),
       credentials: 'include'
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.success) {
       // Apply gradient to the page immediately
@@ -965,9 +972,12 @@ document.getElementById('settingsOverlay').addEventListener('click', function(e)
   if (e.target === this) smCloseSettings();
 });
 
-// Close on Escape (add to existing keydown if any)
+// Close on Escape — only if settings overlay is active
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') smCloseSettings();
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay && overlay.classList.contains('active')) smCloseSettings();
+  }
 });
 </script>
 
@@ -1028,7 +1038,7 @@ document.addEventListener('keydown', function(e) {
 
 </div>
 
-    <div id="deco-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center;">
+    <div id="deco-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center; flex-direction: column;">
         <div style="background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 400px; text-align: center;">
             <h3 style="color: white; margin-bottom: 20px;">Оберіть прикрасу</h3>
             <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
@@ -1045,7 +1055,7 @@ document.addEventListener('keydown', function(e) {
         </div>
     </div>
 
-    <div id="badges-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center;">
+    <div id="badges-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center; flex-direction: column;">
         <div style="background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 450px; text-align: center;">
             <h3 style="color: white; margin-bottom: 10px;">Оберіть бейджі</h3>
             <p style="color: #888; font-size: 13px; margin-bottom: 20px;">Натисніть, щоб обрати (макс. 5)</p>
@@ -1103,6 +1113,7 @@ document.addEventListener('keydown', function(e) {
 
             // 3. Робимо запит
             const res = await fetch(fetchUrl, { credentials: 'include' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             const data = await res.json();
 
             // 4. Оскільки файли віддають дані трохи по-різному, дістаємо назву універсально:
@@ -1135,7 +1146,7 @@ document.addEventListener('keydown', function(e) {
 
         } catch (err) {
             blogSpan.innerText = "Помилка";
-            console.error("Блог крашнувся:", err);
+            console.error("Blog fetch error:", err);
         }
     }
 
@@ -1146,7 +1157,7 @@ document.addEventListener('keydown', function(e) {
     <script src="js/profile.js"></script>
 
 <!-- ========== PREMIUM MODAL (profile.html) ========== -->
-<div id="profile-premium-modal" style="display:none; position:fixed; inset:0; z-index:9999999; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px);">
+<div id="profile-premium-modal" style="display:none; position:fixed; inset:0; z-index:9999999; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px); flex-direction:column;">
   <div style="background:linear-gradient(145deg,#1a0014,#0d000a); border:1px solid rgba(240,4,127,0.35); border-radius:24px; padding:40px 32px 32px; max-width:400px; width:90%; position:relative; box-shadow:0 0 60px rgba(240,4,127,0.25), 0 20px 60px rgba(0,0,0,0.6); font-family:'Geologica',sans-serif;">
     
     <!-- Close -->
@@ -1498,6 +1509,7 @@ async function buyPremiumFromProfile() {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({plan: _ppmSelectedPlan})
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.success) {
       msg.style.color = '#4cff91';
@@ -1545,7 +1557,12 @@ function applyPremiumLockState(isPremium) {
     } else {
       if (existing) existing.remove();
       const applyBtn = document.querySelector('.confirm-btn');
-      if (applyBtn) { applyBtn.disabled = false; applyBtn.style.opacity = ''; applyBtn.style.cursor = ''; applyBtn.onclick = applyGradientToBlock; }
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.style.opacity = '';
+        applyBtn.style.cursor = '';
+        applyBtn.onclick = typeof applyGradientToBlock === 'function' ? applyGradientToBlock : null;
+      }
     }
   }
 
@@ -1565,20 +1582,23 @@ function applyPremiumLockState(isPremium) {
 // Hook into existing data load — run after get_user response
 document.addEventListener('DOMContentLoaded', () => {
   // Poll until _profileData is available (set by profile.js)
+  let _premiumCheckDone = false;
   const checkInterval = setInterval(() => {
     if (window._profileData !== undefined) {
       clearInterval(checkInterval);
+      _premiumCheckDone = true;
       applyPremiumLockState(!!window._profileData.is_premium);
     }
   }, 300);
   // Fallback: after 5s apply locked state by default
   setTimeout(() => {
     clearInterval(checkInterval);
-    if (window._profileData === undefined) applyPremiumLockState(false);
+    if (!_premiumCheckDone) applyPremiumLockState(false);
   }, 5000);
 
   // Close modal on backdrop click
-  document.getElementById('profile-premium-modal').addEventListener('click', function(e) {
+  const premModal = document.getElementById('profile-premium-modal');
+  if (premModal) premModal.addEventListener('click', function(e) {
     if (e.target === this) hidePremiumModal();
   });
 });

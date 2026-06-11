@@ -49,7 +49,7 @@ window.applyDecoration = function(videoUrl) {
         openBtn.innerHTML = 'Прикрасу встановлено';
     }
 
-    localStorage.setItem('user_decoration', videoUrl);
+    try { localStorage.setItem('user_decoration', videoUrl); } catch(_) {}
 };
 
 window.removeDecoration = function() {
@@ -65,7 +65,7 @@ window.removeDecoration = function() {
         openBtn.innerHTML = 'Обрати прикрасу';
     }
 
-    localStorage.removeItem('user_decoration');
+    try { localStorage.removeItem('user_decoration'); } catch(_) {}
 };
 
 // --- ОСНОВНА ІНІЦІАЛІЗАЦІЯ ---
@@ -109,11 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(window.loadNotifications, 10000);
 
     // 6. Перевірка збереженої прикраси
-    const savedDeco = localStorage.getItem('user_decoration');
+    let savedDeco = null;
+    try { savedDeco = localStorage.getItem('user_decoration'); } catch(_) {}
     if (savedDeco) window.applyDecoration(savedDeco);
 
     // 7. Тема
-    const savedTheme = localStorage.getItem('theme') || 'dark';
+    let savedTheme = 'dark';
+    try { savedTheme = localStorage.getItem('theme') || 'dark'; } catch(_) {}
     window.setTheme(savedTheme);
 
     // 8. Онлайн-статус
@@ -189,16 +191,17 @@ window.followUser = async function() {
             body: JSON.stringify({ target_id: targetId }),
             credentials: 'include'
         });
-
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         const result = await response.json();
 
         if (result.success) {
+            const spanEl = btn.querySelector('span');
             if (result.action === 'followed') {
                 btn.classList.add('active');
-                btn.querySelector('span').innerText = 'Відписатися';
+                if (spanEl) spanEl.innerText = 'Відписатися';
             } else {
                 btn.classList.remove('active');
-                btn.querySelector('span').innerText = 'Підписатися';
+                if (spanEl) spanEl.innerText = 'Підписатися';
             }
             if (countSpan && result.new_count !== undefined) {
                 countSpan.innerText = result.new_count;
@@ -233,6 +236,7 @@ window.loadNotifications = async function() {
 
     try {
         const response = await fetch('get_notifications.php', { credentials: 'include' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
 
         if (data.success && data.followers && data.followers.length > 0) {
@@ -294,20 +298,6 @@ function showToastNotification(user) {
         setTimeout(() => toast.remove(), 500);
     }, 5000);
 }
-
-// --- ТЕМА (одна функція) ---
-window.setTheme = function(theme) {
-    localStorage.setItem('theme', theme);
-    if (theme === 'light') {
-        document.body.classList.add('light-theme');
-        document.getElementById('theme-light')?.classList.add('active');
-        document.getElementById('theme-dark')?.classList.remove('active');
-    } else {
-        document.body.classList.remove('light-theme');
-        document.getElementById('theme-dark')?.classList.add('active');
-        document.getElementById('theme-light')?.classList.remove('active');
-    }
-};
 
 // --- МОВА (виправлено: event передається як параметр) ---
 function setLanguage(lang, event) {
@@ -491,8 +481,7 @@ async function syncRobloxInventoryFromServer(robloxId) {
 }
 
 
-// --- 2. INITIALIZATION ---
-// --- 2. INITIALIZATION ---
+// --- 2. ІНІЦІАЛІЗАЦІЯ ---
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Скрипт ініціалізовано!");
 
@@ -521,14 +510,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Робота з Roblox OAuth\
+    // Roblox OAuth обробляється в DOMContentLoaded головного блоку
 
     // Оновлення статусу кожну хвилину
     setInterval(checkStatus, 60000);
 });
-// --- ФУНКЦІЇ ПРОФІЛЮ ---
-// --- ФУНКЦІЇ ПРОФІЛЮ ---
-// --- ФУНКЦІЇ ПРОФІЛЮ ---
 // --- ФУНКЦІЇ ПРОФІЛЮ ---
 async function loadUserData() {
     console.log("🔄 Завантаження даних профілю...");
@@ -678,31 +664,22 @@ if (av1) av1.src = srcAvatar;
 if (av2) av2.src = srcAvatar;
 window._currentAvatarSrc = srcAvatar;
 
-// Sync small avatar previews (settings modal)
+// Sync avatar previews in settings modal — called after avatar changes
 function smSyncUserInfo() {
     const src = window._currentAvatarSrc;
     if (!src) return;
 
-    // Large preview circle in settings
-    const previewImg = document.getElementById('sm-avatar-preview-img');
+    const previewImg    = document.getElementById('sm-avatar-preview-img');
     const previewLetter = document.getElementById('sm-avatar-preview-letter');
-    if (previewImg) {
-        previewImg.src = src;
-        previewImg.style.display = 'block';
-    }
-    if (previewLetter) previewLetter.style.display = 'none';
+    const miniImg       = document.getElementById('sm-user-avatar-img');
+    const miniLetter    = document.getElementById('sm-user-avatar-letter');
 
-    // Mini avatar (header or sidebar)
-    const miniImg = document.getElementById('sm-user-avatar-img');
-    const miniLetter = document.getElementById('sm-user-avatar-letter');
-    if (miniImg) {
-        miniImg.src = src;
-        miniImg.style.display = 'block';
-    }
-    if (miniLetter) miniLetter.style.display = 'none';
+    if (previewImg)    { previewImg.src = src; previewImg.style.display = 'block'; }
+    if (previewLetter)   previewLetter.style.display = 'none';
+    if (miniImg)       { miniImg.src = src; miniImg.style.display = 'block'; }
+    if (miniLetter)      miniLetter.style.display = 'none';
 }
 window.smSyncUserInfo = smSyncUserInfo;
-setTimeout(smSyncUserInfo, 0);
 
             // 2. БАНЕР (banner_url)
             let rawBanner = data.banner_url || data.banner;
@@ -1080,15 +1057,6 @@ if (subBtn) {
     }
 }
 
-function startRobloxAuth() {
-    const authUrl = `https://apis.roblox.com/oauth/v1/authorize?` + 
-                    `client_id=${clientId}&` +
-                    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                    `scope=openid profile&` +
-                    `response_type=code`;
-    window.location.href = authUrl;
-}
-
 
 // ==========================================
 // АВТОРИЗАЦІЯ STEAM (OpenID)
@@ -1110,7 +1078,7 @@ window.startSteamAuth = function() {
     console.log("🚂 Запуск авторизації Steam...");
     
     // ЗАПОМИНАЕМ, что нужно открыть настройки после возврата
-    localStorage.setItem('reopen_integrations', 'true');
+    try { localStorage.setItem('reopen_integrations', 'true'); } catch(_) {}
 
     const realm = window.location.origin; 
     const returnTo = `${realm}/profile.html`; 
@@ -1156,10 +1124,12 @@ window.handleSteamCallback = async function() {
                 await loadUserData(); 
 
                 // ПРОВЕРЯЕМ, нужно ли открыть модалку
-                if (localStorage.getItem('reopen_integrations') === 'true') {
-                    localStorage.removeItem('reopen_integrations'); // Сразу очищаем
+                let _reopen = false;
+                try { _reopen = localStorage.getItem('reopen_integrations') === 'true'; } catch(_) {}
+                if (_reopen) {
+                    try { localStorage.removeItem('reopen_integrations'); } catch(_) {}
                     setTimeout(() => {
-                        window.openIntegrationsTab(); // Открываем вкладку интеграций
+                        window.openIntegrationsTab();
                     }, 500);
                 }
 
@@ -1173,13 +1143,13 @@ window.handleSteamCallback = async function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Если в памяти висит флаг открытия — открываем настройки
-    if (localStorage.getItem('reopen_integrations') === 'true') {
-        // Даем небольшую задержку, чтобы все стили и скрипты успели прогрузиться
+    let _reopen = false;
+    try { _reopen = localStorage.getItem('reopen_integrations') === 'true'; } catch(_) {}
+    if (_reopen) {
         setTimeout(() => {
             if (typeof window.openIntegrationsTab === 'function') {
                 window.openIntegrationsTab();
-                localStorage.removeItem('reopen_integrations');
+                try { localStorage.removeItem('reopen_integrations'); } catch(_) {}
             }
         }, 800);
     }
@@ -1249,26 +1219,6 @@ async function saveBioToServer(text) {
 
 // --- 3. ROBLOX AUTH & DATA FETCHING ---
 
-function startRobloxAuth() {
-    const authUrl = `https://apis.roblox.com/oauth/v1/authorize?` + 
-                    `client_id=${clientId}&` +
-                    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                    `scope=openid profile&` +
-                    `response_type=code`;
-    window.location.href = authUrl;
-}
-
-async function handleRobloxCallback() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-
-    if (code) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        // FIX: Call exchangeCodeForData, NOT checkAssetsOwnership directly
-        await exchangeCodeForData(code);
-    }
-}
-
 window.exchangeCodeForData = async function(authCode) {
     try {
         // FIX: credentials:'include' обов'язковий — без нього PHP не бачить сесію
@@ -1317,9 +1267,7 @@ window.exchangeCodeForData = async function(authCode) {
         console.error("Помилка авторизації Roblox:", err);
     }
 };
-// UNIVERSAL ASSET CHECKER (Badges + GamePasses)
-// UNIVERSAL ASSET CHECKER (Оптимізована версія - без спаму запитами)
-// UNIVERSAL ASSET CHECKER (Тепер працює через наш PHP сервер!)
+// UNIVERSAL ASSET CHECKER (через PHP сервер)
 async function checkAssetsOwnership(userId) {
     const loadingText = document.querySelector('.status-text');
     if (loadingText) loadingText.innerText = "⏳ Перевірка інвентаря Roblox...";
@@ -1371,8 +1319,7 @@ function closeGamesModal() {
 // ФІНАЛЬНІ ФУНКЦІЇ ДЛЯ ІГОР ТА БЕЙДЖІВ
 // ==========================================
 
-// 1. ГОЛОВНА БІБЛІОТЕКА (Список ігор)
-// 1. ГОЛОВНА БІБЛІОТЕКА (Список ігор)
+// ГОЛОВНА БІБЛІОТЕКА (Список ігор)
 window.loadMainLibrary = function() {
     const grid = document.getElementById('media-grid');
     const backBtn = document.getElementById('modal-back-button');
@@ -1487,15 +1434,12 @@ window.openGamesModal = function() {
     // --- НАДІЙНА ПЕРЕВІРКА АВТОРИЗАЦІЇ ROBLOX ---
     let isRobloxConnected = window.isRobloxConnected === true;
     try {
-        const robloxData = JSON.parse(localStorage.getItem('roblox_user'));
+        const robloxData = JSON.parse(localStorage.getItem('roblox_user') || 'null');
         if (robloxData && robloxData.id && robloxData.id !== "null") {
             isRobloxConnected = true;
         }
     } catch (e) {
-        const rawData = localStorage.getItem('roblox_user');
-        if (rawData && rawData !== "null" && rawData !== "{}" && rawData !== "[]") {
-             isRobloxConnected = true;
-        }
+        // localStorage might be blocked or data malformed
     }
 
     // --- ПЕРЕВІРКА АВТОРИЗАЦІЇ STEAM ---
@@ -1622,9 +1566,10 @@ function changeValue(type, delta) {
         if (val < 1) val = 12;
         if (val > 12) val = 1;
     } else if (type === 'year') {
+        const currentYear = new Date().getFullYear();
         val += delta;
-        if (val < 1950) val = 2026;
-        if (val > 2026) val = 1950;
+        if (val < 1950) val = currentYear;
+        if (val > currentYear) val = 1950;
     }
     
     // Добавляем нолик спереди для красоты (01, 02...)
@@ -1834,7 +1779,8 @@ async function saveRegionSettings() {
         const response = await fetch('save_region.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            credentials: 'include'
         });
 
         const result = await response.json();
@@ -1854,53 +1800,12 @@ async function saveRegionSettings() {
         alert("Помилка з'єднання");
     }
 }
-for (let i = 0; i < 24; i++) {
-    const cell = document.createElement('div');
-    cell.classList.add('hour-cell');
-    cell.innerText = i;
-    cell.dataset.hour = i;
-
-    // Клик по ячейке
-    cell.onclick = () => {
-        const currentHour = parseInt(cell.dataset.hour);
-
-        if (firstClick === null) {
-            // ПЕРВЫЙ КЛИК: устанавливаем точку старта
-            firstClick = currentHour;
-            resetGridClasses();
-            cell.classList.add('selected');
-        } else {
-            // ВТОРОЙ КЛИК: фиксируем интервал
-            startHour = Math.min(firstClick, currentHour);
-            endHour = Math.max(firstClick, currentHour);
-
-            renderSelection(startHour, endHour);
-            saveTime(); 
-            
-            firstClick = null; // Выключаем режим слежения
-        }
-    };
-
-    // НАВЕДЕНИЕ МЫШКИ: живое обновление полосы
-    cell.onmouseenter = () => {
-        if (firstClick !== null) {
-            // Если первая точка выбрана, подсвечиваем путь до текущей ячейки
-            const currentHour = parseInt(cell.dataset.hour);
-            const tempMin = Math.min(firstClick, currentHour);
-            const tempMax = Math.max(firstClick, currentHour);
-            
-            renderSelection(tempMin, tempMax);
-        }
-    };
-
-    grid.appendChild(cell);
-}
-window.onmouseup = () => {
+window.addEventListener('mouseup', () => {
     if (isDragging) {
         isDragging = false;
         saveTime();
     }
-};
+});
 
 function renderSelection(min, max) {
     const cells = document.querySelectorAll('.hour-cell');
@@ -1951,6 +1856,7 @@ async function saveTime() {
             const response = await fetch('update_status.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ 
                     start: startHour, 
                     end: endHour 
@@ -1971,11 +1877,14 @@ async function saveTime() {
 }
 
 function checkStatus() {
-    // Если время не выбрано (startHour еще null)
+    const triggerEl = document.getElementById('activityTrigger');
+    const iconEl = document.getElementById('statusIcon');
+    if (!triggerEl || !iconEl) return;
+
     if (startHour === null || endHour === null) {
-        trigger.classList.add('inactive-now');
-        trigger.classList.remove('active-now');
-        iconDisplay.innerHTML = '🕒'; 
+        triggerEl.classList.add('inactive-now');
+        triggerEl.classList.remove('active-now');
+        iconEl.innerHTML = '🕒'; 
         return;
     }
     
@@ -1985,22 +1894,31 @@ function checkStatus() {
         : (now >= startHour || now <= endHour);
 
     if (isActive) {
-        trigger.classList.add('active-now');
-        trigger.classList.remove('inactive-now');
-        iconDisplay.innerHTML = '🎮';
+        triggerEl.classList.add('active-now');
+        triggerEl.classList.remove('inactive-now');
+        iconEl.innerHTML = '🎮';
     } else {
-        trigger.classList.add('inactive-now');
-        trigger.classList.remove('active-now');
-        iconDisplay.innerHTML = '💤';
+        triggerEl.classList.add('inactive-now');
+        triggerEl.classList.remove('active-now');
+        iconEl.innerHTML = '💤';
     }
 }
 
-// Открытие/закрытие панели
-trigger.onclick = () => picker.style.display = 'block';
-document.getElementById('closePicker').onclick = (e) => {
-    e.stopPropagation();
-    picker.style.display = 'none';
-};
+// Відкриття/закриття панелі часу
+document.addEventListener('DOMContentLoaded', () => {
+    const _trigger = document.getElementById('activityTrigger');
+    const _picker  = document.getElementById('timePicker');
+    const _closePicker = document.getElementById('closePicker');
+    if (_trigger && _picker) {
+        _trigger.addEventListener('click', () => _picker.style.display = 'block');
+    }
+    if (_closePicker && _picker) {
+        _closePicker.addEventListener('click', (e) => {
+            e.stopPropagation();
+            _picker.style.display = 'none';
+        });
+    }
+});
 
 // Обновляем статус каждую минуту
 setInterval(checkStatus, 60000);
@@ -2011,7 +1929,7 @@ setInterval(checkStatus, 60000);
 
 
 function initTimeGrid() {
-    const grid = document.getElementById('time-grid'); // Переконайся, що ID вірний
+    const grid = document.getElementById('timeGrid');
     if (!grid) return;
 
     // ОЧИЩЕННЯ: видаляємо старі комірки перед створенням нових
@@ -2203,7 +2121,7 @@ async function uploadBanner(file) {
     formData.append('banner', file);
 
     try {
-        const response = await fetch('upload_avatar.php', {
+        const response = await fetch('upload_banner.php', {
             method: 'POST',
             body: formData,
             credentials: 'include'
@@ -2247,7 +2165,7 @@ async function directUpload(inputElement) {
     formData.append('banner', file);
 
     try {
-        const response = await fetch('upload_avatar.php', {
+        const response = await fetch('upload_banner.php', {
             method: 'POST',
             body: formData,
             // [КРИТИЧНО] Додаємо куки сесії, щоб PHP знав, який це юзер
@@ -2309,7 +2227,7 @@ async function uploadBackground(inputElement) {
     formData.append('background', file);
 
     try {
-        const response = await fetch('upload_avatar.php', {
+        const response = await fetch('upload_background.php', {
             method: 'POST',
             body: formData,
             credentials: 'include'
@@ -2389,12 +2307,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // 4. Закриття модалки при кліку на фон
-    window.onclick = (event) => {
+    // Закриття модалки при кліку на фон
+    window.addEventListener('click', (event) => {
         if (event.target === decoModal) {
             decoModal.style.display = 'none';
         }
-    };
+    });
 
     // --- ГОЛОВНА ПЕРЕВІРКА ПРИ ЗАВАНТАЖЕННІ ---
     const savedDeco = localStorage.getItem('user_decoration');
@@ -2556,6 +2474,7 @@ async function applyGradientToBlock() {
         const response = await fetch('update_gradient.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ color_left: colorL, color_right: colorR })
         });
 
@@ -2606,40 +2525,6 @@ const badgeImages = {
 };
 
 // Клік по бейджу (вибір/скасування)
-function toggleBadge(element) {
-    // 1. Перевіряємо, чи цей бейдж вже вибраний зараз
-    // (Браузери можуть зберігати колір як rgb(255, 69, 0) або hex #ff4500, тому перевіряємо обидва варіанти)
-    const isSelected = (element.style.borderColor === 'rgb(255, 69, 0)' || element.style.borderColor === '#ff4500');
-
-    if (isSelected) {
-        // === ЯКЩО ВЖЕ ВИБРАНИЙ -> ЗНІМАЄМО ВИДІЛЕННЯ ===
-        // Знімати виділення можна завжди, ліміт тут не важливий
-        element.style.borderColor = '#444';
-        element.style.background = '#222';
-    } else {
-        // === ЯКЩО ХОЧЕМО ВИБРАТИ НОВИЙ -> ПЕРЕВІРЯЄМО ЛІМІТ ===
-        
-        // а) Рахуємо, скільки бейджів вже світяться помаранчевим
-        let count = 0;
-        const allBadges = document.querySelectorAll('.badge-item');
-        allBadges.forEach(badge => {
-            if (badge.style.borderColor === 'rgb(255, 69, 0)' || badge.style.borderColor === '#ff4500') {
-                count++;
-            }
-        });
-
-        // б) Якщо вже вибрано 5 (або більше) -> забороняємо і показуємо попередження
-        if (count >= 5) {
-            alert("Максимум можна обрати 5 бейджів!");
-            return; // Зупиняємо функцію, нічого не змінюємо
-        }
-
-        // в) Якщо ліміт не перевищено -> виділяємо
-        element.style.borderColor = '#ff4500';
-        element.style.background = '#331a15';
-    }
-}
-
 function openBadgesModal() {
     document.getElementById('badges-modal').style.display = 'flex';
 }
@@ -2702,8 +2587,9 @@ async function saveBadgesSelection() {
         const response = await fetch('save_badges.php', {
             method: 'POST',
             headers: { 
-                'Content-Type': 'application/json' // <--- ЦЕ ДУЖЕ ВАЖЛИВО!
+                'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({ badges: selectedBadges })
         });
 
@@ -2787,8 +2673,8 @@ function updateProfileGifts() {
     const giftArea = document.getElementById('gifts-display-area');
     if (!giftArea) return;
 
-    // Читаємо з того ж ключа 'my_shared_gifts'
-    const gifts = JSON.parse(localStorage.getItem('my_shared_gifts')) || [];
+    let gifts = [];
+    try { gifts = JSON.parse(localStorage.getItem('my_shared_gifts')) || []; } catch(_) {}
 
     if (gifts.length > 0) {
         giftArea.innerHTML = ''; // Прибираємо "Подарунків немає"
@@ -2811,7 +2697,7 @@ function updateProfileGifts() {
 // ФУНКЦІЯ ВИДАЛЕННЯ АВАТАРКИ
 // ==========================================
 async function deleteAvatar() {
-    // 1. Запитуємо підтвердження
+    if (!confirm('Видалити аватар? Буде встановлено зображення за замовчуванням.')) return;
 
     const btn = document.querySelector('.btn-danger-outline');
     const originalText = btn ? btn.innerText : 'Видалити';
@@ -2959,24 +2845,6 @@ document.addEventListener('click', function(e) {
         }
     }
 }, true);
-
-window.toggleModeSelection = function(gameName, mode, isSelecting) {
-    if (isSelecting) {
-        // Додаємо в масив, якщо там ще немає такого ID
-        if (!selectedItems.some(i => normalizeAssetId(i.id) === normalizeAssetId(mode.id))) {
-            selectedItems.push({
-                game: gameName,
-                id: mode.id,
-                name: mode.name,
-                img: mode.img
-            });
-        }
-    } else {
-        // Видаляємо з масиву, якщо користувач "відтиснув" картку
-        selectedItems = selectedItems.filter(i => normalizeAssetId(i.id) !== normalizeAssetId(mode.id));
-    }
-    console.log("📦 Поточні вибрані речі:", selectedItems);
-};
 
 // 2. Жорстко перевіряємо сторінку ПІСЛЯ всіх завантажень
 function displayRobloxData(data) {
@@ -3159,7 +3027,8 @@ async function confirmSelection() {
         const response = await fetch('save_roblox_games.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ games: selectedItems })
+            body: JSON.stringify({ games: selectedItems }),
+            credentials: 'include'
         });
 
         const result = await response.json();
@@ -3248,92 +3117,3 @@ window.checkSteamGamesOwnership = async function(steamId) {
         console.error("❌ Ошибка (Steam Check):", err);
     }
 };
-
-
-function setLanguage(lang, event) {
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    console.log("Мова змінена на:", lang);
-    // Тут логіка зміни мови
-}
-
-// === 1. ЛОГИКА ТЕМЫ (Оставляем как было) ===
-window.setTheme = function(theme) {
-    localStorage.setItem('theme', theme);
-    if (theme === 'light') {
-        document.body.classList.add('light-theme');
-        document.getElementById('theme-light')?.classList.add('active');
-        document.getElementById('theme-dark')?.classList.remove('active');
-    } else {
-        document.body.classList.remove('light-theme');
-        document.getElementById('theme-dark')?.classList.add('active');
-        document.getElementById('theme-light')?.classList.remove('active');
-    }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
-});
-
-
-// === 2. ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ ЦВЕТА КРУЖОЧКА ===
-function setOnlineStatus(isOnline) {
-    const statusDot = document.getElementById('status-dot');
-    if (!statusDot) return;
-
-    if (isOnline) {
-        statusDot.classList.remove('status-offline');
-        statusDot.classList.add('status-online');
-    } else {
-        statusDot.classList.remove('status-online');
-        statusDot.classList.add('status-offline');
-    }
-}
-
-
-// === 3. ПРОВЕРКА ЧУЖОГО ПРОФИЛЯ С ЛОГАМИ ===
-async function loadProfileStatus(profileUserId) {
-    console.log("👉 1. Початок перевірки. Шукаємо онлайн для ID:", profileUserId);
-    
-    try {
-        const response = await fetch(`get_online_status.php?user_id=${profileUserId}`);
-        const text = await response.text(); 
-        
-        console.log("📩 2. Що відповів сервер (PHP):", text);
-        
-        const data = JSON.parse(text);
-        console.log("🟢 3. Фінальний статус з бази:", data.online ? "ОНЛАЙН (true)" : "ОФФЛАЙН (false)");
-        
-        setOnlineStatus(data.online);
-    } catch (error) {
-        console.error("❌ ПОМИЛКА під час перевірки:", error);
-        setOnlineStatus(false);
-    }
-}
-
-
-// === 4. САМОЕ ГЛАВНОЕ: ЗАПУСК ПРОВЕРКИ ПРИ ЗАГРУЗКЕ ===
-document.addEventListener('DOMContentLoaded', () => {
-    // Шукаємо ID у посиланні (наприклад, ?id=5)
-    const urlParams = new URLSearchParams(window.location.search);
-    const profileId = urlParams.get('id'); 
-
-    if (profileId) {
-        // Якщо ми зайшли на ЧУЖИЙ профіль (є ID у посиланні) — перевіряємо його статус у базі
-        console.log("🔍 Знайдено чужий ID у посиланні:", profileId);
-        loadProfileStatus(profileId);
-    } else {
-        // Якщо ID немає — це ТВІЙ ВЛАСНИЙ профіль. 
-        // А на своєму профілі ти завжди онлайн!
-        console.log("🏠 Це твій власний профіль (ID в посиланні немає). Вмикаємо зелений.");
-        setOnlineStatus(true);
-    }
-});
-
-// === 5. ТВОЙ ПУЛЬС (Ты отправляешь сигнал, что ТЫ онлайн) ===
-setInterval(() => {
-    fetch('update_online_status.php').catch(() => {}); // catch убирает лишние ошибки в консоли
-}, 120000); 
-
-fetch('update_online_status.php').catch(() => {}); // Сигнал при входе на сайт
