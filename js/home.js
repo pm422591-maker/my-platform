@@ -9499,6 +9499,28 @@ window.showGroupToast = function(text) {
 };
 
 // === 4. ПОВІДОМЛЕННЯ + РЕАКЦІЇ ===
+window._lastGroupMsgDate = null;
+window._groupRoleTitles = {};
+
+// 📅 "12 червня" — як у Telegram
+function fmtGroupDate(iso) {
+    const months = ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'];
+    const d = new Date(iso.replace(' ', 'T'));
+    if (isNaN(d)) return iso.slice(0, 10);
+    const today = new Date();
+    const yest = new Date(); yest.setDate(today.getDate() - 1);
+    const sameDay = (a, b) => a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+    if (sameDay(d, today)) return 'Сьогодні';
+    if (sameDay(d, yest)) return 'Вчора';
+    let out = `${d.getDate()} ${months[d.getMonth()]}`;
+    if (d.getFullYear() !== today.getFullYear()) out += ` ${d.getFullYear()}`;
+    return out;
+}
+
+function groupEmptyPlaceholderHTML(g) {
+    return `<div id="group-empty-placeholder" style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:30px 0;">${g.type === 'channel' ? 'У каналі поки немає публікацій' : 'Повідомлень поки немає — напишіть першим! 💬'}</div>`;
+}
+
 window.fetchGroupMessages = async function(initial) {
     const g = window.currentGroupChat;
     if (!g) return;
@@ -9510,9 +9532,11 @@ window.fetchGroupMessages = async function(initial) {
 
         const msgContainer = document.getElementById('chat-messages');
         if (!msgContainer) return;
-        if (initial) msgContainer.innerHTML = '';
+        if (initial) { msgContainer.innerHTML = ''; window._lastGroupMsgDate = null; }
 
-        // ❤️ Оновлюємо карту реакцій (приходить для останніх 100 повідомлень)
+        if (data.role_titles) window._groupRoleTitles = data.role_titles;
+
+        // ❤️ Карта реакцій
         if (Array.isArray(data.reactions)) {
             window.groupReactionsMap = {};
             data.reactions.forEach(r => {
@@ -9524,15 +9548,53 @@ window.fetchGroupMessages = async function(initial) {
 
         const myId = parseInt(localStorage.getItem('user_id') || 0);
         const msgs = data.messages || [];
-        if (initial && msgs.length === 0) {
-            msgContainer.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:30px 0;">${g.type === 'channel' ? 'У каналі поки немає публікацій' : 'Повідомлень поки немає — напишіть першим! 💬'}</div>`;
+        const wasAtBottom = Math.abs(msgContainer.scrollHeight - msgContainer.scrollTop - msgContainer.clientHeight) <= 80;
+
+        // 🗑 СИНХРОНІЗАЦІЯ ВИДАЛЕНЬ: прибираємо рядки, яких більше немає на сервері
+        if (Array.isArray(data.ids) && data.ids.length) {
+            const idSet = new Set(data.ids);
+            const minId = Math.min(...data.ids);
+            msgContainer.querySelectorAll('.msg-row[data-gid]').forEach(row => {
+                const gid = parseInt(row.getAttribute('data-gid'));
+                if (gid >= minId && !idSet.has(gid)) row.remove();
+            });
+        } else if (Array.isArray(data.ids) && data.ids.length === 0) {
+            msgContainer.querySelectorAll('.msg-row[data-gid]').forEach(row => row.remove());
         }
 
-        const wasAtBottom = Math.abs(msgContainer.scrollHeight - msgContainer.scrollTop - msgContainer.clientHeight) <= 80;
+        // ✏️ СИНХРОНІЗАЦІЯ РЕДАГУВАНЬ
+        (data.edited_list || []).forEach(e => {
+            const row = msgContainer.querySelector(`.msg-row[data-gid="${e.id}"]`);
+            if (!row) return;
+            const tb = row.querySelector('.text-bubble');
+            if (tb && row.getAttribute('data-msg-raw') !== e.message) {
+                row.setAttribute('data-msg-raw', e.message);
+                tb.innerHTML = renderGroupText(e.message);
+                const timeEl = row.querySelector('.group-msg-time');
+                if (timeEl && !timeEl.querySelector('.msg-edited-mark')) {
+                    timeEl.insertAdjacentHTML('afterbegin', '<span class="msg-edited-mark">ред. </span>');
+                }
+            }
+        });
 
         msgs.forEach(m => {
             window.lastGroupMsgId = Math.max(window.lastGroupMsgId, parseInt(m.id));
             if (msgContainer.querySelector(`.msg-row[data-gid="${m.id}"]`)) return;
+
+            // ✨ Плейсхолдер "немає повідомлень" зникає з першим повідомленням
+            document.getElementById('group-empty-placeholder')?.remove();
+
+            // 📅 ДАТА-ЧІП при зміні дня (як у Telegram)
+            const msgDate = (m.created_at || '').slice(0, 10);
+            if (msgDate && msgDate !== window._lastGroupMsgDate) {
+                window._lastGroupMsgDate = msgDate;
+                if (!msgContainer.querySelector(`.group-date-chip[data-date="${msgDate}"]`)) {
+                    msgContainer.insertAdjacentHTML('beforeend', `
+                        <div class="msg-date-row" style="display:flex; justify-content:center; width:100%; margin:14px 0 8px;">
+                            <div class="group-date-chip" data-date="${msgDate}">${fmtGroupDate(m.created_at)}</div>
+                        </div>`);
+                }
+            }
 
             if (m.media_type === 'system') {
                 msgContainer.insertAdjacentHTML('beforeend', `
@@ -9548,33 +9610,43 @@ window.fetchGroupMessages = async function(initial) {
 
             let contentHTML = '';
             let isSticker = false;
+            let canEdit = false;
             if (m.media_type === 'image' && m.media_url) {
                 contentHTML = `<img src="${escapeGroupHTML(m.media_url)}" class="group-msg-image" loading="lazy" onclick="window.open('${escapeGroupHTML(m.media_url)}', '_blank')">`;
             } else if (m.media_type === 'voice' && m.media_url) {
                 contentHTML = `<audio controls preload="none" class="group-msg-voice" src="${escapeGroupHTML(m.media_url)}"></audio>`;
             } else if (m.media_type === 'sticker' && m.media_url) {
-                // 🎨 Стікер — без бульки, як у Telegram
                 isSticker = true;
                 contentHTML = `<img src="${escapeGroupHTML(m.media_url)}" class="group-msg-sticker" loading="lazy">`;
             } else {
+                canEdit = true;
                 contentHTML = `<span class="text-bubble">${renderGroupText(m.message)}</span>`;
             }
 
+            // 🏷️ ПІДПИС РОЛІ праворуч від ніка (як у Telegram у адмінів)
+            const roleKey = m.sender_role;
+            const roleLabel = (roleKey && roleKey !== 'member' && window._groupRoleTitles[roleKey])
+                ? `<span class="group-msg-role">${escapeGroupHTML(window._groupRoleTitles[roleKey])}</span>` : '';
+
             const senderLine = (!isMe && g.type !== 'channel')
-                ? `<div class="group-msg-sender">${escapeGroupHTML(m.username || 'Користувач')}</div>` : '';
+                ? `<div class="group-msg-sender">${escapeGroupHTML(m.username || 'Користувач')}${roleLabel}</div>` : '';
+
+            const editedMark = parseInt(m.edited) ? '<span class="msg-edited-mark">ред. </span>' : '';
 
             const avatarHTML = `<img src="${escapeGroupHTML(ava)}" class="group-msg-avatar" loading="lazy" onerror="this.src='img/default_avatar.png'" title="${escapeGroupHTML(m.username || '')}">`;
 
             const bubbleClass = isSticker ? 'msg-sticker-wrap' : `msg-bubble ${isMe ? 'msg-sent' : 'msg-received'}`;
 
             msgContainer.insertAdjacentHTML('beforeend', `
-                <div class="msg-row group-msg-row ${isMe ? 'mine' : 'theirs'}" data-gid="${m.id}">
+                <div class="msg-row group-msg-row ${isMe ? 'mine' : 'theirs'}" data-gid="${m.id}" data-msg-raw="${escapeGroupHTML(m.media_type === 'text' ? m.message : '')}">
                     ${!isMe ? avatarHTML : ''}
                     <div style="display:flex; flex-direction:column; align-items:${isMe ? 'flex-end' : 'flex-start'}; max-width:72%;">
-                        <div class="${bubbleClass} msg-anim-in group-reactable" onclick="window.openReactionBar(event, ${m.id})">
+                        <div class="${bubbleClass} msg-anim-in group-reactable"
+                             onclick="window.openReactionBar(event, ${m.id})"
+                             oncontextmenu="window.openMsgContextMenu(event, ${m.id}, ${isMe}, ${canEdit})">
                             ${senderLine}
                             ${contentHTML}
-                            ${isSticker ? '' : `<span class="group-msg-time">${time}</span>`}
+                            ${isSticker ? '' : `<span class="group-msg-time">${editedMark}${time}</span>`}
                         </div>
                         <div class="group-reactions" id="group-reactions-${m.id}"></div>
                     </div>
@@ -9582,7 +9654,13 @@ window.fetchGroupMessages = async function(initial) {
                 </div>`);
         });
 
-        // Перемальовуємо реакції на ВСІХ видимих повідомленнях
+        // ✨ Якщо повідомлень не лишилося — повертаємо плейсхолдер
+        if (!msgContainer.querySelector('.msg-row[data-gid]') && !document.getElementById('group-empty-placeholder')) {
+            msgContainer.querySelectorAll('.msg-date-row').forEach(r => r.remove());
+            window._lastGroupMsgDate = null;
+            msgContainer.innerHTML = groupEmptyPlaceholderHTML(g);
+        }
+
         window.renderAllReactions();
 
         if (msgs.length && (initial || wasAtBottom)) {
@@ -9597,10 +9675,115 @@ window.renderAllReactions = function() {
         const list = window.groupReactionsMap[mid] || [];
         box.innerHTML = list.map(r => {
             const url = (window.appleEmojis || {})[r.emoji] || (window.customEmojis || {})[r.emoji];
-            const face = url ? `<img src="${url}" style="width:16px; height:16px; vertical-align:-3px;">` : escapeGroupHTML(r.emoji);
+            const face = url ? `<img src="${url}" style="width:15px; height:15px; vertical-align:-3px;">` : escapeGroupHTML(r.emoji);
             return `<span class="reaction-chip ${r.mine ? 'mine' : ''}" onclick="event.stopPropagation(); window.toggleReaction(${mid}, '${escapeGroupHTML(r.emoji)}')">${face} ${r.cnt}</span>`;
         }).join('');
     });
+};
+
+// 🖱️ КОНТЕКСТНЕ МЕНЮ (правий клік): реакції + редагувати + видалити
+window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.querySelectorAll('.reaction-bar, .msg-context-menu').forEach(b => b.remove());
+
+    const info = window.currentGroupInfo;
+    const isAdmin = info && ['owner', 'coowner', 'moderator'].includes(info.my_role);
+
+    const menu = document.createElement('div');
+    menu.className = 'msg-context-menu';
+    menu.onclick = (e) => e.stopPropagation();
+
+    const standard = Object.entries(window.appleEmojis || {});
+    const custom = Object.entries(window.customEmojis || {}).slice(0, 3);
+    const reactionsRow = `
+        <div class="ctx-reactions">
+            ${standard.map(([emoji, url]) =>
+                `<span class="ctx-react-item" onclick="window.toggleReaction(${msgId}, '${emoji}'); document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());"><img src="${url}"></span>`
+            ).join('')}
+            ${custom.map(([code, url]) =>
+                `<span class="ctx-react-item" onclick="window.toggleReaction(${msgId}, '${escapeGroupHTML(code)}'); document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());"><img src="${url}"></span>`
+            ).join('')}
+        </div>`;
+
+    let items = '';
+    if (isMe && canEdit) {
+        items += `<div class="ctx-item" onclick="window.startEditGroupMessage(${msgId})">✏️ Редагувати</div>`;
+    }
+    if (isMe || isAdmin) {
+        items += `<div class="ctx-item ctx-danger" onclick="window.deleteGroupMessage(${msgId})">🗑 Видалити</div>`;
+    }
+    if (!items) items = `<div class="ctx-item" style="opacity:0.5; cursor:default;">Оберіть реакцію</div>`;
+
+    menu.innerHTML = reactionsRow + `<div class="ctx-divider"></div>` + items;
+    document.body.appendChild(menu);
+
+    // Позиціюємо біля курсора, не вилазячи за екран
+    const mw = 230, mh = 140;
+    let x = event.clientX, y = event.clientY;
+    if (x + mw > window.innerWidth) x = window.innerWidth - mw - 10;
+    if (y + mh > window.innerHeight) y = window.innerHeight - mh - 10;
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+
+    setTimeout(() => {
+        document.addEventListener('click', function closeCtx(e) {
+            if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', closeCtx); }
+        });
+        document.addEventListener('contextmenu', function closeCtx2(e) {
+            if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('contextmenu', closeCtx2); }
+        });
+    }, 50);
+};
+
+// ✏️ РЕЖИМ РЕДАГУВАННЯ (текст підставляється у поле вводу)
+window.editingGroupMsg = null;
+
+window.startEditGroupMessage = function(msgId) {
+    document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
+    const row = document.querySelector(`.msg-row[data-gid="${msgId}"]`);
+    const input = document.getElementById('msg-input');
+    if (!row || !input) return;
+
+    const raw = row.getAttribute('data-msg-raw') || row.querySelector('.text-bubble')?.innerText || '';
+    window.editingGroupMsg = msgId;
+    input.value = raw;
+    input.focus();
+
+    // Панелька "Редагування" над полем вводу
+    document.getElementById('group-edit-bar')?.remove();
+    const inputArea = document.querySelector('#chat-window .chat-input-area');
+    if (inputArea) {
+        inputArea.insertAdjacentHTML('beforebegin', `
+            <div id="group-edit-bar">
+                <span>✏️ Редагування повідомлення</span>
+                <button onclick="window.cancelEditGroupMessage()">✕ Скасувати</button>
+            </div>`);
+    }
+};
+
+window.cancelEditGroupMessage = function() {
+    window.editingGroupMsg = null;
+    document.getElementById('group-edit-bar')?.remove();
+    const input = document.getElementById('msg-input');
+    if (input) input.value = '';
+};
+
+window.deleteGroupMessage = async function(msgId) {
+    document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
+    const data = await groupApiPost({ action: 'delete_message', message_id: msgId });
+    if (!data.success) { window.showGroupToast(data.message || 'Помилка'); return; }
+    document.querySelector(`.msg-row[data-gid="${msgId}"]`)?.remove();
+    delete window.groupReactionsMap[msgId];
+    // Якщо все видалили — плейсхолдер
+    const msgContainer = document.getElementById('chat-messages');
+    const g = window.currentGroupChat;
+    if (msgContainer && g && !msgContainer.querySelector('.msg-row[data-gid]')) {
+        msgContainer.querySelectorAll('.msg-date-row').forEach(r => r.remove());
+        window._lastGroupMsgDate = null;
+        msgContainer.innerHTML = groupEmptyPlaceholderHTML(g);
+    }
+    window.showGroupToast('🗑 Повідомлення видалено');
 };
 
 // ❤️ Панель швидких реакцій (клік по повідомленню)
@@ -9852,6 +10035,28 @@ window.toggleGroupVoiceRecording = async function(micIcon) {
             const text = input ? input.value.trim() : '';
             if (!text) return;
             input.value = '';
+
+            // ✏️ Якщо ми в режимі редагування — оновлюємо існуюче повідомлення
+            if (window.editingGroupMsg) {
+                const editId = window.editingGroupMsg;
+                window.cancelEditGroupMessage();
+                try {
+                    const ed = await groupApiPost({ action: 'edit_message', message_id: editId, text });
+                    if (!ed.success) { alert(ed.message || 'Не вдалося відредагувати'); return; }
+                    const row = document.querySelector(`.msg-row[data-gid="${editId}"]`);
+                    if (row) {
+                        row.setAttribute('data-msg-raw', text);
+                        const tb = row.querySelector('.text-bubble');
+                        if (tb) tb.innerHTML = renderGroupText(text);
+                        const timeEl = row.querySelector('.group-msg-time');
+                        if (timeEl && !timeEl.querySelector('.msg-edited-mark')) {
+                            timeEl.insertAdjacentHTML('afterbegin', '<span class="msg-edited-mark">ред. </span>');
+                        }
+                    }
+                } catch (e) {}
+                return;
+            }
+
             try {
                 const data = await groupApiPost({
                     action: 'send_message',
@@ -10306,7 +10511,8 @@ window.deleteGroup = async function() {
         document.getElementById('group-settings-panel')?.remove();
         document.getElementById('group-invite-modal')?.remove();
         document.getElementById('chat-emoji-picker')?.remove();
-        document.querySelectorAll('.reaction-bar, .role-popover').forEach(b => b.remove());
+        document.querySelectorAll('.reaction-bar, .role-popover, .msg-context-menu').forEach(b => b.remove());
+        window.cancelEditGroupMessage();
         document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = '');
         ['group-header-bell', 'group-header-gear', 'group-header-discuss'].forEach(id => {
             const el = document.getElementById(id);

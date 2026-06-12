@@ -62,6 +62,7 @@ try {
         "ALTER TABLE chat_group_members ADD COLUMN notifications TINYINT(1) NOT NULL DEFAULT 1",
         "ALTER TABLE chat_group_messages ADD COLUMN media_type VARCHAR(12) NOT NULL DEFAULT 'text'",
         "ALTER TABLE chat_group_messages ADD COLUMN media_url VARCHAR(255) DEFAULT NULL",
+        "ALTER TABLE chat_group_messages ADD COLUMN edited TINYINT(1) NOT NULL DEFAULT 0",
     ];
     foreach ($migrations as $sql) {
         try { $pdo->exec($sql); } catch (Throwable $e) { /* вже застосовано */ }
@@ -455,14 +456,32 @@ try {
         $since = intval($data['since_id'] ?? $_GET['since_id'] ?? 0);
         if ($gid <= 0) { echo json_encode(['success' => false]); exit; }
 
+        $grp = getGroup($pdo, $gid);
         $stmt = $pdo->prepare("
-            SELECT gm.id, gm.user_id, gm.username, gm.avatar, gm.message, gm.media_type, gm.media_url, gm.created_at
+            SELECT gm.id, gm.user_id, gm.username, gm.avatar, gm.message, gm.media_type, gm.media_url,
+                   gm.created_at, gm.edited, mem.role AS sender_role
             FROM chat_group_messages gm
+            LEFT JOIN chat_group_members mem ON mem.group_id = gm.group_id AND mem.user_id = gm.user_id
             WHERE gm.group_id = :g AND gm.id > :s
             ORDER BY gm.id ASC LIMIT 100
         ");
         $stmt->execute([':g' => $gid, ':s' => $since]);
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($messages as &$mm) {
+            if ($grp && intval($mm['user_id']) === intval($grp['owner_id'])) $mm['sender_role'] = 'owner';
+        }
+        unset($mm);
+
+        // 🔄 СИНХРОНІЗАЦІЯ: ids останніх 100 (щоб ловити видалення) + нещодавно відредаговані
+        $idsSt = $pdo->prepare("SELECT id FROM chat_group_messages WHERE group_id = :g ORDER BY id DESC LIMIT 100");
+        $idsSt->execute([':g' => $gid]);
+        $ids = array_map('intval', $idsSt->fetchAll(PDO::FETCH_COLUMN));
+
+        $edSt = $pdo->prepare("SELECT id, message FROM chat_group_messages
+                               WHERE group_id = :g AND edited = 1
+                               ORDER BY id DESC LIMIT 100");
+        $edSt->execute([':g' => $gid]);
+        $editedList = $edSt->fetchAll(PDO::FETCH_ASSOC);
 
         // ❤️ Реакції для останніх 100 повідомлень групи (щоб бачити зміни на старих)
         $rs = $pdo->prepare("
@@ -481,7 +500,7 @@ try {
         $rs->execute([':me' => $my_id, ':g' => $gid]);
         $reactions = $rs->fetchAll(PDO::FETCH_ASSOC);
 
-        echo json_encode(['success' => true, 'messages' => $messages, 'reactions' => $reactions]);
+        echo json_encode(['success' => true, 'messages' => $messages, 'reactions' => $reactions, 'ids' => $ids, 'edited_list' => $editedList, 'role_titles' => groupTitles($grp)]);
         exit;
     }
 
@@ -510,6 +529,52 @@ try {
                 ->execute([':m' => $mid, ':u' => $my_id, ':e' => $emoji]);
             echo json_encode(['success' => true, 'state' => 'added']);
         }
+        exit;
+    }
+
+    // ✏️ РЕДАГУВАТИ ПОВІДОМЛЕННЯ (лише своє, лише текст)
+    if ($action === 'edit_message') {
+        $mid = intval($data['message_id'] ?? 0);
+        $text = trim(mb_substr($data['text'] ?? '', 0, 2000));
+        if ($mid <= 0 || $text === '') { echo json_encode(['success' => false]); exit; }
+
+        $st = $pdo->prepare("SELECT group_id, user_id, media_type FROM chat_group_messages WHERE id = :m");
+        $st->execute([':m' => $mid]);
+        $msg = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$msg) { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
+        if (intval($msg['user_id']) !== $my_id) { echo json_encode(['success' => false, 'message' => 'Можна редагувати лише свої повідомлення']); exit; }
+        if ($msg['media_type'] !== 'text') { echo json_encode(['success' => false, 'message' => 'Це повідомлення не можна редагувати']); exit; }
+
+        $pdo->prepare("UPDATE chat_group_messages SET message = :t, edited = 1 WHERE id = :m")
+            ->execute([':t' => $text, ':m' => $mid]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // 🗑 ВИДАЛИТИ ПОВІДОМЛЕННЯ (своє — завжди; чуже — адмінам, але не повідомлення власника)
+    if ($action === 'delete_message') {
+        $mid = intval($data['message_id'] ?? 0);
+        if ($mid <= 0) { echo json_encode(['success' => false]); exit; }
+
+        $st = $pdo->prepare("SELECT group_id, user_id FROM chat_group_messages WHERE id = :m");
+        $st->execute([':m' => $mid]);
+        $msg = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$msg) { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
+
+        $gid = intval($msg['group_id']);
+        $grp = getGroup($pdo, $gid);
+        $myR = myRole($pdo, $gid, $my_id, $grp);
+        $isMine = intval($msg['user_id']) === $my_id;
+        $targetIsOwner = $grp && intval($msg['user_id']) === intval($grp['owner_id']);
+
+        $can = $isMine
+            || ($myR === 'owner')
+            || (isAdminRole($myR) && !$targetIsOwner);
+        if (!$can) { echo json_encode(['success' => false, 'message' => 'Недостатньо прав']); exit; }
+
+        $pdo->prepare("DELETE FROM chat_group_messages WHERE id = :m")->execute([':m' => $mid]);
+        $pdo->prepare("DELETE FROM chat_group_reactions WHERE message_id = :m")->execute([':m' => $mid]);
+        echo json_encode(['success' => true]);
         exit;
     }
 
