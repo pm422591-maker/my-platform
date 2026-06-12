@@ -9564,7 +9564,8 @@ window.fetchGroupMessages = async function(initial) {
             });
         }
 
-        const myId = parseInt(localStorage.getItem('user_id') || 0);
+        if (data.my_id) window._groupMyId = parseInt(data.my_id); // ✅ надійний id із сервера
+        const myId = window._groupMyId || parseInt(localStorage.getItem('user_id') || 0);
         const msgs = data.messages || [];
         const wasAtBottom = Math.abs(msgContainer.scrollHeight - msgContainer.scrollTop - msgContainer.clientHeight) <= 80;
 
@@ -9758,15 +9759,20 @@ window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
     menu.innerHTML = reactionsRow + items;
     document.body.appendChild(menu);
 
-    // Позиція біля курсора, в межах екрана
-    const mh = menu.offsetHeight || 170;
-    let x = event.clientX, y = event.clientY;
-    if (x + 240 > window.innerWidth) x = window.innerWidth - 250;
-    if (y + mh > window.innerHeight) y = window.innerHeight - mh - 10;
-    if (x < 6) x = 6;
-    if (y < 6) y = 6;
+    // 📌 СТАБІЛЬНА ПОЗИЦІЯ (як у Telegram): за замовчуванням ВНИЗ-ПРАВОРУЧ від курсора;
+    // якщо не влазить — відкривається вгору/вліво дзеркально, без стрибків
+    menu.style.visibility = 'hidden';
+    const mw = menu.offsetWidth || 232;
+    const mh = menu.offsetHeight || 180;
+    let x = event.clientX + 4;
+    let y = event.clientY + 4;
+    if (x + mw > window.innerWidth - 8) x = event.clientX - mw - 4;   // не влазить праворуч → вліво
+    if (y + mh > window.innerHeight - 8) y = event.clientY - mh - 4;  // не влазить знизу → вгору
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
+    menu.style.visibility = 'visible';
 
     setTimeout(() => {
         document.addEventListener('click', function closeCtx(e) {
@@ -9817,6 +9823,7 @@ window.openForwardModal = function(msgId) {
     const chats = (window._myGroupsCache || []).filter(x => parseInt(x.id) !== (window.currentGroupChat?.id || 0));
     modal = document.createElement('div');
     modal.id = 'group-forward-modal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(5,0,4,0.7); backdrop-filter:blur(8px); z-index:999999; display:flex; align-items:center; justify-content:center;';
     modal.innerHTML = `
         <div class="ginv-box">
             <div class="gset-header" style="margin-bottom:12px;">

@@ -501,7 +501,7 @@ try {
         $rs->execute([':me' => $my_id, ':g' => $gid]);
         $reactions = $rs->fetchAll(PDO::FETCH_ASSOC);
 
-        echo json_encode(['success' => true, 'messages' => $messages, 'reactions' => $reactions, 'ids' => $ids, 'edited_list' => $editedList, 'role_titles' => groupTitles($grp)]);
+        echo json_encode(['success' => true, 'messages' => $messages, 'reactions' => $reactions, 'ids' => $ids, 'edited_list' => $editedList, 'role_titles' => groupTitles($grp), 'my_id' => $my_id]);
         exit;
     }
 
