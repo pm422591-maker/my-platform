@@ -9375,8 +9375,24 @@ window.openGroupChat = function(g) {
         targetAvatar.onclick = () => window.openGroupSettings();
     }
 
-    document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = 'none');
+    document.querySelectorAll('.chat-header-icons svg').forEach(svg => {
+        if (!svg.closest('.group-header-btn')) svg.style.display = 'none'; // не чіпаємо наші кнопки
+    });
     window.ensureGroupHeaderButtons();
+
+    // 🛡️ ОХОРОНЕЦЬ ШАПКИ: щосекунди перевіряє, що дзвіночок і шестерня на місці
+    // (інші скрипти чату могли їх ховати після відправки повідомлень)
+    if (window.groupHeaderGuard) clearInterval(window.groupHeaderGuard);
+    window.groupHeaderGuard = setInterval(() => {
+        if (!window.currentGroupChat) return;
+        document.querySelectorAll('.chat-header-icons svg').forEach(svg => {
+            if (!svg.closest('.group-header-btn')) svg.style.display = 'none';
+        });
+        window.ensureGroupHeaderButtons();
+        const info = window.currentGroupInfo;
+        const disc = document.getElementById('group-header-discuss');
+        if (disc) disc.style.display = (info && info.type === 'channel' && info.linked_group) ? 'flex' : 'none';
+    }, 1200);
 
     const input = document.getElementById('msg-input');
     const sendBtn = document.getElementById('send-btn');
@@ -9468,8 +9484,14 @@ window.ensureGroupHeaderButtons = function() {
     }
     ['group-header-bell', 'group-header-gear'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.style.display = 'flex';
+        if (el) {
+            el.style.display = 'flex';
+            const svg = el.querySelector('svg');
+            if (svg) svg.style.display = ''; // якщо чужий код сховав — повертаємо
+        }
     });
+    const discBtn = document.getElementById('group-header-discuss');
+    if (discBtn) { const svg = discBtn.querySelector('svg'); if (svg) svg.style.display = ''; }
 };
 
 // 💬 Відкрити групу обговорення каналу (авто-вступ як у Telegram)
@@ -10599,6 +10621,7 @@ window.deleteGroup = async function() {
     const originalClose = window.closeChat;
     window.closeChat = function() {
         if (window.groupPollTimer) { clearInterval(window.groupPollTimer); window.groupPollTimer = null; }
+        if (window.groupHeaderGuard) { clearInterval(window.groupHeaderGuard); window.groupHeaderGuard = null; }
         if (window.groupVoiceRecorder && window.groupVoiceRecorder.state === 'recording') {
             try { window.groupVoiceRecorder.stop(); } catch (e) {}
         }
