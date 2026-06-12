@@ -9658,7 +9658,8 @@ window.fetchGroupMessages = async function(initial) {
 
             const avatarHTML = `<img src="${escapeGroupHTML(ava)}" class="group-msg-avatar" loading="lazy" onerror="this.src='img/default_avatar.png'" title="${escapeGroupHTML(m.username || '')}">`;
 
-            const bubbleClass = isSticker ? 'msg-sticker-wrap' : `msg-bubble ${isMe ? 'msg-sent' : 'msg-received'}`;
+            const isMedia = (m.media_type === 'image' || m.media_type === 'voice');
+            const bubbleClass = isSticker ? 'msg-sticker-wrap' : `msg-bubble ${isMe ? 'msg-sent' : 'msg-received'}${isMedia ? ' msg-media-bubble' : ''}`;
 
             msgContainer.insertAdjacentHTML('beforeend', `
                 <div class="msg-row group-msg-row ${isMe ? 'mine' : 'theirs'}" data-gid="${m.id}" data-msg-raw="${escapeGroupHTML(m.media_type === 'text' ? m.message : '')}">
@@ -9714,6 +9715,13 @@ window.closeMsgCtx = function() {
 };
 
 window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
+    // 🛡️ Перестраховка: визначаємо права прямо з DOM (раптом інлайн-атрибут застарів)
+    const rowRef = document.querySelector(`.msg-row[data-gid="${msgId}"]`);
+    if (rowRef) {
+        if (rowRef.classList.contains('mine')) isMe = true;
+        if (rowRef.querySelector('.text-bubble')) canEdit = true;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     // Прибираємо БУДЬ-ЯКІ старі панелі (включно з легасі .reaction-bar)

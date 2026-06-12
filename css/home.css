@@ -7479,3 +7479,25 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
 /* Колонка повідомлення не дає вмісту вилазити */
 .group-msg-row > div { min-width: 0; }
 .msg-bubble { max-width: 100%; overflow: hidden; }
+
+/* 📐 МЕДІА-БУЛЬБАШКИ: обтискаються по вмісту, картинки компактні */
+.msg-media-bubble {
+    width: fit-content !important;
+    max-width: 100% !important;
+    padding: 7px 9px 5px !important;
+}
+.msg-media-bubble .group-msg-image,
+.group-msg-image {
+    max-width: 150px !important;
+    max-height: 170px !important;
+    width: auto !important;
+    height: auto !important;
+    border-radius: 9px;
+    display: block;
+}
+.msg-media-bubble .group-msg-time {
+    display: block;
+    text-align: right;
+    margin-top: 3px;
+    margin-left: 0;
+}
