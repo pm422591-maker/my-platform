@@ -2,6 +2,21 @@
 const clientId = "3297832364838545643";
 const redirectUri = "https://syncora.cyou/profile.html";
 
+// 🛡️ ФІКС "window.setTheme is not a function":
+// setTheme оголошена в home.js, але profile.html його НЕ підключає.
+// Без цього фолбеку виклик на старті кидав TypeError і вбивав
+// весь DOMContentLoaded — профіль "не прогружався".
+if (typeof window.setTheme !== 'function') {
+    window.setTheme = function(theme) {
+        try { localStorage.setItem('theme', theme); } catch (_) {}
+        document.body.classList.toggle('light-theme', theme === 'light');
+        const darkBtn = document.getElementById('theme-dark');
+        const lightBtn = document.getElementById('theme-light');
+        if (darkBtn)  darkBtn.classList.toggle('active', theme !== 'light');
+        if (lightBtn) lightBtn.classList.toggle('active', theme === 'light');
+    };
+}
+
 // Елементи інтерфейсу
 const trigger = document.getElementById('activityTrigger');
 const picker = document.getElementById('timePicker');
@@ -109,10 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try { savedDeco = localStorage.getItem('user_decoration'); } catch(_) {}
     if (savedDeco) window.applyDecoration(savedDeco);
 
-    // 7. Тема
+    // 7. Тема (з захистом — щоб помилка не зупинила решту ініціалізації профілю)
     let savedTheme = 'dark';
     try { savedTheme = localStorage.getItem('theme') || 'dark'; } catch(_) {}
-    window.setTheme(savedTheme);
+    try { window.setTheme(savedTheme); } catch (e) { console.warn('setTheme:', e); }
 
     // 8. Онлайн-статус
     const urlParams = new URLSearchParams(window.location.search);

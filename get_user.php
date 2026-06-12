@@ -8,15 +8,8 @@ error_reporting(0);
 
 header('Content-Type: application/json; charset=utf-8');
 
-$host = 'my-mysql';
-$db   = 'mywebsite';
-$user = getenv('DB_USER') ?: 'appuser';
-$pass = getenv('DB_PASS') ?: ''; 
-
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
+    require_once __DIR__ . '/db_connect.php'; // utf8mb4 + безпечні налаштування
 
     $currentUserId = $_SESSION['user_id'] ?? null;
     $requestedUserId = $_GET['id'] ?? null;
@@ -25,7 +18,33 @@ try {
     if ($targetId) {
         $isOwnProfile = ($currentUserId && $targetId == $currentUserId);
 
-        $sql = "SELECT username, `user`, avatar_url, banner_url, background_url, avatar_frame, created_at, bio, country_code, languages_icons, secondary_email, grad_color_left, grad_color_right, status_start_hour, status_end_hour, status_last_updated, badges, roblox_id, roblox_data, roblox_inventory, steam_id, premium_until FROM users WHERE id = ?";
+        // 🛡️ ФІКС "профіль не вантажиться":
+        // Раніше SELECT жорстко вимагав avatar_frame та інші нові колонки.
+        // Якщо хоч однієї немає в БД — "Unknown column" і профіль падав цілком.
+        // Тепер вибираємо лише ті колонки, що реально існують,
+        // а відсутні віддаємо як NULL — фронтенд має для них дефолти.
+        $wanted = ['username', 'user', 'avatar_url', 'banner_url', 'background_url',
+                   'avatar_frame', 'created_at', 'bio', 'country_code', 'languages_icons',
+                   'secondary_email', 'grad_color_left', 'grad_color_right',
+                   'status_start_hour', 'status_end_hour', 'status_last_updated',
+                   'badges', 'roblox_id', 'roblox_data', 'roblox_inventory',
+                   'steam_id', 'premium_until'];
+
+        $existing = [];
+        foreach ($pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $existing[$c['Field']] = true;
+        }
+
+        $selectCols = [];
+        foreach ($wanted as $col) {
+            if (isset($existing[$col])) {
+                $selectCols[] = "`$col`";
+            } else {
+                $selectCols[] = "NULL AS `$col`"; // колонки немає — віддаємо NULL
+            }
+        }
+
+        $sql = "SELECT " . implode(', ', $selectCols) . " FROM users WHERE id = ?";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$targetId]);
@@ -102,6 +121,7 @@ try {
         echo json_encode(['success' => false, 'message' => 'Not authorized (Session is empty)']);
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    error_log('[get_user] ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера']);
 }
 exit;

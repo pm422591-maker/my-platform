@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 2026-06-11 22:15:51,751:DEBUG:certbot._internal.main:certbot version: 5.6.0
 2026-06-11 22:15:51,751:DEBUG:certbot._internal.main:Location of certbot entry point: /opt/certbot/bin/certbot
 2026-06-11 22:15:51,751:DEBUG:certbot._internal.main:Arguments: ['-n', '--config', '/etc/letsencrypt.ini', '--work-dir', '/tmp/letsencrypt-lib', '--logs-dir', '/data/logs', '--cert-name', 'npm-7', '--agree-tos', '--authenticator', 'webroot', '-m', 'p439190532@gmail.com', '--preferred-challenges', 'http', '--domains', 'syncora.cyou']
@@ -20,6 +21,66 @@ Prep: True
 HTTP 200
 Server: nginx
 Date: Thu, 11 Jun 2026 22:15:53 GMT
+=======
+2026-06-12 09:20:13,034:DEBUG:certbot._internal.main:certbot version: 5.6.0
+2026-06-12 09:20:13,034:DEBUG:certbot._internal.main:Location of certbot entry point: /opt/certbot/bin/certbot
+2026-06-12 09:20:13,034:DEBUG:certbot._internal.main:Arguments: ['-n', '--config', '/etc/letsencrypt.ini', '--work-dir', '/tmp/letsencrypt-lib', '--logs-dir', '/data/logs', '--cert-name', 'npm-1', '--agree-tos', '--authenticator', 'webroot', '-m', 'pm422591@gmail.com', '--preferred-challenges', 'http', '--domains', 'syncora.cyou']
+2026-06-12 09:20:13,034:DEBUG:certbot._internal.main:Discovered plugins: PluginsRegistry(PluginEntryPoint#manual,PluginEntryPoint#null,PluginEntryPoint#standalone,PluginEntryPoint#webroot)
+2026-06-12 09:20:13,043:DEBUG:certbot._internal.log:Root logging level set at 30
+2026-06-12 09:20:13,046:DEBUG:certbot._internal.plugins.selection:Requested authenticator webroot and installer None
+2026-06-12 09:20:13,046:DEBUG:certbot._internal.plugins.selection:Single candidate plugin: * webroot
+Description: Saves the necessary validation files to a .well-known/acme-challenge/ directory within the nominated webroot path. A separate HTTP server must be running and serving files from the webroot path. HTTP challenge only (wildcards not supported).
+Interfaces: Authenticator, Plugin
+Entry point: EntryPoint(name='webroot', value='certbot._internal.plugins.webroot:Authenticator', group='certbot.plugins')
+Initialized: <certbot._internal.plugins.webroot.Authenticator object at 0x78738885bcb0>
+Prep: True
+2026-06-12 09:20:13,047:DEBUG:certbot._internal.plugins.selection:Selected authenticator <certbot._internal.plugins.webroot.Authenticator object at 0x78738885bcb0> and installer None
+2026-06-12 09:20:13,047:INFO:certbot._internal.plugins.selection:Plugins selected: Authenticator webroot, Installer None
+2026-06-12 09:20:13,096:DEBUG:certbot._internal.main:Picked account: <Account(RegistrationResource(body=Registration(key=None, contact=(), agreement=None, status=None, terms_of_service_agreed=None, only_return_existing=None, external_account_binding=None), uri='https://acme-v02.api.letsencrypt.org/acme/acct/3391339296', new_authzr_uri=None, terms_of_service=None), f0fcafa20fb765b0c8fc7583f69ee6aa, Meta(creation_dt=datetime.datetime(2026, 6, 1, 8, 36, 49, tzinfo=datetime.timezone.utc), creation_host='214fc1ec314a', register_to_eff=None))>
+2026-06-12 09:20:13,097:DEBUG:acme.client:Sending GET request to https://acme-v02.api.letsencrypt.org/directory.
+2026-06-12 09:20:13,098:DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): acme-v02.api.letsencrypt.org:443
+2026-06-12 09:20:13,554:DEBUG:urllib3.connectionpool:https://acme-v02.api.letsencrypt.org:443 "GET /directory HTTP/1.1" 200 1031
+2026-06-12 09:20:13,555:DEBUG:acme.client:Received response:
+HTTP 200
+Server: nginx
+Date: Fri, 12 Jun 2026 09:20:13 GMT
+Content-Type: application/json
+Content-Length: 1031
+Connection: keep-alive
+Cache-Control: public, max-age=0, no-cache
+X-Frame-Options: DENY
+Strict-Transport-Security: max-age=604800
+
+{
+  "Ur5DIDkdcV8": "https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417",
+  "keyChange": "https://acme-v02.api.letsencrypt.org/acme/key-change",
+  "meta": {
+    "caaIdentities": [
+      "letsencrypt.org"
+    ],
+    "profiles": {
+      "classic": "https://letsencrypt.org/docs/profiles#classic",
+      "shortlived": "https://letsencrypt.org/docs/profiles#shortlived",
+      "tlsclient": "https://letsencrypt.org/docs/profiles#tlsclient",
+      "tlsserver": "https://letsencrypt.org/docs/profiles#tlsserver"
+    },
+    "termsOfService": "https://letsencrypt.org/documents/LE-SA-v1.7-June-04-2026.pdf",
+    "website": "https://letsencrypt.org"
+  },
+  "newAccount": "https://acme-v02.api.letsencrypt.org/acme/new-acct",
+  "newNonce": "https://acme-v02.api.letsencrypt.org/acme/new-nonce",
+  "newOrder": "https://acme-v02.api.letsencrypt.org/acme/new-order",
+  "renewalInfo": "https://acme-v02.api.letsencrypt.org/acme/renewal-info",
+  "revokeCert": "https://acme-v02.api.letsencrypt.org/acme/revoke-cert"
+}
+2026-06-12 09:20:13,566:DEBUG:acme.client:Sending GET request to https://acme-v02.api.letsencrypt.org/directory.
+2026-06-12 09:20:13,567:DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): acme-v02.api.letsencrypt.org:443
+2026-06-12 09:20:13,970:DEBUG:urllib3.connectionpool:https://acme-v02.api.letsencrypt.org:443 "GET /directory HTTP/1.1" 200 1031
+2026-06-12 09:20:13,971:DEBUG:acme.client:Received response:
+HTTP 200
+Server: nginx
+Date: Fri, 12 Jun 2026 09:20:13 GMT
+>>>>>>> 3f925ecb5059aa899bec467c143f09f14a0d6718
 Content-Type: application/json
 Content-Length: 1031
 Connection: keep-alive
@@ -45,6 +106,7 @@ Strict-Transport-Security: max-age=604800
   "newAccount": "https://acme-v02.api.letsencrypt.org/acme/new-acct",
   "newNonce": "https://acme-v02.api.letsencrypt.org/acme/new-nonce",
   "newOrder": "https://acme-v02.api.letsencrypt.org/acme/new-order",
+<<<<<<< HEAD
   "ogAThCNzypM": "https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417",
   "renewalInfo": "https://acme-v02.api.letsencrypt.org/acme/renewal-info",
   "revokeCert": "https://acme-v02.api.letsencrypt.org/acme/revoke-cert"
@@ -87,10 +149,29 @@ Cache-Control: public, max-age=0, no-cache
 Link: <https://acme-v02.api.letsencrypt.org/directory>;rel="index"
 Location: https://acme-v02.api.letsencrypt.org/acme/order/3427313506/520616418606
 Replay-Nonce: 6jCWSrDqpItMI7uxAZ7jzh7DDvSDNpsVKhf_axLKP6KqajafEuY
+=======
+  "renewalInfo": "https://acme-v02.api.letsencrypt.org/acme/renewal-info",
+  "revokeCert": "https://acme-v02.api.letsencrypt.org/acme/revoke-cert",
+  "xNp7OIcgh_o": "https://community.letsencrypt.org/t/adding-random-entries-to-the-directory/33417"
+}
+2026-06-12 09:20:13,971:DEBUG:acme.client:Sending GET request to https://acme-v02.api.letsencrypt.org/acme/renewal-info/uyDKRwv-1-Wc-Y8JKqOMN0WxvNg.BbMRAnUN85PPQ_Z1kWFWKLtK.
+2026-06-12 09:20:14,191:DEBUG:urllib3.connectionpool:https://acme-v02.api.letsencrypt.org:443 "GET /acme/renewal-info/uyDKRwv-1-Wc-Y8JKqOMN0WxvNg.BbMRAnUN85PPQ_Z1kWFWKLtK HTTP/1.1" 200 101
+2026-06-12 09:20:14,192:DEBUG:acme.client:Received response:
+HTTP 200
+Server: nginx
+Date: Fri, 12 Jun 2026 09:20:14 GMT
+Content-Type: application/json
+Content-Length: 101
+Connection: keep-alive
+Cache-Control: public, max-age=0, no-cache
+Link: <https://acme-v02.api.letsencrypt.org/directory>;rel="index"
+Retry-After: 22238
+>>>>>>> 3f925ecb5059aa899bec467c143f09f14a0d6718
 X-Frame-Options: DENY
 Strict-Transport-Security: max-age=604800
 
 {
+<<<<<<< HEAD
   "status": "pending",
   "expires": "2026-06-18T22:15:53Z",
   "identifiers": [
@@ -304,3 +385,14 @@ Traceback (most recent call last):
     raise errors.AuthorizationError('Some challenges have failed.')
 certbot.errors.AuthorizationError: Some challenges have failed.
 2026-06-11 22:15:54,994:ERROR:certbot._internal.log:Some challenges have failed.
+=======
+  "suggestedWindow": {
+    "start": "2026-07-30T10:22:28Z",
+    "end": "2026-08-01T05:33:18Z"
+  }
+}
+2026-06-12 09:20:14,194:INFO:certbot._internal.ocsp:Cannot extract OCSP URI from /etc/letsencrypt/archive/npm-1/cert1.pem
+2026-06-12 09:20:14,194:DEBUG:certbot._internal.display.obj:Notifying user: Certificate not yet due for renewal
+2026-06-12 09:20:14,196:INFO:certbot._internal.main:Keeping the existing certificate
+2026-06-12 09:20:14,196:DEBUG:certbot._internal.display.obj:Notifying user: Certificate not yet due for renewal; no action taken.
+>>>>>>> 3f925ecb5059aa899bec467c143f09f14a0d6718

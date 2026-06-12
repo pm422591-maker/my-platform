@@ -192,9 +192,9 @@ async function checkTutorialFromDB(force = false) {
       _tutorialDBCache = true;
       return true;
     }
-    // Якщо сесії немає — це НЕ означає "туторіал не пройдено",
-    // просто не можемо перевірити. Не чіпаємо локальний прапорець.
-    if (data.reason === 'no_session') {
+    // Якщо сесії немає або БД тимчасово впала — це НЕ означає "туторіал не пройдено",
+    // просто не можемо перевірити. Не чіпаємо локальний прапорець і НЕ показуємо туторіал.
+    if (data.reason === 'no_session' || data.reason === 'db_error') {
       _tutorialDBCache = tutorialDone();
       return _tutorialDBCache;
     }
