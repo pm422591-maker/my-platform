@@ -9379,6 +9379,7 @@ window.openGroupChat = function(g) {
         msgContainer.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:30px 0;">Завантаження...</div>`;
     }
 
+    document.querySelectorAll('.reaction-bar, .msg-context-menu').forEach(b => b.remove());
     window.refreshGroupInfo();
     if (window.groupPollTimer) clearInterval(window.groupPollTimer);
     window.fetchGroupMessages(true);
@@ -9685,57 +9686,74 @@ window.renderAllReactions = function() {
     });
 };
 
-// 🖱️ КОНТЕКСТНЕ МЕНЮ (правий клік): реакції + редагувати + видалити
+// 🖱️ КОНТЕКСТНЕ МЕНЮ (ПКМ): реакції + редагувати + переслати + видалити
+// ⚠️ Стилі вшиті інлайн — меню виглядає правильно навіть зі старим CSS у кеші
 window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
     event.preventDefault();
     event.stopPropagation();
-    document.querySelectorAll('.reaction-bar, .msg-context-menu').forEach(b => b.remove());
+    // Прибираємо БУДЬ-ЯКІ старі панелі (включно з легасі .reaction-bar)
+    document.querySelectorAll('.reaction-bar, .msg-context-menu, .sticker-picker-window.floating').forEach(b => b.remove());
 
     const info = window.currentGroupInfo;
     const isAdmin = info && ['owner', 'coowner', 'moderator'].includes(info.my_role);
 
     const menu = document.createElement('div');
     menu.className = 'msg-context-menu';
+    menu.style.cssText = [
+        'position:fixed', 'width:232px', 'z-index:999999',
+        'background:linear-gradient(180deg,#2a0d1d 0%,#170810 100%)',
+        'border:1px solid rgba(240,4,127,0.55)', 'border-radius:14px',
+        'box-shadow:0 14px 44px rgba(0,0,0,0.7), 0 0 24px rgba(240,4,127,0.25)',
+        'overflow:hidden', 'padding-bottom:4px',
+        "font-family:'Geologica',sans-serif"
+    ].join(';');
     menu.onclick = (e) => e.stopPropagation();
 
+    // Рядок реакцій: 5 стандартних + 3 кастомні (компактно, один ряд)
     const standard = Object.entries(window.appleEmojis || {});
     const custom = Object.entries(window.customEmojis || {}).slice(0, 3);
+    const reactItem = (key, url) => `
+        <span onclick="window.toggleReaction(${msgId}, '${escapeGroupHTML(key)}'); document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());"
+              onmouseover="this.style.transform='scale(1.3)'; this.style.background='rgba(240,4,127,0.3)';"
+              onmouseout="this.style.transform='scale(1)'; this.style.background='transparent';"
+              style="width:25px; height:25px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:50%; transition:0.15s; flex-shrink:0;">
+            <img src="${url}" style="width:17px; height:17px; object-fit:contain;">
+        </span>`;
     const reactionsRow = `
-        <div class="ctx-reactions">
-            ${standard.map(([emoji, url]) =>
-                `<span class="ctx-react-item" onclick="window.toggleReaction(${msgId}, '${emoji}'); document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());"><img src="${url}"></span>`
-            ).join('')}
-            ${custom.map(([code, url]) =>
-                `<span class="ctx-react-item" onclick="window.toggleReaction(${msgId}, '${escapeGroupHTML(code)}'); document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());"><img src="${url}"></span>`
-            ).join('')}
-        </div>`;
+        <div style="display:flex; gap:2px; padding:8px 8px 6px; justify-content:center;">
+            ${standard.map(([e, u]) => reactItem(e, u)).join('')}
+            ${custom.map(([c, u]) => reactItem(c, u)).join('')}
+        </div>
+        <div style="height:1px; background:rgba(240,4,127,0.25); margin:0 8px 4px;"></div>`;
+
+    const itemStyle = "padding:9px 16px; font-size:13px; font-weight:600; color:#eee; cursor:pointer; transition:background 0.15s;";
+    const hov = `onmouseover="this.style.background='rgba(240,4,127,0.18)'" onmouseout="this.style.background='transparent'"`;
 
     let items = '';
     if (isMe && canEdit) {
-        items += `<div class="ctx-item" onclick="window.startEditGroupMessage(${msgId})">✏️ Редагувати</div>`;
+        items += `<div style="${itemStyle}" ${hov} onclick="window.startEditGroupMessage(${msgId})">✏️ Редагувати</div>`;
     }
-    items += `<div class="ctx-item" onclick="window.openForwardModal(${msgId})">↪️ Переслати</div>`;
+    items += `<div style="${itemStyle}" ${hov} onclick="window.openForwardModal(${msgId})">↪️ Переслати</div>`;
     if (isMe || isAdmin) {
-        items += `<div class="ctx-item ctx-danger" onclick="window.deleteGroupMessage(${msgId})">🗑 Видалити</div>`;
+        items += `<div style="${itemStyle} color:#ff4d6d;" onmouseover="this.style.background='rgba(255,0,51,0.18)'" onmouseout="this.style.background='transparent'" onclick="window.deleteGroupMessage(${msgId})">🗑 Видалити</div>`;
     }
 
-    menu.innerHTML = reactionsRow + `<div class="ctx-divider"></div>` + items;
+    menu.innerHTML = reactionsRow + items;
     document.body.appendChild(menu);
 
-    // Позиціюємо біля курсора, не вилазячи за екран
-    const mw = 230, mh = 140;
+    // Позиція біля курсора, в межах екрана
+    const mh = menu.offsetHeight || 170;
     let x = event.clientX, y = event.clientY;
-    if (x + mw > window.innerWidth) x = window.innerWidth - mw - 10;
+    if (x + 240 > window.innerWidth) x = window.innerWidth - 250;
     if (y + mh > window.innerHeight) y = window.innerHeight - mh - 10;
+    if (x < 6) x = 6;
+    if (y < 6) y = 6;
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
 
     setTimeout(() => {
         document.addEventListener('click', function closeCtx(e) {
             if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', closeCtx); }
-        });
-        document.addEventListener('contextmenu', function closeCtx2(e) {
-            if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('contextmenu', closeCtx2); }
         });
     }, 50);
 };
