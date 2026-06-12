@@ -18,10 +18,10 @@ Options -Indexes
 </FilesMatch>
 
 # ── Заборона доступу до .git
-<DirectoryMatch "^/.git/">
+<FilesMatch "^\.git">
     Order Allow,Deny
     Deny from all
-</DirectoryMatch>
+</FilesMatch>
 
 # ── Безпечні заголовки
 <IfModule mod_headers.c>

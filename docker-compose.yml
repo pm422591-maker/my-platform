@@ -8,7 +8,7 @@ services:
       DB_HOST: my-mysql
       DB_NAME: mywebsite
       DB_USER: appuser
-      DB_PASS: ${DB_APP_PASSWORD}   # береться з .env файлу
+      DB_PASS: ${DB_APP_PASSWORD}
     volumes:
       - uploads_data:/var/www/html/uploads
     depends_on:
@@ -22,13 +22,12 @@ services:
     container_name: my-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}   # з .env
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: mywebsite
       MYSQL_USER: appuser
-      MYSQL_PASSWORD: ${DB_APP_PASSWORD}             # окремий юзер для додатку
+      MYSQL_PASSWORD: ${DB_APP_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-    # ВАЖЛИВО: не відкриваємо порт 3306 назовні!
     expose:
       - "3306"
     healthcheck:
@@ -46,10 +45,8 @@ services:
     environment:
       PMA_HOST: my-mysql
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    # ВАЖЛИВО: НЕ відкривати порт 8888 назовні на production!
-    # Для локальної розробки — ok, на сервері — ВИДАЛИ або закрий firewall
     ports:
-      - "127.0.0.1:8888:80"   # тільки localhost, не 0.0.0.0
+      - "127.0.0.1:8888:80"
     depends_on:
       db:
         condition: service_healthy
@@ -60,11 +57,9 @@ services:
     image: 'jc21/nginx-proxy-manager:latest'
     restart: always
     ports:
-      - '80:80'
-      - '443:443'
-    # Адмін-панель Nginx Proxy Manager — тільки localhost!
-    expose:
-      - "81"
+      - "80:80"
+      - "81:81"
+      - "443:443"
     volumes:
       - ./proxy_data:/data
       - ./letsencrypt:/etc/letsencrypt
