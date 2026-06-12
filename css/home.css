@@ -7418,3 +7418,19 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     font-family: 'Geologica', sans-serif;
 }
 #group-edit-bar button:hover { background: rgba(240, 4, 127, 0.8); border-color: transparent; }
+
+/* ↪️ Переслане повідомлення */
+.group-msg-fwd {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    font-style: italic;
+    margin-bottom: 4px;
+    border-left: 2px solid rgba(240, 4, 127, 0.6);
+    padding-left: 7px;
+}
+.group-msg-fwd b { color: #ff6ab8; font-style: normal; }
+.msg-sent .group-msg-fwd { color: rgba(255, 255, 255, 0.75); border-left-color: rgba(255, 255, 255, 0.5); }
+.msg-sent .group-msg-fwd b { color: #fff; }
+
+/* Курсор: бульки тепер реагують лише на ПКМ */
+.group-reactable { cursor: context-menu; }

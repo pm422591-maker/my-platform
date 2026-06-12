@@ -63,6 +63,7 @@ try {
         "ALTER TABLE chat_group_messages ADD COLUMN media_type VARCHAR(12) NOT NULL DEFAULT 'text'",
         "ALTER TABLE chat_group_messages ADD COLUMN media_url VARCHAR(255) DEFAULT NULL",
         "ALTER TABLE chat_group_messages ADD COLUMN edited TINYINT(1) NOT NULL DEFAULT 0",
+        "ALTER TABLE chat_group_messages ADD COLUMN fwd_from VARCHAR(80) DEFAULT NULL",
     ];
     foreach ($migrations as $sql) {
         try { $pdo->exec($sql); } catch (Throwable $e) { /* вже застосовано */ }
@@ -459,7 +460,7 @@ try {
         $grp = getGroup($pdo, $gid);
         $stmt = $pdo->prepare("
             SELECT gm.id, gm.user_id, gm.username, gm.avatar, gm.message, gm.media_type, gm.media_url,
-                   gm.created_at, gm.edited, mem.role AS sender_role
+                   gm.created_at, gm.edited, gm.fwd_from, mem.role AS sender_role
             FROM chat_group_messages gm
             LEFT JOIN chat_group_members mem ON mem.group_id = gm.group_id AND mem.user_id = gm.user_id
             WHERE gm.group_id = :g AND gm.id > :s
@@ -529,6 +530,48 @@ try {
                 ->execute([':m' => $mid, ':u' => $my_id, ':e' => $emoji]);
             echo json_encode(['success' => true, 'state' => 'added']);
         }
+        exit;
+    }
+
+    // ↪️ ПЕРЕСЛАТИ ПОВІДОМЛЕННЯ в іншу групу/канал
+    if ($action === 'forward_message') {
+        $mid = intval($data['message_id'] ?? 0);
+        $to = intval($data['to_group_id'] ?? 0);
+        if ($mid <= 0 || $to <= 0) { echo json_encode(['success' => false]); exit; }
+
+        // Джерело: маю бути учасником групи, звідки пересилаю
+        $st = $pdo->prepare("SELECT * FROM chat_group_messages WHERE id = :m");
+        $st->execute([':m' => $mid]);
+        $src = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$src || $src['media_type'] === 'system') { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
+        if (!myRole($pdo, intval($src['group_id']), $my_id)) {
+            echo json_encode(['success' => false, 'message' => 'Ви не учасник вихідного чату']); exit;
+        }
+
+        // Призначення: ті ж права, що й на відправку
+        $dst = getGroup($pdo, $to);
+        if (!$dst) { echo json_encode(['success' => false, 'message' => 'Чат не знайдено']); exit; }
+        $role = myRole($pdo, $to, $my_id, $dst);
+        if (!$role) { echo json_encode(['success' => false, 'message' => 'Ви не учасник цього чату']); exit; }
+        if ($dst['type'] === 'channel' && !isAdminRole($role)) {
+            echo json_encode(['success' => false, 'message' => 'У канал пересилають лише адміністратори']); exit;
+        }
+
+        $uname = $data['username'] ?? ($_SESSION['username'] ?? 'Користувач');
+        $uavatar = $data['avatar'] ?? null;
+        // Хто справжній автор: якщо це вже переслане — зберігаємо первинного автора
+        $origin = $src['fwd_from'] ?: $src['username'];
+
+        $ins = $pdo->prepare("INSERT INTO chat_group_messages
+            (group_id, user_id, username, avatar, message, media_type, media_url, fwd_from)
+            VALUES (:g, :u, :n, :a, :m, :t, :url, :f)");
+        $ins->execute([
+            ':g' => $to, ':u' => $my_id,
+            ':n' => mb_substr($uname, 0, 80), ':a' => $uavatar,
+            ':m' => $src['message'], ':t' => $src['media_type'], ':url' => $src['media_url'],
+            ':f' => mb_substr($origin, 0, 80)
+        ]);
+        echo json_encode(['success' => true, 'id' => intval($pdo->lastInsertId()), 'to_name' => $dst['name']]);
         exit;
     }
 

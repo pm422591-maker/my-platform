@@ -9623,6 +9623,10 @@ window.fetchGroupMessages = async function(initial) {
                 contentHTML = `<span class="text-bubble">${renderGroupText(m.message)}</span>`;
             }
 
+            // ↪️ Позначка пересланого повідомлення
+            const fwdLine = m.fwd_from
+                ? `<div class="group-msg-fwd">↪ Переслано від <b>${escapeGroupHTML(m.fwd_from)}</b></div>` : '';
+
             // 🏷️ ПІДПИС РОЛІ праворуч від ніка (як у Telegram у адмінів)
             const roleKey = m.sender_role;
             const roleLabel = (roleKey && roleKey !== 'member' && window._groupRoleTitles[roleKey])
@@ -9642,9 +9646,9 @@ window.fetchGroupMessages = async function(initial) {
                     ${!isMe ? avatarHTML : ''}
                     <div style="display:flex; flex-direction:column; align-items:${isMe ? 'flex-end' : 'flex-start'}; max-width:72%;">
                         <div class="${bubbleClass} msg-anim-in group-reactable"
-                             onclick="window.openReactionBar(event, ${m.id})"
                              oncontextmenu="window.openMsgContextMenu(event, ${m.id}, ${isMe}, ${canEdit})">
                             ${senderLine}
+                            ${fwdLine}
                             ${contentHTML}
                             ${isSticker ? '' : `<span class="group-msg-time">${editedMark}${time}</span>`}
                         </div>
@@ -9710,10 +9714,10 @@ window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
     if (isMe && canEdit) {
         items += `<div class="ctx-item" onclick="window.startEditGroupMessage(${msgId})">✏️ Редагувати</div>`;
     }
+    items += `<div class="ctx-item" onclick="window.openForwardModal(${msgId})">↪️ Переслати</div>`;
     if (isMe || isAdmin) {
         items += `<div class="ctx-item ctx-danger" onclick="window.deleteGroupMessage(${msgId})">🗑 Видалити</div>`;
     }
-    if (!items) items = `<div class="ctx-item" style="opacity:0.5; cursor:default;">Оберіть реакцію</div>`;
 
     menu.innerHTML = reactionsRow + `<div class="ctx-divider"></div>` + items;
     document.body.appendChild(menu);
@@ -9769,6 +9773,55 @@ window.cancelEditGroupMessage = function() {
     if (input) input.value = '';
 };
 
+// ↪️ ПЕРЕСИЛКА: вибір групи/каналу зі своїх чатів
+window.openForwardModal = function(msgId) {
+    document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
+    let modal = document.getElementById('group-forward-modal');
+    if (modal) modal.remove();
+
+    const chats = (window._myGroupsCache || []).filter(x => parseInt(x.id) !== (window.currentGroupChat?.id || 0));
+    modal = document.createElement('div');
+    modal.id = 'group-forward-modal';
+    modal.innerHTML = `
+        <div class="ginv-box">
+            <div class="gset-header" style="margin-bottom:12px;">
+                <span style="font-weight:800; font-size:15px;">↪️ Переслати до...</span>
+                <button class="close-chat-x" onclick="document.getElementById('group-forward-modal').remove()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div style="max-height:300px; overflow-y:auto;">
+                ${chats.length ? chats.map(c => `
+                    <div class="gset-member-row" style="cursor:pointer;" onclick="window.forwardGroupMessage(${msgId}, ${c.id}, this)">
+                        <div class="group-avatar-circle">${c.type === 'channel' ? '📣' : '👥'}</div>
+                        <span style="flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeGroupHTML(c.name)}</span>
+                        <span style="font-size:11px; color:rgba(255,255,255,0.4);">${c.type === 'channel' ? 'канал' : 'група'}</span>
+                    </div>`).join('')
+                : '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">Немає інших чатів для пересилки</div>'}
+            </div>
+        </div>`;
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+};
+
+window.forwardGroupMessage = async function(msgId, toGroupId, rowEl) {
+    if (rowEl) { rowEl.style.opacity = '0.5'; rowEl.style.pointerEvents = 'none'; }
+    const data = await groupApiPost({
+        action: 'forward_message',
+        message_id: msgId,
+        to_group_id: toGroupId,
+        username: localStorage.getItem('user_name') || 'Користувач',
+        avatar: localStorage.getItem('user_avatar') || null
+    });
+    if (!data.success) {
+        window.showGroupToast('⚠️ ' + (data.message || 'Не вдалося переслати'));
+        if (rowEl) { rowEl.style.opacity = '1'; rowEl.style.pointerEvents = 'auto'; }
+        return;
+    }
+    document.getElementById('group-forward-modal')?.remove();
+    window.showGroupToast('↪️ Переслано до «' + (data.to_name || 'чату') + '»');
+};
+
 window.deleteGroupMessage = async function(msgId) {
     document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
     const data = await groupApiPost({ action: 'delete_message', message_id: msgId });
@@ -9786,36 +9839,7 @@ window.deleteGroupMessage = async function(msgId) {
     window.showGroupToast('🗑 Повідомлення видалено');
 };
 
-// ❤️ Панель швидких реакцій (клік по повідомленню)
-window.openReactionBar = function(event, msgId) {
-    // Не реагуємо на кліки по аудіо-плеєру
-    if (event.target.tagName === 'AUDIO') return;
-    document.querySelectorAll('.reaction-bar').forEach(b => b.remove());
-
-    const row = document.querySelector(`.msg-row[data-gid="${msgId}"]`);
-    if (!row) return;
-
-    const bar = document.createElement('div');
-    bar.className = 'reaction-bar';
-    const standard = Object.entries(window.appleEmojis || {});
-    const custom = Object.entries(window.customEmojis || {}).slice(0, 6);
-    bar.innerHTML =
-        standard.map(([emoji, url]) =>
-            `<span class="reaction-bar-item" onclick="event.stopPropagation(); window.toggleReaction(${msgId}, '${emoji}')"><img src="${url}"></span>`
-        ).join('') +
-        custom.map(([code, url]) =>
-            `<span class="reaction-bar-item" onclick="event.stopPropagation(); window.toggleReaction(${msgId}, '${escapeGroupHTML(code)}')"><img src="${url}"></span>`
-        ).join('');
-
-    row.style.position = 'relative';
-    row.appendChild(bar);
-
-    setTimeout(() => {
-        document.addEventListener('click', function closeBar(e) {
-            if (!bar.contains(e.target)) { bar.remove(); document.removeEventListener('click', closeBar); }
-        });
-    }, 50);
-};
+// ❤️ Реакції тепер відкриваються ЛИШЕ правим кліком (контекстне меню)
 
 window.toggleReaction = async function(msgId, emoji) {
     document.querySelectorAll('.reaction-bar').forEach(b => b.remove());
@@ -10510,6 +10534,7 @@ window.deleteGroup = async function() {
         window.groupReactionsMap = {};
         document.getElementById('group-settings-panel')?.remove();
         document.getElementById('group-invite-modal')?.remove();
+        document.getElementById('group-forward-modal')?.remove();
         document.getElementById('chat-emoji-picker')?.remove();
         document.querySelectorAll('.reaction-bar, .role-popover, .msg-context-menu').forEach(b => b.remove());
         window.cancelEditGroupMessage();
@@ -10527,6 +10552,24 @@ window.deleteGroup = async function() {
         return originalClose.apply(this, arguments);
     };
 })();
+
+// 🖱️ СТРАХОВКА: делегування ПКМ на весь контейнер повідомлень
+// (працює, навіть якщо inline-атрибут не спрацював)
+document.addEventListener('contextmenu', function(e) {
+    if (!window.currentGroupChat) return;
+    const bubble = e.target.closest('.group-reactable');
+    if (!bubble) return;
+    const row = bubble.closest('.msg-row[data-gid]');
+    if (!row) return;
+    e.preventDefault();
+    const msgId = parseInt(row.getAttribute('data-gid'));
+    const myId = parseInt(localStorage.getItem('user_id') || 0);
+    const isMe = row.classList.contains('mine');
+    const canEdit = !!row.querySelector('.text-bubble');
+    if (!document.querySelector('.msg-context-menu')) {
+        window.openMsgContextMenu(e, msgId, isMe, canEdit);
+    }
+});
 
 // === 13. ВСТУП ЗА ПОСИЛАННЯМ + ІНІЦІАЛІЗАЦІЯ ===
 document.addEventListener('DOMContentLoaded', () => {
