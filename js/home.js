@@ -3970,14 +3970,14 @@ window.initMessageContextMenu = function() {
     const style = document.createElement('style');
     style.id = 'msg-context-menu-styles'; 
     style.innerHTML = `
-        #msg-context-menu { display: none; position: fixed; background: #1e1f22; border: 1px solid #333; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10001; width: 220px; padding: 0 0 5px 0; overflow: hidden; }
-        .reactions-bar { display: flex; justify-content: space-around; padding: 10px 15px; background: #2b2d31; border-bottom: 1px solid #333; margin-bottom: 5px; }
-        .reaction-emoji { font-size: 22px; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); user-select: none; }
-        .reaction-emoji:hover { transform: scale(1.4); }
+        #msg-context-menu { display: none; position: fixed; background: linear-gradient(180deg, #2a0d1d 0%, #170810 100%); border: 1px solid rgba(240,4,127,0.55); border-radius: 14px; box-shadow: 0 14px 44px rgba(0,0,0,0.7), 0 0 24px rgba(240,4,127,0.25); z-index: 10001; width: 220px; padding: 0 0 5px 0; overflow: hidden; }
+        .reactions-bar { display: flex; justify-content: center; gap: 2px; padding: 8px; background: transparent; border-bottom: 1px solid rgba(240,4,127,0.25); margin-bottom: 4px; }
+        .reaction-emoji { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); user-select: none; }
+        .reaction-emoji img { width: 18px !important; height: 18px !important; } .reaction-emoji:hover { transform: scale(1.3) translateY(-2px); background: rgba(240,4,127,0.3); }
         .msg-menu-item { padding: 10px 15px; color: #ddd; cursor: pointer; font-size: 14px; transition: background 0.2s; display: flex; align-items: center; gap: 10px; }
-        .msg-menu-item:hover { background: #490f3b; color: white; }
-        .msg-menu-item.delete { color: #ff4d4d; }
-        .msg-menu-item.delete:hover { background: #4a1a1a; }
+        .msg-menu-item:hover { background: rgba(240,4,127,0.18); color: white; }
+        .msg-menu-item.delete { color: #ff4d6d; }
+        .msg-menu-item.delete:hover { background: rgba(255,0,51,0.18); }
         
         @keyframes tg-pop-in {
             0% { transform: scale(0.3); opacity: 0; }
@@ -4234,6 +4234,23 @@ window.executeDeleteMessage = function(msgId) {
 
 // === АГРЕСИВНЕ ПЕРЕХОПЛЕННЯ ПРАВОГО КЛІКУ ТА ДІАГНОСТИКА ===
 window.addEventListener('contextmenu', function(e) {
+
+    // === ГРУПИ ТА КАНАЛИ: ПКМ відкриває НАШЕ рожеве меню і виходить ===
+    const groupRow = e.target.closest('.msg-row[data-gid]');
+    if (groupRow) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const gMenuOld = document.getElementById('msg-context-menu');
+        if (gMenuOld) gMenuOld.style.display = 'none';
+        if (!groupRow.querySelector('.group-system-chip') && typeof window.openMsgContextMenu === 'function') {
+            const msgId = parseInt(groupRow.getAttribute('data-gid'));
+            const isMe = groupRow.classList.contains('mine');
+            const canEdit = !!groupRow.querySelector('.text-bubble');
+            window.openMsgContextMenu(e, msgId, isMe, canEdit);
+        }
+        return;
+    }
+
 
 
     // 1. ПЕРЕВІРКА ПОВІДОМЛЕНЬ
@@ -10571,23 +10588,8 @@ window.deleteGroup = async function() {
     };
 })();
 
-// 🖱️ СТРАХОВКА: делегування ПКМ на весь контейнер повідомлень
-// (працює, навіть якщо inline-атрибут не спрацював)
-document.addEventListener('contextmenu', function(e) {
-    if (!window.currentGroupChat) return;
-    const bubble = e.target.closest('.group-reactable');
-    if (!bubble) return;
-    const row = bubble.closest('.msg-row[data-gid]');
-    if (!row) return;
-    e.preventDefault();
-    const msgId = parseInt(row.getAttribute('data-gid'));
-    const myId = parseInt(localStorage.getItem('user_id') || 0);
-    const isMe = row.classList.contains('mine');
-    const canEdit = !!row.querySelector('.text-bubble');
-    if (!document.querySelector('.msg-context-menu')) {
-        window.openMsgContextMenu(e, msgId, isMe, canEdit);
-    }
-});
+// (делегування ПКМ перенесено в головний window-обробник)
+
 
 // === 13. ВСТУП ЗА ПОСИЛАННЯМ + ІНІЦІАЛІЗАЦІЯ ===
 document.addEventListener('DOMContentLoaded', () => {
