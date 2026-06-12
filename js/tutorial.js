@@ -135,28 +135,79 @@ const QUIZ_STEPS = [
 // ─────────────────────────────────────────────
 // HELPERS — localStorage + DB
 // ─────────────────────────────────────────────
-function tutorialDone()     { return localStorage.getItem('syncora_tutorial_done') === '1'; }
-function markTutorialDone() {
-  localStorage.setItem('syncora_tutorial_done', '1');
-  // Save to DB as well (non-blocking)
-  fetch('set_tutorial_done.php', { method: 'POST', credentials: 'include' }).catch(() => {});
+
+// 🛡️ Безпечні обгортки: Tracking Prevention може блокувати localStorage
+// (саме це видно в консолі: "Tracking Prevention blocked access to storage").
+// Без try/catch будь-який виклик кидає помилку і ламає весь tutorial.js.
+function safeGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
 }
-function quizDone()         { return localStorage.getItem('syncora_quiz_done') === '1'; }
-function markQuizDone()     { localStorage.setItem('syncora_quiz_done', '1'); }
+function safeSet(key, val) {
+  try { localStorage.setItem(key, val); } catch (e) {}
+}
+function safeRemove(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+}
+
+function tutorialDone()     { return safeGet('syncora_tutorial_done') === '1'; }
+
+// Зберігаємо в БД і ПЕРЕВІРЯЄМО відповідь сервера.
+// Раніше: fetch().catch(()=>{}) — якщо сесія злетіла і сервер повернув
+// success:false, ми цього не бачили → при наступному вході туторіал вискакував знову.
+async function markTutorialDone() {
+  safeSet('syncora_tutorial_done', '1');
+  try {
+    const res = await fetch('set_tutorial_done.php', { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) {
+      console.warn('[Tutorial] Сервер не зберіг tutorial_done:', data.reason || data.message);
+    }
+    return !!data.success;
+  } catch (e) {
+    console.warn('[Tutorial] Не вдалося зберегти tutorial_done у БД:', e);
+    return false;
+  }
+}
+function quizDone()         { return safeGet('syncora_quiz_done') === '1'; }
+function markQuizDone()     {
+  safeSet('syncora_quiz_done', '1');
+  // Дублюємо в БД, щоб квіз не вискакував повторно на іншому пристрої / після чистки localStorage
+  fetch('set_quiz_done.php', { method: 'POST', credentials: 'include' }).catch(() => {});
+}
 
 // Check tutorial status from DB (for new sessions / different devices)
-async function checkTutorialFromDB() {
+// 🛡️ Кешуємо результат, щоб не робити два однакові запити при завантаженні
+// (раніше maybeShowWelcomeAndStart і checkAndStartTutorial фетчили двічі).
+let _tutorialDBCache = null;
+async function checkTutorialFromDB(force = false) {
+  if (_tutorialDBCache !== null && !force) return _tutorialDBCache;
   try {
     const res = await fetch('get_tutorial_status.php', { credentials: 'include' });
     const data = await res.json();
-    console.log('[Tutorial] get_tutorial_status response:', data);
+    if (data.success && data.quiz_done) {
+      safeSet('syncora_quiz_done', '1');
+    }
     if (data.success && data.tutorial_done) {
-      localStorage.setItem('syncora_tutorial_done', '1');
+      safeSet('syncora_tutorial_done', '1');
+      _tutorialDBCache = true;
       return true;
+    }
+    // Якщо сесії немає — це НЕ означає "туторіал не пройдено",
+    // просто не можемо перевірити. Не чіпаємо локальний прапорець.
+    if (data.reason === 'no_session') {
+      _tutorialDBCache = tutorialDone();
+      return _tutorialDBCache;
+    }
+    if (data.success && data.quiz_done) {
+      safeSet('syncora_quiz_done', '1');
     }
   } catch (e) {
     console.error('[Tutorial] checkTutorialFromDB error:', e);
+    // Мережа впала — довіряємо локальному прапорцю, щоб не показувати повторно
+    _tutorialDBCache = tutorialDone();
+    return _tutorialDBCache;
   }
+  _tutorialDBCache = false;
   return false;
 }
 
@@ -864,18 +915,20 @@ window.closeQuiz = function () {
 // ─────────────────────────────────────────────
 async function checkAndStartTutorial() {
   const dbDone = await checkTutorialFromDB();
-  console.log('[Tutorial] DB done:', dbDone);
 
-  // Sync localStorage with DB (DB is the source of truth)
   if (dbDone) {
-    localStorage.setItem('syncora_tutorial_done', '1');
-  } else {
-    localStorage.removeItem('syncora_tutorial_done');
+    // Уже пройдено — тільки перевіряємо квіз
+    if (!quizDone()) setTimeout(showQuizPrompt, 1200);
+    return;
   }
 
-  if (dbDone) {
-    console.log('[Tutorial] Already done (DB) — skipping');
-    // Check quiz: also trust DB over stale localStorage
+  // 🛡️ ГОЛОВНИЙ ФІКС повторного показу:
+  // Якщо локально позначено "пройдено", але БД каже "ні" —
+  // значить, минулого разу запис у БД не вдався (злетіла сесія тощо).
+  // НЕ показуємо туторіал знову, а ДОСИЛАЄМО прапорець у БД.
+  if (tutorialDone()) {
+    console.log('[Tutorial] Локально пройдено, синхронізую з БД...');
+    markTutorialDone(); // повторна спроба зберегти в БД
     if (!quizDone()) setTimeout(showQuizPrompt, 1200);
     return;
   }
@@ -888,7 +941,7 @@ async function checkAndStartTutorial() {
 // Welcome screen only shows for brand-new registrations.
 // Falls back gracefully if sessionStorage is blocked (Tracking Prevention).
 function maybeShowWelcomeAndStart() {
-  const username = localStorage.getItem('user_name') || 'Гравець';
+  const username = safeGet('user_name') || 'Гравець';
 
   // Try to read sessionStorage (may be blocked by Tracking Prevention)
   let isNewRegistration = false;
@@ -905,11 +958,11 @@ function maybeShowWelcomeAndStart() {
     return;
   }
 
-  // Returning user (or sessionStorage was blocked):
-  // Check DB — if tutorial done, just check quiz silently.
-  // If not done (sessionStorage blocked edge case), show welcome + tutorial as fallback.
+  // Returning user: один запит до БД (результат кешується),
+  // далі checkAndStartTutorial використає кеш — без подвійного фетчу.
   checkTutorialFromDB().then(dbDone => {
-    if (dbDone) {
+    if (dbDone || tutorialDone()) {
+      if (dbDone === false && tutorialDone()) markTutorialDone(); // досилаємо в БД
       if (!quizDone()) setTimeout(showQuizPrompt, 1200);
     } else {
       showWelcomeScreen(username, checkAndStartTutorial);
@@ -918,7 +971,7 @@ function maybeShowWelcomeAndStart() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  const isLoggedIn = localStorage.getItem('user_name') || document.cookie.includes('PHPSESSID');
+  const isLoggedIn = safeGet('user_name') || document.cookie.includes('PHPSESSID');
   if (!isLoggedIn) {
     // Wait for page to render avatar before starting
     setTimeout(() => {

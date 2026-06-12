@@ -131,9 +131,13 @@ try {
     // -------------------------------------------------------
     // 5. Зберігаємо Roblox ID в БД
     // -------------------------------------------------------
-    $pdo = new PDO("mysql:host=my-mysql;dbname=mywebsite;charset=utf8", 'root', 'root', [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
+    // ВИПРАВЛЕНО: без хардкоду root/root — логін/пароль з environment
+    $pdo = new PDO(
+        "mysql:host=" . (getenv('DB_HOST') ?: 'my-mysql') . ";dbname=" . (getenv('DB_NAME') ?: 'mywebsite') . ";charset=utf8",
+        getenv('DB_USER') ?: 'appuser',
+        getenv('DB_PASS') ?: '',
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
 
     $stmt = $pdo->prepare("UPDATE users SET roblox_id = ? WHERE id = ?");
     $stmt->execute([$roblox_user['sub'], $_SESSION['user_id']]);

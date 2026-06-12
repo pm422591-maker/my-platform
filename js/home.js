@@ -89,19 +89,12 @@ document.addEventListener('DOMContentLoaded', loadUserFilters);
 document.addEventListener('DOMContentLoaded', function() {
     // Оновлюємо інтерфейс даними з PHP
     updateUIFromPHP();
+
+    // Завантажуємо ігри ОДИН раз (loadUserGamesUI сама викличе loadAllPosts в кінці)
     loadUserGamesUI();
 
-    // Рендер ігор
-    if (typeof renderGames === 'function') {
-        renderGames();
-    }
-    if (typeof loadUserGamesUI === 'function') loadUserGamesUI();
+    // Рендер ігор — один раз
     if (typeof renderGames === 'function') renderGames();
-
-    // 🔴 ДОДАЙ ОСЬ ЦЕЙ РЯДОК:
-if (typeof loadAllPosts === 'function') {
-    loadAllPosts(true); // Викликаємо ПРАВИЛЬНУ функцію!
-}
 
     // Логіка вкладок
     const urlParams = new URLSearchParams(window.location.search);
@@ -542,7 +535,6 @@ async function loadAllPosts(reset = false, forceReload = false) {
     if (window.isLoadingPosts) return; 
 
     if (reset && window.isFirstPostsLoadDone && !forceReload) {
-        console.log("🛑 Повторне завантаження заблоковано.");
         return;
     }
 
@@ -570,6 +562,15 @@ async function loadAllPosts(reset = false, forceReload = false) {
         
         // ✨ ГОЛОВНИЙ ФІКС: Формуємо URL з урахуванням активних фільтрів!
         let fetchUrl = `get_posts.php?page=${window.currentPage}&type=${currentTab}`;
+
+        // 🛡️ ФІКС БЛОГУ: вантажимо ТІЛЬКИ пости власника блогу,
+        // інакше чужі blog-пости "влітають" у блог іншого юзера.
+        // window.currentBlogOwnerId можна виставити при перегляді чужого блогу;
+        // якщо не задано — бекенд візьме user_id з сесії (мій блог).
+        if (currentTab === 'blog') {
+            const blogOwner = window.currentBlogOwnerId || currentUserId;
+            if (blogOwner) fetchUrl += `&blog_user_id=${encodeURIComponent(blogOwner)}`;
+        }
 
         // Якщо ми знаходимося на вкладці "Заявки" і маємо об'єкт з фільтрами
         if (currentTab === 'requests' && window.currentFilters) {
@@ -851,7 +852,7 @@ if (post.post_type === 'requests') {
 
            // --- 7. ФОРМУЄМО HTML ---
 const postHTML = `
-<div id="${post.id}" class="user-post-card" style="${cardStyle} border-radius: 20px; padding: 20px; margin-bottom: 20px; position: relative; border: ${borderStyle}; box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
+<div id="post-${post.id}" class="user-post-card" data-post-id="${post.id}" data-post-type="${(post.post_type || 'feed')}" style="${cardStyle} border-radius: 20px; padding: 20px; margin-bottom: 20px; position: relative; border: ${borderStyle}; box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
     
     <div class="post-header-info" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
         <a href="profile.html?id=${post.user_id}" style="text-decoration: none; display: flex; align-items: center; gap: 12px; color: ${textColor};">
@@ -2233,7 +2234,7 @@ async function loadUserGamesUI() {
     }
 });
         const selectedGames = await response.json();
-        console.log("🔴 ПРИЙШЛО З СЕРВЕРА:", selectedGames); // <--- ДОДАЙ ЦЕ
+
         
         const container = document.getElementById('media-upload-container');
         if (!container) return;
@@ -2278,7 +2279,6 @@ if (!gameData) {
     console.warn(`Картинку для ${gameName} не знайдено в бібліотеці, використано заглушку.`);
 }
 
-console.log(`🟡 ШУКАЄМО: ${gameName}, ЗНАЙШЛИ:`, gameData);
 
 if (gameData) {
     renderedCount++;
@@ -2287,7 +2287,7 @@ if (gameData) {
                     wrapper.style.cssText = 'display: flex; flex-direction: column; align-items: center; width: 45px; flex-shrink: 0; gap: 6px;';
                    wrapper.innerHTML = `
     <div class="image-preview-box filled ${isMuted ? 'muted-game' : ''}" onclick="addPhotoPlaceholder(this)" style="width: 45px; height: 45px; border-radius: 10px; overflow: hidden; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
-        <img src="${gameData.img}" alt="preview" style="width: 100%; height: 100%; object-fit: cover;">
+        <img src="${gameData.img}" alt="preview" onerror="this.onerror=null;this.src='img/default_avatar.png';" style="width: 100%; height: 100%; object-fit: cover;">
     </div>
     <div class="preview-mini-title" title="${gameData.name}">${gameData.name}</div>
 `;
@@ -4195,7 +4195,7 @@ window.executeDeleteMessage = function(msgId) {
 
 // === АГРЕСИВНЕ ПЕРЕХОПЛЕННЯ ПРАВОГО КЛІКУ ТА ДІАГНОСТИКА ===
 window.addEventListener('contextmenu', function(e) {
-    console.log("👉 [ДІАГНОСТИКА] Правий клік! Ви натиснули на:", e.target);
+
 
     // 1. ПЕРЕВІРКА ПОВІДОМЛЕНЬ
     // 1. ПЕРЕВІРКА ПОВІДОМЛЕНЬ
@@ -6879,8 +6879,7 @@ function setActiveChip(containerId, value) {
     if (target) target.classList.add('active');
 }
 
-// Запускаємо завантаження фільтрів, коли сторінка відкрилася
-document.addEventListener('DOMContentLoaded', loadUserFilters);
+// Завантаження фільтрів уже запускається при DOMContentLoaded на початку файлу (без дублювання)
 
 window.saveToHistory = function(id, username, avatar) {
     let history = JSON.parse(localStorage.getItem('profile_view_history')) || [];
@@ -7406,17 +7405,13 @@ window.switchPickerTab = function(element, postId, tabName) {
 };
 
 // Твій список гіфок та стікерів. Просто додавай сюди назви файлів!
+// 🛡️ ФІКС 404: залишені тільки файли, які реально існують в img/.
+// 'sticker4.png' відсутній на сервері, а 'imgsticker5/6.png' були з помилкою
+// (загублений слеш "img/") і теж не існують — вони давали 404 в консолі.
 window.myCustomStickers = [
     'img/sticker1.gif',
     'img/sticker2.gif',
-    'img/sticker3.png',
-    'img/sticker4.png',
-    'imgsticker5.png',
-    'imgsticker6.png',
-    'imgsticker5.png',
-    'imgsticker5.png',
-    'imgsticker5.png',
-    'imgsticker5.png'
+    'img/sticker3.png'
 ];
 
 window.customEmojis = {

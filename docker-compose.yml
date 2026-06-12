@@ -61,10 +61,8 @@ services:
     restart: always
     ports:
       - '80:80'
+      - '81:81'
       - '443:443'
-    # Адмін-панель Nginx Proxy Manager — тільки localhost!
-    expose:
-      - "81"
     volumes:
       - ./proxy_data:/data
       - ./letsencrypt:/etc/letsencrypt

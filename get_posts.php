@@ -4,12 +4,8 @@ require_once __DIR__ . '/cors_session.php';
 header('Content-Type: application/json; charset=utf-8');
 session_start();
 
-$host = 'my-mysql'; $db = 'mywebsite'; $user = getenv('DB_USER') ?: 'appuser'; $pass = getenv('DB_PASS') ?: ''; 
-
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
+    require_once __DIR__ . '/db_connect.php'; // utf8mb4 + безпечні налаштування
 
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
@@ -27,6 +23,19 @@ try {
     // Отримуємо тип (requests, feed або blog)
     $post_type = isset($_GET['type']) ? $_GET['type'] : 'feed';
 
+    // 🛡️ ФІКС БЛОГУ: блог — це сторінка КОНКРЕТНОГО користувача.
+    // Без цього фільтра сюди потрапляли blog-пости ВСІХ юзерів.
+    // blog_user_id передає фронтенд; якщо його немає — беремо власника сесії.
+    $blog_user_id = 0;
+    if ($post_type === 'blog') {
+        $blog_user_id = isset($_GET['blog_user_id']) ? intval($_GET['blog_user_id']) : $user_id;
+        if ($blog_user_id <= 0) {
+            // Немає ні параметра, ні сесії — нічого показувати
+            echo json_encode([]);
+            exit;
+        }
+    }
+
     // ✨ НОВЕ: Отримуємо фільтри з запиту (якщо їх немає, за замовчуванням 'any')
     $filter_age = isset($_GET['filter_age']) ? $_GET['filter_age'] : 'any';
     $filter_comm = isset($_GET['filter_comm']) ? $_GET['filter_comm'] : 'any';
@@ -42,6 +51,11 @@ try {
     FROM posts p
     WHERE p.post_type = :ptype
     ";
+
+    // 🛡️ Фільтр блогу: тільки пости власника блогу
+    if ($post_type === 'blog') {
+        $query .= " AND p.user_id = :blog_uid";
+    }
 
     // ✨ НОВЕ: Динамічно додаємо умови, якщо це заявки і значення не 'any'
     if ($post_type === 'requests') {
@@ -69,6 +83,11 @@ try {
     $stmt->bindValue(':ptype', $post_type, PDO::PARAM_STR); 
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+    // 🛡️ Прив'язуємо власника блогу
+    if ($post_type === 'blog') {
+        $stmt->bindValue(':blog_uid', $blog_user_id, PDO::PARAM_INT);
+    }
 
     // ✨ НОВЕ: Прив'язуємо параметри фільтрів, ТІЛЬКИ якщо вони були додані в запит
     if ($post_type === 'requests') {
@@ -139,7 +158,8 @@ try {
 
     echo json_encode($posts);
 } catch (Exception $e) {
+    error_log('[get_posts] ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => 'Помилка сервера']);
 }
 ?>

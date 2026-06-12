@@ -1,11 +1,12 @@
 <?php
 declare(strict_types=1);
 
-// db підключення напряму
+// db підключення — ВИПРАВЛЕНО: без хардкоду root/root, логін/пароль з environment
 function get_pdo(string $charset = 'utf8mb4'): PDO {
     return new PDO(
-        "mysql:host=my-mysql;dbname=mywebsite;charset=$charset",
-        'root', 'root',
+        "mysql:host=" . (getenv('DB_HOST') ?: 'my-mysql') . ";dbname=" . (getenv('DB_NAME') ?: 'mywebsite') . ";charset=$charset",
+        getenv('DB_USER') ?: 'appuser',
+        getenv('DB_PASS') ?: '',
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 }

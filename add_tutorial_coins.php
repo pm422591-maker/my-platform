@@ -1,45 +1,23 @@
 <?php
-// add_tutorial_coins.php — Зачисление монет за прохождение туториала
-$origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '*';
-header("Access-Control-Allow-Origin: $origin");
-header("Access-Control-Allow-Credentials: true");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+require_once __DIR__ . '/cors_session.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
-$isSecure = true;
-session_set_cookie_params([
-    'lifetime' => 86400,
-    'path' => '/',
-    'secure' => $isSecure,
-    'httponly' => true,
-    'samesite' => 'None'
-]);
 session_start();
 
-// Проверяем авторизацию (используем user_id, как и во всех остальных файлах)
 $userId = $_SESSION['user_id'] ?? null;
 if (!$userId) {
     echo json_encode(['success' => false, 'message' => 'Пользователь не авторизован.']);
     exit;
 }
 
+require_once __DIR__ . '/db_connect.php';
+
 $reward_coins = 100;
 
 try {
-    $pdo = new PDO(
-        "mysql:host=my-mysql;dbname=mywebsite;charset=utf8mb4",
-        'root', 'root',
-        [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ]
-    );
-
-    // 1. Убеждаемся, что колонки coins и tutorial_coins_rewarded существуют
+    // 1. Переконуємось, що колонки існують
     $existingCols = $pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_COLUMN);
     if (!in_array('coins', $existingCols)) {
         $pdo->exec("ALTER TABLE users ADD COLUMN coins INT NOT NULL DEFAULT 0");
@@ -48,7 +26,7 @@ try {
         $pdo->exec("ALTER TABLE users ADD COLUMN tutorial_coins_rewarded TINYINT(1) NOT NULL DEFAULT 0");
     }
 
-    // 2. Проверяем, не была ли уже выдана награда этому пользователю
+    // 2. Перевіряємо, чи не була вже видана нагорода
     $stmtCheck = $pdo->prepare("SELECT tutorial_coins_rewarded, coins FROM users WHERE id = ?");
     $stmtCheck->execute([$userId]);
     $row = $stmtCheck->fetch();
@@ -59,18 +37,17 @@ try {
     }
 
     if ($row['tutorial_coins_rewarded'] == 1) {
-        // Награда уже была получена — просто возвращаем текущий баланс
         echo json_encode([
-            'success' => true,
+            'success'          => true,
             'already_rewarded' => true,
-            'message' => 'Награда уже была получена ранее.',
-            'added' => 0,
-            'new_balance' => (int)$row['coins']
+            'message'          => 'Награда уже была получена ранее.',
+            'added'            => 0,
+            'new_balance'      => (int)$row['coins']
         ]);
         exit;
     }
 
-    // 3. Атомарно начисляем монеты и помечаем флаг (транзакция)
+    // 3. Атомарно нараховуємо монети і ставимо прапор
     $pdo->beginTransaction();
 
     $stmtUpdate = $pdo->prepare(
@@ -85,15 +62,15 @@ try {
     $pdo->commit();
 
     echo json_encode([
-        'success' => true,
+        'success'          => true,
         'already_rewarded' => false,
-        'message' => 'Монеты успешно зачислены!',
-        'added' => $reward_coins,
-        'new_balance' => (int)$newRow['coins']
+        'message'          => 'Монеты успешно зачислены!',
+        'added'            => $reward_coins,
+        'new_balance'      => (int)$newRow['coins']
     ]);
 
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
     error_log("[add_tutorial_coins] error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Ошибка БД: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера.']);
 }
