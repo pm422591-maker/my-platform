@@ -9193,17 +9193,32 @@ window.buyGiftForPost = async function(postId, giftType) {
         return false;
     }
 };
+
 // ==========================================================
-// 👥 ГРУПИ ТА КАНАЛИ (повна реалізація: створення, список, чат)
+// 👥 ГРУПИ ТА КАНАЛИ v2 — TELEGRAM-STYLE
+// (створення, чат з аватарками, налаштування, ролі, інвайти,
+//  публічність, посилання, медіа/голосові, сповіщення)
 // ==========================================================
 window.currentGroupChat = null;      // {id, name, type, owner_id}
+window.currentGroupInfo = null;      // повна інфа (get_info)
 window.lastGroupMsgId = 0;
 window.groupPollTimer = null;
 window.creationFlowType = 'group';
+window.groupVoiceRecorder = null;
+window.groupVoiceChunks = [];
 
 function escapeGroupHTML(str) {
     return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function groupApiPost(body) {
+    return fetch('groups_api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+    }).then(r => r.json());
 }
 
 // === 1. ЕКРАН СТВОРЕННЯ ===
@@ -9218,19 +9233,17 @@ window.openCreateFlow = function(type) {
 
     if (header) header.innerText = window.creationFlowType === 'channel' ? 'Створення каналу' : 'Створення групи';
     if (title) title.innerText = window.creationFlowType === 'channel' ? '📣 Новий канал' : '👥 Нова група';
-    if (input) { 
-        input.value = ''; 
+    if (input) {
+        input.value = '';
         input.placeholder = window.creationFlowType === 'channel' ? 'Назва каналу...' : 'Назва групи...';
     }
 
-    // Показуємо поверх контенту
     const parentBox = screen.parentElement;
     if (parentBox) { parentBox.style.position = 'relative'; parentBox.style.overflow = 'hidden'; }
     screen.style.display = 'flex';
     screen.style.flexDirection = 'column';
     setTimeout(() => input && input.focus(), 100);
 
-    // Enter = створити
     if (input && !input.hasAttribute('data-enter-bound')) {
         input.setAttribute('data-enter-bound', '1');
         input.addEventListener('keydown', (e) => { if (e.key === 'Enter') window.submitChatCreation(); });
@@ -9248,28 +9261,17 @@ window.closeChatCreation = function() {
 window.submitChatCreation = async function() {
     const input = document.getElementById('creation-name-input');
     const name = input ? input.value.trim() : '';
-    if (!name) { 
+    if (!name) {
         if (input) { input.style.borderColor = '#ff3358'; setTimeout(() => input.style.borderColor = 'rgba(240, 4, 127, 0.3)', 1200); }
-        return; 
+        return;
     }
-
     try {
-        const res = await fetch('groups_api.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'create', name: name, type: window.creationFlowType })
-        });
-        const data = await res.json();
+        const data = await groupApiPost({ action: 'create', name, type: window.creationFlowType });
         if (!data.success) throw new Error(data.message || 'Помилка створення');
-
         window.closeChatCreation();
         await window.loadMyGroupChats();
-        // Одразу відкриваємо новостворений чат
         if (data.group) window.openGroupChat(data.group);
-    } catch (e) {
-        alert('Не вдалося створити: ' + e.message);
-    }
+    } catch (e) { alert('Не вдалося створити: ' + e.message); }
 };
 
 // === 2. СПИСОК У САЙДБАРІ ===
@@ -9281,8 +9283,6 @@ window.loadMyGroupChats = async function() {
 
         const channelsList = document.getElementById('channels-list');
         const groupsList = document.getElementById('groups-list');
-
-        // Прибираємо старі елементи (залишаємо кнопки "Створити")
         [channelsList, groupsList].forEach(list => {
             if (!list) return;
             list.querySelectorAll('.group-chat-item').forEach(el => el.remove());
@@ -9299,16 +9299,17 @@ window.loadMyGroupChats = async function() {
             item.onclick = () => window.openGroupChat(g);
 
             const lastMsg = g.last_message ? escapeGroupHTML(String(g.last_message).slice(0, 28)) : (isChannel ? 'Канал' : `${g.members || 1} учасн.`);
-            const icon = isChannel ? '📣' : '👥';
+            const avaHTML = g.avatar
+                ? `<img src="${escapeGroupHTML(g.avatar)}" class="group-avatar-circle" style="object-fit:cover;" onerror="this.outerHTML='<div class=\\'group-avatar-circle\\'>${isChannel ? '📣' : '👥'}</div>'">`
+                : `<div class="group-avatar-circle">${isChannel ? '📣' : '👥'}</div>`;
 
             item.innerHTML = `
-                <div class="group-avatar-circle">${icon}</div>
+                ${avaHTML}
                 <div class="chat-info" style="overflow: hidden;">
                     <span class="chat-name" style="display:block; font-weight:700; color:#eaeaea; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeGroupHTML(g.name)}</span>
                     <span style="display:block; font-size:11px; color:rgba(255,255,255,0.4); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${lastMsg}</span>
                 </div>`;
 
-            // Вставляємо ПЕРЕД кнопкою "Створити", щоб вона завжди була внизу
             const createBtn = list.querySelector('.create-chat-btn');
             if (createBtn) list.insertBefore(item, createBtn);
             else list.appendChild(item);
@@ -9316,13 +9317,13 @@ window.loadMyGroupChats = async function() {
     } catch (e) { console.warn('Групи: не вдалося завантажити список', e); }
 };
 
-// === 3. ВІДКРИТТЯ ГРУПОВОГО ЧАТУ (повторно використовуємо вікно чату) ===
+// === 3. ВІДКРИТТЯ ГРУПОВОГО ЧАТУ ===
 window.openGroupChat = function(g) {
     window.currentGroupChat = { id: parseInt(g.id), name: g.name, type: g.type, owner_id: parseInt(g.owner_id) };
-    window.currentChatUserId = null; // вимикаємо логіку особистих чатів
+    window.currentGroupInfo = null;
+    window.currentChatUserId = null;
     window.lastGroupMsgId = 0;
 
-    // Видимість вкладок як у openChatUI
     document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
     const postPanel = document.getElementById('create-post-panel');
     if (postPanel) postPanel.style.display = 'none';
@@ -9336,46 +9337,134 @@ window.openGroupChat = function(g) {
     if (parentBox) { parentBox.style.position = 'relative'; parentBox.style.overflow = 'hidden'; }
     chatWin.style.display = 'flex';
 
-    // Шапка
+    // Шапка: аватар групи + назва (клік = налаштування)
     const targetName = document.getElementById('chat-target-name');
     const targetAvatar = document.getElementById('chat-target-avatar');
-    if (targetName) { 
-        targetName.innerText = (g.type === 'channel' ? '📣 ' : '👥 ') + g.name; 
-        targetName.onclick = null; targetName.style.cursor = 'default';
+    if (targetName) {
+        targetName.innerHTML = `${escapeGroupHTML(g.name)} <span id="group-header-sub" style="display:block; font-size:11px; font-weight:400; color:rgba(255,255,255,0.45);">${g.type === 'channel' ? 'канал' : 'група'}</span>`;
+        targetName.style.cursor = 'pointer';
+        targetName.onclick = () => window.openGroupSettings();
     }
-    if (targetAvatar) { targetAvatar.style.display = 'none'; }
+    if (targetAvatar) {
+        targetAvatar.style.display = '';
+        targetAvatar.src = g.avatar || 'img/default_avatar.png';
+        targetAvatar.style.cursor = 'pointer';
+        targetAvatar.onclick = () => window.openGroupSettings();
+    }
 
-    // У групових чатах ховаємо дзвінки/блокування (це функції особистих чатів)
+    // У групових чатах ховаємо іконки дзвінків особистого чату
     document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = 'none');
+    window.ensureGroupHeaderButtons();
 
-    // Канал: писати може лише власник
-    const myId = parseInt(localStorage.getItem('user_id') || 0);
+    // Поле вводу (права уточняться після get_info)
     const input = document.getElementById('msg-input');
     const sendBtn = document.getElementById('send-btn');
-    const readOnly = (g.type === 'channel' && myId !== parseInt(g.owner_id));
     if (input) {
-        input.style.display = readOnly ? 'none' : 'block';
+        input.style.display = 'block';
         input.placeholder = g.type === 'channel' ? 'Опублікувати в каналі...' : 'Написати в групу...';
         input.value = '';
     }
-    if (sendBtn) sendBtn.style.display = readOnly ? 'none' : 'block';
+    if (sendBtn) sendBtn.style.display = 'block';
 
-    // Зона повідомлень
+    // Іконки біля поля вводу → групові медіа (скріпка=фото, мікрофон=голосове)
+    window.bindGroupInputIcons();
+
     const msgContainer = document.getElementById('chat-messages');
     if (msgContainer) {
         msgContainer.style.background = '#170A11';
         msgContainer.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:30px 0;">Завантаження...</div>`;
-        if (readOnly) {
-            msgContainer.insertAdjacentHTML('afterbegin', `<div class="group-readonly-note">📣 Це канал — публікації робить лише власник</div>`);
-        }
     }
 
-    // Поллінг повідомлень
+    // Тягнемо повну інфу (роль, права, сповіщення)
+    window.refreshGroupInfo();
+
     if (window.groupPollTimer) clearInterval(window.groupPollTimer);
     window.fetchGroupMessages(true);
     window.groupPollTimer = setInterval(() => window.fetchGroupMessages(false), 3000);
 };
 
+window.refreshGroupInfo = async function() {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    try {
+        const data = await groupApiPost({ action: 'get_info', group_id: g.id });
+        if (!data.success || !window.currentGroupChat || window.currentGroupChat.id !== g.id) return;
+        window.currentGroupInfo = data.group;
+
+        // Оновлюємо шапку
+        const sub = document.getElementById('group-header-sub');
+        if (sub) sub.innerText = `${data.group.members} учасн. • ${data.group.type === 'channel' ? 'канал' : 'група'}${data.group.my_notifications ? '' : ' • 🔕'}`;
+        const targetAvatar = document.getElementById('chat-target-avatar');
+        if (targetAvatar && data.group.avatar) targetAvatar.src = data.group.avatar;
+
+        // Права на письмо в каналі
+        const canWrite = data.group.type !== 'channel' || ['owner', 'moderator'].includes(data.group.my_role);
+        const input = document.getElementById('msg-input');
+        const sendBtn = document.getElementById('send-btn');
+        if (input) input.style.display = canWrite ? 'block' : 'none';
+        if (sendBtn) sendBtn.style.display = canWrite ? 'block' : 'none';
+    } catch (e) {}
+};
+
+// Кнопки в шапці групового чату: 🔔 та ⚙️
+window.ensureGroupHeaderButtons = function() {
+    const iconsBox = document.querySelector('#chat-window .chat-header-icons');
+    if (!iconsBox) return;
+    if (!document.getElementById('group-header-bell')) {
+        const bell = document.createElement('div');
+        bell.id = 'group-header-bell';
+        bell.className = 'group-header-btn';
+        bell.title = 'Сповіщення увімк/вимк';
+        bell.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`;
+        bell.onclick = () => window.toggleGroupNotifications();
+        iconsBox.appendChild(bell);
+    }
+    if (!document.getElementById('group-header-gear')) {
+        const gear = document.createElement('div');
+        gear.id = 'group-header-gear';
+        gear.className = 'group-header-btn';
+        gear.title = 'Налаштування';
+        gear.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.66.16 1.18.68 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
+        gear.onclick = () => window.openGroupSettings();
+        iconsBox.appendChild(gear);
+    }
+    document.getElementById('group-header-bell').style.display = 'flex';
+    document.getElementById('group-header-gear').style.display = 'flex';
+};
+
+window.toggleGroupNotifications = async function() {
+    const info = window.currentGroupInfo;
+    const g = window.currentGroupChat;
+    if (!g) return;
+    const newVal = info ? !info.my_notifications : false;
+    try {
+        await groupApiPost({ action: 'toggle_notifications', group_id: g.id, enabled: newVal });
+        if (window.currentGroupInfo) window.currentGroupInfo.my_notifications = newVal ? 1 : 0;
+        const sub = document.getElementById('group-header-sub');
+        if (sub && window.currentGroupInfo) {
+            sub.innerText = `${window.currentGroupInfo.members} учасн. • ${g.type === 'channel' ? 'канал' : 'група'}${newVal ? '' : ' • 🔕'}`;
+        }
+        const toggle = document.getElementById('gset-notif-toggle');
+        if (toggle) toggle.checked = newVal;
+        // Маленький тост
+        window.showGroupToast(newVal ? '🔔 Сповіщення увімкнено' : '🔕 Сповіщення вимкнено');
+    } catch (e) {}
+};
+
+window.showGroupToast = function(text) {
+    let toast = document.getElementById('group-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'group-toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerText = text;
+    toast.classList.add('visible');
+    clearTimeout(window._groupToastT);
+    window._groupToastT = setTimeout(() => toast.classList.remove('visible'), 2200);
+};
+
+// === 4. ПОВІДОМЛЕННЯ — TELEGRAM-STYLE З АВАТАРКАМИ ===
 window.fetchGroupMessages = async function(initial) {
     const g = window.currentGroupChat;
     if (!g) return;
@@ -9383,7 +9472,7 @@ window.fetchGroupMessages = async function(initial) {
         const res = await fetch(`groups_api.php?action=get_messages&group_id=${g.id}&since_id=${window.lastGroupMsgId}`, { credentials: 'include' });
         const data = await res.json();
         if (!data.success) return;
-        if (!window.currentGroupChat || window.currentGroupChat.id !== g.id) return; // чат уже закрили
+        if (!window.currentGroupChat || window.currentGroupChat.id !== g.id) return;
 
         const msgContainer = document.getElementById('chat-messages');
         if (!msgContainer) return;
@@ -9401,18 +9490,44 @@ window.fetchGroupMessages = async function(initial) {
             window.lastGroupMsgId = Math.max(window.lastGroupMsgId, parseInt(m.id));
             if (msgContainer.querySelector(`.msg-row[data-gid="${m.id}"]`)) return;
 
+            // 🔔 СИСТЕМНІ ПОВІДОМЛЕННЯ (зайшов/вийшов/запросили) — чіп по центру
+            if (m.media_type === 'system') {
+                msgContainer.insertAdjacentHTML('beforeend', `
+                    <div class="msg-row" data-gid="${m.id}" style="display:flex; justify-content:center; width:100%; margin:8px 0;">
+                        <div class="group-system-chip msg-anim-in">${escapeGroupHTML(m.message)}</div>
+                    </div>`);
+                return;
+            }
+
             const isMe = parseInt(m.user_id) === myId;
             const time = (m.created_at || '').slice(11, 16);
+            const ava = m.avatar || 'img/default_avatar.png';
+
+            // Вміст бульки залежно від типу
+            let contentHTML = '';
+            if (m.media_type === 'image' && m.media_url) {
+                contentHTML = `<img src="${escapeGroupHTML(m.media_url)}" class="group-msg-image" loading="lazy" onclick="window.open('${escapeGroupHTML(m.media_url)}', '_blank')">`;
+            } else if (m.media_type === 'voice' && m.media_url) {
+                contentHTML = `<audio controls preload="none" class="group-msg-voice" src="${escapeGroupHTML(m.media_url)}"></audio>`;
+            } else {
+                contentHTML = `<span class="text-bubble">${escapeGroupHTML(m.message)}</span>`;
+            }
+
             const senderLine = (!isMe && g.type !== 'channel')
                 ? `<div class="group-msg-sender">${escapeGroupHTML(m.username || 'Користувач')}</div>` : '';
 
+            // 📱 TELEGRAM-STYLE: кругла аватарка поруч із бульбашкою
+            const avatarHTML = `<img src="${escapeGroupHTML(ava)}" class="group-msg-avatar" loading="lazy" onerror="this.src='img/default_avatar.png'" title="${escapeGroupHTML(m.username || '')}">`;
+
             msgContainer.insertAdjacentHTML('beforeend', `
-                <div class="msg-row" data-gid="${m.id}" style="display:flex; flex-direction:column; width:100%; margin-bottom:6px; align-items:${isMe ? 'flex-end' : 'flex-start'};">
+                <div class="msg-row group-msg-row ${isMe ? 'mine' : 'theirs'}" data-gid="${m.id}">
+                    ${!isMe ? avatarHTML : ''}
                     <div class="msg-bubble ${isMe ? 'msg-sent' : 'msg-received'} msg-anim-in">
                         ${senderLine}
-                        <span class="text-bubble">${escapeGroupHTML(m.message)}</span>
+                        ${contentHTML}
                         <span class="group-msg-time">${time}</span>
                     </div>
+                    ${isMe ? avatarHTML : ''}
                 </div>`);
         });
 
@@ -9422,7 +9537,86 @@ window.fetchGroupMessages = async function(initial) {
     } catch (e) {}
 };
 
-// === 4. ВІДПРАВКА: перехоплюємо sendMessage для групового режиму ===
+// === 5. МЕДІА У ГРУПУ: ФОТО ТА ГОЛОСОВІ ===
+window.bindGroupInputIcons = function() {
+    const inputIcons = document.querySelectorAll('.chat-input-icons svg');
+    if (inputIcons.length >= 2) {
+        // Скріпка → фото
+        inputIcons[0].onclick = () => {
+            let fi = document.getElementById('group-photo-input');
+            if (!fi) {
+                fi = document.createElement('input');
+                fi.type = 'file';
+                fi.id = 'group-photo-input';
+                fi.accept = 'image/*';
+                fi.style.display = 'none';
+                document.body.appendChild(fi);
+            }
+            fi.onchange = function() {
+                if (this.files && this.files[0]) window.sendGroupMedia(this.files[0], 'image');
+                this.value = '';
+            };
+            fi.click();
+        };
+        // Мікрофон → голосове (натиснув = запис, ще раз = надіслати)
+        inputIcons[1].onclick = () => window.toggleGroupVoiceRecording(inputIcons[1]);
+        // GIF-іконка у групі неактивна
+        if (inputIcons[2]) inputIcons[2].onclick = () => window.showGroupToast('GIF у групах скоро 😉');
+    }
+};
+
+window.sendGroupMedia = async function(file, type) {
+    const g = window.currentGroupChat;
+    if (!g || !file) return;
+    window.showGroupToast(type === 'voice' ? '🎤 Надсилаємо голосове...' : '📷 Надсилаємо фото...');
+    const fd = new FormData();
+    fd.append('action', 'send_media');
+    fd.append('group_id', g.id);
+    fd.append('type', type);
+    fd.append('file', file);
+    fd.append('username', localStorage.getItem('user_name') || 'Користувач');
+    fd.append('avatar', localStorage.getItem('user_avatar') || '');
+    try {
+        const res = await fetch('groups_api.php', { method: 'POST', body: fd, credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) { alert(data.message || 'Не вдалося надіслати'); return; }
+        window.fetchGroupMessages(false);
+    } catch (e) { alert('Помилка мережі'); }
+};
+
+window.toggleGroupVoiceRecording = async function(micIcon) {
+    if (!window.currentGroupChat) return;
+
+    if (window.groupVoiceRecorder && window.groupVoiceRecorder.state === 'recording') {
+        // ⏹ Зупиняємо та надсилаємо
+        window.groupVoiceRecorder.stop();
+        return;
+    }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+        window.groupVoiceChunks = [];
+        window.groupVoiceRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        window.groupVoiceRecorder.ondataavailable = e => { if (e.data.size) window.groupVoiceChunks.push(e.data); };
+        window.groupVoiceRecorder.onstop = () => {
+            stream.getTracks().forEach(t => t.stop());
+            if (micIcon) micIcon.classList.remove('group-mic-recording');
+            const blob = new Blob(window.groupVoiceChunks, { type: 'audio/webm' });
+            if (blob.size > 500) {
+                const file = new File([blob], 'voice.webm', { type: 'audio/webm' });
+                window.sendGroupMedia(file, 'voice');
+            }
+            window.groupVoiceRecorder = null;
+        };
+        window.groupVoiceRecorder.start();
+        if (micIcon) micIcon.classList.add('group-mic-recording');
+        window.showGroupToast('🔴 Запис... натисніть мікрофон ще раз, щоб надіслати');
+    } catch (e) {
+        alert('Мікрофон недоступний: ' + e.message);
+    }
+};
+
+// === 6. ВІДПРАВКА ТЕКСТУ: перехоплення sendMessage ===
 (function hookGroupSend() {
     const originalSend = window.sendMessage;
     window.sendMessage = async function() {
@@ -9432,21 +9626,15 @@ window.fetchGroupMessages = async function(initial) {
             if (!text) return;
             input.value = '';
             try {
-                const res = await fetch('groups_api.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        action: 'send_message',
-                        group_id: window.currentGroupChat.id,
-                        text: text,
-                        username: localStorage.getItem('user_name') || 'Користувач',
-                        avatar: localStorage.getItem('user_avatar') || null
-                    })
+                const data = await groupApiPost({
+                    action: 'send_message',
+                    group_id: window.currentGroupChat.id,
+                    text: text,
+                    username: localStorage.getItem('user_name') || 'Користувач',
+                    avatar: localStorage.getItem('user_avatar') || null
                 });
-                const data = await res.json();
                 if (!data.success) { alert(data.message || 'Не вдалося надіслати'); return; }
-                window.fetchGroupMessages(false); // миттєво показуємо
+                window.fetchGroupMessages(false);
             } catch (e) { console.error(e); }
             return;
         }
@@ -9454,15 +9642,373 @@ window.fetchGroupMessages = async function(initial) {
     };
 })();
 
-// === 5. ЗАКРИТТЯ: чистимо груповий режим ===
+// === 7. ПАНЕЛЬ НАЛАШТУВАНЬ (як у Telegram) ===
+window.openGroupSettings = async function() {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    await window.refreshGroupInfo();
+    const info = window.currentGroupInfo;
+    if (!info) return;
+
+    let panel = document.getElementById('group-settings-panel');
+    if (panel) panel.remove();
+
+    const chatWin = document.getElementById('chat-window');
+    panel = document.createElement('div');
+    panel.id = 'group-settings-panel';
+
+    const isOwner = info.my_role === 'owner';
+    const isAdmin = ['owner', 'moderator'].includes(info.my_role);
+    const titles = info.role_titles || { owner: 'Власник', moderator: 'Модератор', member: 'Учасник' };
+    const link = `${location.origin}${location.pathname.replace(/[^\/]*$/, '')}home.html?join=${info.slug || ''}`;
+    const entity = info.type === 'channel' ? 'каналу' : 'групи';
+
+    panel.innerHTML = `
+    <div class="gset-header">
+        <span style="font-weight:800; font-size:15px; text-transform:uppercase; letter-spacing:0.5px;">Налаштування ${entity}</span>
+        <button class="close-chat-x" onclick="document.getElementById('group-settings-panel').remove()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+    <div class="gset-body">
+
+        <!-- АВАТАР + НАЗВА + ОПИС -->
+        <div class="gset-card" style="display:flex; gap:16px; align-items:flex-start;">
+            <div class="gset-avatar-wrap" ${isAdmin ? 'onclick="document.getElementById(\'gset-avatar-input\').click()"' : ''} style="${isAdmin ? 'cursor:pointer;' : ''}">
+                <img id="gset-avatar-img" src="${escapeGroupHTML(info.avatar || 'img/default_avatar.png')}" onerror="this.src='img/default_avatar.png'">
+                ${isAdmin ? '<div class="gset-avatar-cam">📷</div>' : ''}
+            </div>
+            <input type="file" id="gset-avatar-input" accept="image/*" style="display:none;" onchange="window.uploadGroupAvatar(this)">
+            <div style="flex:1; min-width:0;">
+                <label class="gset-label">Назва</label>
+                <input id="gset-name" class="gset-input" value="${escapeGroupHTML(info.name)}" maxlength="80" ${isAdmin ? '' : 'disabled'}>
+                <label class="gset-label" style="margin-top:10px;">Опис</label>
+                <textarea id="gset-desc" class="gset-input" rows="2" maxlength="500" placeholder="Про що ця ${info.type === 'channel' ? 'канал' : 'група'}..." ${isAdmin ? '' : 'disabled'}>${escapeGroupHTML(info.description || '')}</textarea>
+                ${isAdmin ? `<button class="gset-btn-primary" style="margin-top:10px;" onclick="window.saveGroupInfo()">💾 Зберегти</button>` : ''}
+            </div>
+        </div>
+
+        <!-- ПОСИЛАННЯ + ПРИВАТНІСТЬ -->
+        <div class="gset-card">
+            <label class="gset-label">Посилання-запрошення</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span style="color:rgba(255,255,255,0.4); font-size:13px;">?join=</span>
+                <input id="gset-slug" class="gset-input" style="flex:1;" value="${escapeGroupHTML(info.slug || '')}" maxlength="40" ${isOwner ? '' : 'disabled'}>
+                <button class="gset-btn-ghost" onclick="window.copyGroupLink()" title="Скопіювати посилання">📋</button>
+                ${isOwner ? `<button class="gset-btn-ghost" onclick="window.saveGroupSlug()" title="Зберегти посилання">💾</button>` : ''}
+            </div>
+            <div id="gset-link-preview" style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:6px; word-break:break-all;">${escapeGroupHTML(link)}</div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;">
+                <div>
+                    <div style="font-weight:700; font-size:14px;">${info.privacy === 'public' ? '🌍 Публічна' : '🔒 Приватна'}</div>
+                    <div style="font-size:11px; color:rgba(255,255,255,0.4);">${info.privacy === 'public' ? 'Будь-хто може знайти та приєднатися' : 'Вступ лише за посиланням чи запрошенням'}</div>
+                </div>
+                ${isOwner ? `<label class="gset-switch"><input type="checkbox" id="gset-privacy-toggle" ${info.privacy === 'public' ? 'checked' : ''} onchange="window.toggleGroupPrivacy(this.checked)"><span class="gset-slider"></span></label>` : ''}
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
+                <div>
+                    <div style="font-weight:700; font-size:14px;">🔔 Сповіщення</div>
+                    <div style="font-size:11px; color:rgba(255,255,255,0.4);">Звуки та позначки для цього чату</div>
+                </div>
+                <label class="gset-switch"><input type="checkbox" id="gset-notif-toggle" ${info.my_notifications ? 'checked' : ''} onchange="window.toggleGroupNotifications()"><span class="gset-slider"></span></label>
+            </div>
+        </div>
+
+        <!-- ЗАПРОСИТИ -->
+        <div class="gset-card">
+            <button class="gset-btn-primary" style="width:100%;" onclick="window.openInviteModal()">➕ Запросити користувача</button>
+        </div>
+
+        <!-- ВКЛАДКИ -->
+        <div class="gset-tabs">
+            <div class="gset-tab active" data-tab="members" onclick="window.switchGroupTab('members', this)">👤 Учасники</div>
+            <div class="gset-tab" data-tab="media" onclick="window.switchGroupTab('media', this)">🖼 Медіа</div>
+            <div class="gset-tab" data-tab="voice" onclick="window.switchGroupTab('voice', this)">🎤 Голосові</div>
+        </div>
+        <div id="gset-tab-content" class="gset-card" style="min-height:120px;"></div>
+
+        ${isOwner ? `
+        <!-- НАЗВИ РОЛЕЙ -->
+        <div class="gset-card">
+            <label class="gset-label">Назви ролей (на твій смак)</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                <input id="gset-title-owner" class="gset-input" value="${escapeGroupHTML(titles.owner)}" maxlength="30" placeholder="Власник">
+                <input id="gset-title-moderator" class="gset-input" value="${escapeGroupHTML(titles.moderator)}" maxlength="30" placeholder="Модератор">
+                <input id="gset-title-member" class="gset-input" value="${escapeGroupHTML(titles.member)}" maxlength="30" placeholder="Учасник">
+            </div>
+            <button class="gset-btn-primary" style="margin-top:10px;" onclick="window.saveRoleTitles()">💾 Зберегти назви ролей</button>
+        </div>` : ''}
+
+        <!-- ВИХІД / ВИДАЛЕННЯ -->
+        <div class="gset-card" style="display:flex; gap:10px;">
+            ${!isOwner ? `<button class="gset-btn-danger" style="flex:1;" onclick="window.leaveGroup()">🚪 Вийти з ${entity}</button>` : ''}
+            ${isOwner ? `<button class="gset-btn-danger" style="flex:1;" onclick="window.deleteGroup()">🗑 Видалити ${info.type === 'channel' ? 'канал' : 'групу'}</button>` : ''}
+        </div>
+    </div>`;
+
+    chatWin.appendChild(panel);
+    window.switchGroupTab('members', panel.querySelector('.gset-tab'));
+
+    // Живий прев'ю посилання
+    const slugInput = document.getElementById('gset-slug');
+    if (slugInput) slugInput.addEventListener('input', () => {
+        const prev = document.getElementById('gset-link-preview');
+        if (prev) prev.innerText = `${location.origin}${location.pathname.replace(/[^\/]*$/, '')}home.html?join=${slugInput.value.trim()}`;
+    });
+};
+
+window.uploadGroupAvatar = async function(input) {
+    const g = window.currentGroupChat;
+    if (!g || !input.files || !input.files[0]) return;
+    const fd = new FormData();
+    fd.append('action', 'upload_avatar');
+    fd.append('group_id', g.id);
+    fd.append('file', input.files[0]);
+    input.value = '';
+    try {
+        const res = await fetch('groups_api.php', { method: 'POST', body: fd, credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) { alert(data.message || 'Помилка'); return; }
+        const img = document.getElementById('gset-avatar-img');
+        if (img) img.src = data.avatar + '?t=' + Date.now();
+        const headerAva = document.getElementById('chat-target-avatar');
+        if (headerAva) headerAva.src = data.avatar + '?t=' + Date.now();
+        window.showGroupToast('✅ Аватар оновлено');
+        window.loadMyGroupChats();
+    } catch (e) { alert('Помилка мережі'); }
+};
+
+window.saveGroupInfo = async function() {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    const name = document.getElementById('gset-name')?.value.trim();
+    const desc = document.getElementById('gset-desc')?.value.trim();
+    const data = await groupApiPost({ action: 'update_info', group_id: g.id, name, description: desc });
+    if (!data.success) { alert(data.message || 'Помилка'); return; }
+    if (name) {
+        window.currentGroupChat.name = name;
+        const tn = document.getElementById('chat-target-name');
+        if (tn) tn.childNodes[0].textContent = name + ' ';
+    }
+    window.showGroupToast('✅ Збережено');
+    window.loadMyGroupChats();
+    window.refreshGroupInfo();
+};
+
+window.saveGroupSlug = async function() {
+    const g = window.currentGroupChat;
+    const slug = document.getElementById('gset-slug')?.value.trim();
+    if (!g || !slug) return;
+    const data = await groupApiPost({ action: 'update_info', group_id: g.id, slug });
+    if (!data.success) { alert(data.message || 'Помилка'); return; }
+    window.showGroupToast('✅ Посилання оновлено');
+    window.refreshGroupInfo();
+};
+
+window.copyGroupLink = function() {
+    const slug = document.getElementById('gset-slug')?.value.trim() || (window.currentGroupInfo?.slug || '');
+    const link = `${location.origin}${location.pathname.replace(/[^\/]*$/, '')}home.html?join=${slug}`;
+    const done = () => window.showGroupToast('📋 Посилання скопійовано!');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(done).catch(() => { window.prompt('Скопіюйте посилання:', link); });
+    } else {
+        window.prompt('Скопіюйте посилання:', link);
+    }
+};
+
+window.toggleGroupPrivacy = async function(isPublic) {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    const data = await groupApiPost({ action: 'update_info', group_id: g.id, privacy: isPublic ? 'public' : 'private' });
+    if (!data.success) { alert(data.message || 'Помилка'); return; }
+    window.showGroupToast(isPublic ? '🌍 Тепер публічна' : '🔒 Тепер приватна');
+    window.openGroupSettings(); // перерендер панелі
+};
+
+window.saveRoleTitles = async function() {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    const titles = {
+        owner: document.getElementById('gset-title-owner')?.value.trim(),
+        moderator: document.getElementById('gset-title-moderator')?.value.trim(),
+        member: document.getElementById('gset-title-member')?.value.trim()
+    };
+    const data = await groupApiPost({ action: 'set_role_titles', group_id: g.id, titles });
+    if (!data.success) { alert(data.message || 'Помилка'); return; }
+    window.showGroupToast('✅ Назви ролей збережено');
+    window.switchGroupTab('members', document.querySelector('.gset-tab[data-tab="members"]'));
+};
+
+// Вкладки: Учасники / Медіа / Голосові
+window.switchGroupTab = async function(tab, el) {
+    document.querySelectorAll('.gset-tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const box = document.getElementById('gset-tab-content');
+    if (!box) return;
+    const g = window.currentGroupChat;
+    const info = window.currentGroupInfo;
+    box.innerHTML = '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">Завантаження...</div>';
+
+    if (tab === 'members') {
+        const data = await groupApiPost({ action: 'get_members', group_id: g.id });
+        if (!data.success) { box.innerHTML = 'Помилка'; return; }
+        const titles = data.role_titles || {};
+        const isOwner = info?.my_role === 'owner';
+        const myId = parseInt(localStorage.getItem('user_id') || 0);
+        box.innerHTML = (data.members || []).map(m => {
+            const roleLabel = titles[m.role] || m.role;
+            const roleClass = m.role === 'owner' ? 'role-owner' : (m.role === 'moderator' ? 'role-mod' : 'role-member');
+            const roleControl = (isOwner && m.role !== 'owner' && parseInt(m.user_id) !== myId)
+                ? `<select class="gset-role-select" onchange="window.changeMemberRole(${m.user_id}, this.value)">
+                       <option value="member" ${m.role === 'member' ? 'selected' : ''}>${escapeGroupHTML(titles.member || 'Учасник')}</option>
+                       <option value="moderator" ${m.role === 'moderator' ? 'selected' : ''}>${escapeGroupHTML(titles.moderator || 'Модератор')}</option>
+                   </select>`
+                : `<span class="gset-role-badge ${roleClass}">${escapeGroupHTML(roleLabel)}</span>`;
+            return `
+                <div class="gset-member-row">
+                    <img src="${escapeGroupHTML(m.avatar_url || 'img/default_avatar.png')}" onerror="this.src='img/default_avatar.png'">
+                    <span style="flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeGroupHTML(m.username || 'Користувач #' + m.user_id)}</span>
+                    ${roleControl}
+                </div>`;
+        }).join('') || '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">Немає учасників</div>';
+    }
+
+    if (tab === 'media') {
+        const data = await groupApiPost({ action: 'get_media', group_id: g.id, kind: 'image' });
+        const items = data.items || [];
+        box.innerHTML = items.length
+            ? `<div class="gset-media-grid">${items.map(i =>
+                `<img src="${escapeGroupHTML(i.media_url)}" loading="lazy" onclick="window.open('${escapeGroupHTML(i.media_url)}', '_blank')">`).join('')}</div>`
+            : '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">🖼 Медіа поки немає</div>';
+    }
+
+    if (tab === 'voice') {
+        const data = await groupApiPost({ action: 'get_media', group_id: g.id, kind: 'voice' });
+        const items = data.items || [];
+        box.innerHTML = items.length
+            ? items.map(i => `
+                <div class="gset-voice-row">
+                    <span style="font-size:12px; color:rgba(255,255,255,0.5); min-width:90px;">${escapeGroupHTML(i.username || '')}</span>
+                    <audio controls preload="none" src="${escapeGroupHTML(i.media_url)}" style="flex:1; height:34px;"></audio>
+                </div>`).join('')
+            : '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">🎤 Голосових поки немає</div>';
+    }
+};
+
+window.changeMemberRole = async function(userId, role) {
+    const g = window.currentGroupChat;
+    const data = await groupApiPost({ action: 'set_role', group_id: g.id, user_id: userId, role });
+    if (!data.success) { alert(data.message || 'Помилка'); return; }
+    window.showGroupToast('✅ Роль змінено');
+};
+
+// === 8. ІНВАЙТ-МОДАЛКА З ДРУЗЯМИ ===
+window.openInviteModal = async function() {
+    const g = window.currentGroupChat;
+    if (!g) return;
+
+    let modal = document.getElementById('group-invite-modal');
+    if (modal) modal.remove();
+    modal = document.createElement('div');
+    modal.id = 'group-invite-modal';
+    modal.innerHTML = `
+        <div class="ginv-box">
+            <div class="gset-header" style="margin-bottom:12px;">
+                <span style="font-weight:800; font-size:15px;">➕ Запросити</span>
+                <button class="close-chat-x" onclick="document.getElementById('group-invite-modal').remove()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <button class="gset-btn-ghost" style="width:100%; margin-bottom:14px;" onclick="window.copyGroupLink()">🔗 Скопіювати посилання на ${g.type === 'channel' ? 'канал' : 'групу'}</button>
+            <label class="gset-label">Твої друзі</label>
+            <div id="ginv-friends-list" style="max-height:280px; overflow-y:auto;">
+                <div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">Завантаження...</div>
+            </div>
+        </div>`;
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+
+    try {
+        const res = await fetch('get_mutual_friends.php', { credentials: 'include' });
+        const data = await res.json();
+        const list = document.getElementById('ginv-friends-list');
+        if (!list) return;
+        const friends = data.friends || [];
+        if (!friends.length) {
+            list.innerHTML = '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">Немає взаємних підписок 🙁<br>Поділись посиланням!</div>';
+            return;
+        }
+        list.innerHTML = friends.map(f => `
+            <div class="gset-member-row">
+                <img src="${escapeGroupHTML(f.avatar_url || 'img/default_avatar.png')}" onerror="this.src='img/default_avatar.png'">
+                <span style="flex:1; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeGroupHTML(f.username)}</span>
+                <button class="gset-btn-primary" style="padding:6px 14px; font-size:12px;" id="ginv-btn-${f.id}" onclick="window.inviteFriendToGroup(${f.id})">Запросити</button>
+            </div>`).join('');
+    } catch (e) {
+        const list = document.getElementById('ginv-friends-list');
+        if (list) list.innerHTML = '<div style="text-align:center; color:#ff6;">Не вдалося завантажити друзів</div>';
+    }
+};
+
+window.inviteFriendToGroup = async function(userId) {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    const btn = document.getElementById('ginv-btn-' + userId);
+    const data = await groupApiPost({ action: 'invite', group_id: g.id, user_id: userId });
+    if (data.success) {
+        if (btn) { btn.innerText = '✅ Запрошено'; btn.disabled = true; btn.style.opacity = '0.6'; }
+        window.fetchGroupMessages(false); // системне повідомлення з'явиться в чаті
+        window.refreshGroupInfo();
+    } else {
+        if (btn && data.message === 'Уже в групі') { btn.innerText = 'Уже тут'; btn.disabled = true; btn.style.opacity = '0.6'; }
+        else alert(data.message || 'Помилка');
+    }
+};
+
+// === 9. ВИХІД / ВИДАЛЕННЯ ===
+window.leaveGroup = async function() {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    if (!confirm(`Вийти з "${g.name}"?`)) return;
+    const data = await groupApiPost({ action: 'leave', group_id: g.id });
+    if (!data.success) { alert(data.message || 'Помилка'); return; }
+    document.getElementById('group-settings-panel')?.remove();
+    window.closeChat();
+    window.loadMyGroupChats();
+};
+
+window.deleteGroup = async function() {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    if (!confirm(`Видалити "${g.name}" НАЗАВЖДИ разом з усіма повідомленнями?`)) return;
+    const data = await groupApiPost({ action: 'delete', group_id: g.id });
+    if (!data.success) { alert(data.message || 'Помилка'); return; }
+    document.getElementById('group-settings-panel')?.remove();
+    window.closeChat();
+    window.loadMyGroupChats();
+};
+
+// === 10. ЗАКРИТТЯ ЧАТУ: чистимо груповий режим ===
 (function hookGroupClose() {
     const originalClose = window.closeChat;
     window.closeChat = function() {
         if (window.groupPollTimer) { clearInterval(window.groupPollTimer); window.groupPollTimer = null; }
+        if (window.groupVoiceRecorder && window.groupVoiceRecorder.state === 'recording') {
+            try { window.groupVoiceRecorder.stop(); } catch (e) {}
+        }
         window.currentGroupChat = null;
+        window.currentGroupInfo = null;
         window.lastGroupMsgId = 0;
+        document.getElementById('group-settings-panel')?.remove();
+        document.getElementById('group-invite-modal')?.remove();
         // Повертаємо елементи особистого чату
         document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = '');
+        const bell = document.getElementById('group-header-bell');
+        const gear = document.getElementById('group-header-gear');
+        if (bell) bell.style.display = 'none';
+        if (gear) gear.style.display = 'none';
         const targetAvatar = document.getElementById('chat-target-avatar');
         if (targetAvatar) targetAvatar.style.display = '';
         const input = document.getElementById('msg-input');
@@ -9473,8 +10019,24 @@ window.fetchGroupMessages = async function(initial) {
     };
 })();
 
-// === 6. ІНІЦІАЛІЗАЦІЯ ===
+// === 11. ВСТУП ЗА ПОСИЛАННЯМ (?join=slug) + ІНІЦІАЛІЗАЦІЯ ===
 document.addEventListener('DOMContentLoaded', () => {
     window.loadMyGroupChats();
-    setInterval(window.loadMyGroupChats, 30000); // оновлюємо список раз на 30с
+    setInterval(window.loadMyGroupChats, 30000);
+
+    const params = new URLSearchParams(location.search);
+    const joinSlug = params.get('join');
+    if (joinSlug) {
+        groupApiPost({ action: 'join_by_link', slug: joinSlug }).then(data => {
+            // Прибираємо ?join= з адреси, щоб не вступати повторно при F5
+            history.replaceState(null, '', location.pathname);
+            if (data.success && data.group) {
+                window.loadMyGroupChats();
+                setTimeout(() => window.openGroupChat(data.group), 600);
+                if (!data.already) window.showGroupToast('🎉 Ви приєдналися до "' + data.group.name + '"');
+            } else if (data.message) {
+                window.showGroupToast('⚠️ ' + data.message);
+            }
+        }).catch(() => {});
+    }
 });
