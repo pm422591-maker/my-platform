@@ -547,6 +547,7 @@ async function loadAllPosts(reset = false, forceReload = false) {
 
     if (reset) {
         window.currentPage = 1;
+        window.loadedPostsCount = 0; // ✨ Точний offset для порційного завантаження
         window.hasMorePosts = true;
         if (feedContainer) feedContainer.innerHTML = '';
         if (requestsContainer) requestsContainer.innerHTML = '';
@@ -560,8 +561,10 @@ async function loadAllPosts(reset = false, forceReload = false) {
 
         const currentTab = window.currentLudoraPage || 'feed';
         
-        // ✨ ГОЛОВНИЙ ФІКС: Формуємо URL з урахуванням активних фільтрів!
-        let fetchUrl = `get_posts.php?page=${window.currentPage}&type=${currentTab}`;
+        // ✨ TIKTOK-STYLE: перша порція маленька (5 постів) — миттєвий рендер,
+        // далі догружаємо по 10, коли користувач наближається до низу
+        const batchSize = (window.loadedPostsCount || 0) === 0 ? 5 : 10;
+        let fetchUrl = `get_posts.php?page=${window.currentPage}&type=${currentTab}&limit=${batchSize}&offset=${window.loadedPostsCount || 0}`;
 
         // 🛡️ ФІКС БЛОГУ: вантажимо ТІЛЬКИ пости власника блогу,
         // інакше чужі blog-пости "влітають" у блог іншого юзера.
@@ -599,6 +602,7 @@ async function loadAllPosts(reset = false, forceReload = false) {
             return;
         }
 
+        let insertedInBatch = 0; // ✨ для каскадної появи постів
         posts.forEach(post => {
             const postId = 'post-' + post.id;
             if (document.getElementById(postId)) return;
@@ -904,17 +908,34 @@ const postHTML = `
             if (pType !== currentTab) return; 
 
             // Вставляємо СТРОГО за адресою:
-            if (pType === 'requests' && requestsContainer) {
-                requestsContainer.insertAdjacentHTML('beforeend', postHTML);
-            } else if (pType === 'blog' && blogContainer) {
-                blogContainer.insertAdjacentHTML('beforeend', postHTML);
-            } else if (pType === 'feed' && feedContainer) {
-                feedContainer.insertAdjacentHTML('beforeend', postHTML);
+            let targetContainer = null;
+            if (pType === 'requests' && requestsContainer) targetContainer = requestsContainer;
+            else if (pType === 'blog' && blogContainer) targetContainer = blogContainer;
+            else if (pType === 'feed' && feedContainer) targetContainer = feedContainer;
+
+            if (targetContainer) {
+                targetContainer.insertAdjacentHTML('beforeend', postHTML);
+                // ✨ TIKTOK-STYLE: пости з'являються по черзі, а не всі одразу
+                const newCard = targetContainer.lastElementChild;
+                if (newCard) {
+                    newCard.classList.add('post-pop-in');
+                    newCard.style.animationDelay = `${Math.min(insertedInBatch * 90, 600)}ms`;
+                    // 🖼️ Ліниве завантаження медіа всередині картки
+                    newCard.querySelectorAll('img').forEach(img => img.setAttribute('loading', 'lazy'));
+                    insertedInBatch++;
+                }
             }
         });
 
+        window.loadedPostsCount = (window.loadedPostsCount || 0) + posts.length;
         window.currentPage++;
         window.isFirstPostsLoadDone = true;
+
+        // 🚀 ПЕРЕДЗАВАНТАЖЕННЯ: одразу після першої маленької порції тихо тягнемо наступну,
+        // щоб скрол ніколи не "впирався" у порожнечу
+        if (window.loadedPostsCount <= 5 && window.hasMorePosts) {
+            setTimeout(() => loadAllPosts(false), 350);
+        }
 
     } catch (e) { 
         console.error("❌ Помилка завантаження постів:", e); 
@@ -922,14 +943,33 @@ const postHTML = `
         window.isLoadingPosts = false;
     }
 }
-// === ОБРОБНИК СКРОЛУ (Підвантажуємо пости, коли докрутили донизу) ===
-window.addEventListener('scroll', () => {
-    // Якщо до кінця сторінки залишилося менше 300 пікселів і є ще пости
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-        // Запускаємо БЕЗ ресету (додаємо до існуючих)
-        loadAllPosts(false);
+// === 🚀 РОЗУМНЕ ДОВАНТАЖЕННЯ (IntersectionObserver — швидше та дешевше за scroll) ===
+(function initFeedSentinel() {
+    function ensureSentinel() {
+        let s = document.getElementById('feed-load-sentinel');
+        if (!s) {
+            s = document.createElement('div');
+            s.id = 'feed-load-sentinel';
+            s.style.cssText = 'width:100%; height:1px;';
+            document.body.appendChild(s);
+        }
+        return s;
     }
-});
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) loadAllPosts(false);
+        }, { rootMargin: '900px 0px' }); // починаємо вантажити за ~900px до низу
+        document.addEventListener('DOMContentLoaded', () => io.observe(ensureSentinel()));
+        if (document.readyState !== 'loading') io.observe(ensureSentinel());
+    } else {
+        // Fallback для старих браузерів
+        window.addEventListener('scroll', () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 600) {
+                loadAllPosts(false);
+            }
+        }, { passive: true });
+    }
+})();
 
 // Додай це в свій скрипт ініціалізації
 document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -3328,9 +3368,8 @@ window.startAudioCall = function(userId) {
     window.startTelegramCall(); // Запускаємо нашу нову красиву анімацію дзвінка!
 };
 
-window.startVideoCall = function(userId) {
-    alert(`Відеодзвінок користувачу #${userId}. Функція знаходиться в розробці!`);
-};
+// 🗑️ ВИДАЛЕНО ЗАГЛУШКУ startVideoCall ("Функція в розробці"):
+// справжня функція відеодзвінка оголошена нижче у файлі та працює.
 
 // 2. Заглушити чат (Мут)
 window.toggleChatMute = async function(userId) {
@@ -5201,9 +5240,72 @@ let audioContext, analyser, visualizerFrame;
 const rtcServers = {
     iceServers: [ 
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" } 
-    ]
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" }
+    ],
+    iceCandidatePoolSize: 10 // ✨ заздалегідь збираємо кандидатів — швидше з'єднання
 };
+
+// ❄️ TRICKLE ICE: кандидати, що прийшли до створення peerConnection, чекають у черзі
+window.pendingRemoteCandidates = [];
+window.localCandIdx = 0; // скільки кандидатів партнера ми вже отримали з сервера
+
+async function applyRemoteCandidates(cands) {
+    if (!Array.isArray(cands) || cands.length === 0) return;
+    for (const c of cands) {
+        if (!c) continue;
+        if (peerConnection && peerConnection.remoteDescription) {
+            try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); } 
+            catch (e) { console.warn("ICE candidate skip:", e.message); }
+        } else {
+            window.pendingRemoteCandidates.push(c);
+        }
+    }
+}
+
+async function flushPendingCandidates() {
+    if (!peerConnection || !peerConnection.remoteDescription) return;
+    const queue = window.pendingRemoteCandidates.splice(0);
+    for (const c of queue) {
+        try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+    }
+}
+
+// 🛡️ МОНІТОРИНГ З'ЄДНАННЯ + АВТОВІДНОВЛЕННЯ (як у Telegram)
+function attachConnectionWatchdog(pc) {
+    pc.onicecandidate = (e) => {
+        if (e.candidate) {
+            // Надсилаємо кожного кандидата одразу (trickle), не чекаючи повного збору
+            fetch('call_sync.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'candidate', candidate: e.candidate.toJSON() }),
+                credentials: 'include'
+            }).catch(() => {});
+        }
+    };
+    pc.onconnectionstatechange = () => {
+        const st = pc.connectionState;
+        const statusText = document.getElementById('call-status');
+        if (st === 'connected' && callState === 'active' && statusText) {
+            // нічого — таймер сам показує час
+        } else if (st === 'disconnected') {
+            if (statusText && callState === 'active') statusText.innerText = "Слабкий зв'язок, відновлюємо...";
+            // даємо 3 сек на самовідновлення, потім ICE restart
+            setTimeout(() => {
+                if (peerConnection === pc && pc.connectionState === 'disconnected') {
+                    try { pc.restartIce(); } catch (e) {}
+                }
+            }, 3000);
+        } else if (st === 'failed') {
+            if (statusText) statusText.innerText = "Перепідключення...";
+            try { pc.restartIce(); } catch (e) {}
+        }
+    };
+}
+
 
 // 🛠️ БРОНЕЖИЛЕТ ДЛЯ КЛЮЧІВ (SDP)
 function parseSdp(sdp) {
@@ -5274,7 +5376,7 @@ function waitForIceGathering(pc) {
                 pc.removeEventListener('icegatheringstatechange', checkState);
                 resolve(); 
             }
-        }, 500); 
+        }, 3000); // ✨ було 500мс — SDP відлітав без кандидатів і дзвінок зривався
     });
 }
 
@@ -6073,7 +6175,10 @@ function prepareCallUI(isIncoming, targetName, targetAvatar, incomingMsg, outgoi
     }
 }
 async function makeOffer(trackHandler) {
+    window.pendingRemoteCandidates = [];
+    window.localCandIdx = 0;
     peerConnection = new RTCPeerConnection(rtcServers);
+    attachConnectionWatchdog(peerConnection); // ✨ trickle ICE + автовідновлення
     localAudioStream.getTracks().forEach(track => peerConnection.addTrack(track, localAudioStream));
     peerConnection.ontrack = trackHandler;
 
@@ -6101,11 +6206,13 @@ async function makeAnswer(trackHandler) {
     if (!sdpObj || !sdpObj.type) { return handleMediaError(new Error("Пошкоджені SDP"), "Помилка зв'язку з сервером"); }
 
     peerConnection = new RTCPeerConnection(rtcServers);
+    attachConnectionWatchdog(peerConnection); // ✨ trickle ICE + автовідновлення
     localAudioStream.getTracks().forEach(track => peerConnection.addTrack(track, localAudioStream));
     peerConnection.ontrack = trackHandler;
 
     try {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(sdpObj));
+        await flushPendingCandidates(); // ❄️ застосовуємо кандидатів, що чекали в черзі
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
         
@@ -6160,6 +6267,8 @@ window.endTelegramCall = function(eventOrSkip) {
     lastSignalTime = 0; 
     incomingSdpOffer = null;
     isEffectLooping = false; 
+    window.pendingRemoteCandidates = []; // ❄️ чистимо чергу ICE
+    window.localCandIdx = 0;
     
     clearInterval(callTimerInterval);
     clearTimeout(callRingTimeout);
@@ -6265,8 +6374,14 @@ function startCallTimer(startOffset = 0) {
 // 🔥 ЄДИНИЙ РАДАР ДЗВІНКІВ
 setInterval(async () => {
     try {
-        const response = await fetch('call_sync.php?action=check', { credentials: 'include' });
+        const response = await fetch('call_sync.php?action=check&cand_idx=' + (window.localCandIdx || 0), { credentials: 'include' });
         const data = await response.json();
+
+        // ❄️ TRICKLE ICE: приймаємо нових кандидатів партнера
+        if (data.candidates && data.candidates.length) {
+            window.localCandIdx = data.cand_idx || (window.localCandIdx + data.candidates.length);
+            await applyRemoteCandidates(data.candidates);
+        }
 
         if (data.is_calling && callState === 'idle') {
             window.currentChatUserId = data.caller_id; 
@@ -6290,7 +6405,10 @@ setInterval(async () => {
             if (data.sdp_answer && peerConnection && peerConnection.signalingState !== 'closed') {
                 let ansObj = parseSdp(data.sdp_answer);
                 if (ansObj && ansObj.type) {
-                    try { await peerConnection.setRemoteDescription(new RTCSessionDescription(ansObj)); } 
+                    try { 
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(ansObj)); 
+                        await flushPendingCandidates(); // ❄️ кандидати, що прийшли раніше за answer
+                    } 
                     catch(e) { console.error("Помилка підключення:", e); }
                 }
             }
@@ -8352,23 +8470,46 @@ const activeStreamsData = [
     { title: "Огляд нових ігор / Спілкування", streamer: "PlayUA", category: "Just Chatting", viewers: "3.1k", avatar: "img/default_avatar.png", thumb: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600", tags: ["IRL", "Українська"] }
 ];
 
-window.renderStreams = function() {
+window.renderStreams = async function() {
     const grid = document.getElementById('streams-grid');
     if (!grid) return;
     
     grid.innerHTML = ''; // Очищаем старое
+
+    // 🔴 1. СПРАВЖНІ ЖИВІ СТРІМИ З СЕРВЕРА
+    let liveStreams = [];
+    try {
+        const res = await fetch('streams.php?action=list', { credentials: 'include' });
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.streams)) {
+            liveStreams = data.streams.map(s => ({
+                title: s.title || 'Стрім',
+                streamer: s.streamer || 'Streamer',
+                category: s.category || 'Just Chatting',
+                viewers: String(s.viewers || 1),
+                avatar: s.avatar || 'img/default_avatar.png',
+                thumb: s.avatar || 'img/default_avatar.png',
+                tags: [s.subtitle].filter(Boolean),
+                isReal: true,
+                userId: s.user_id
+            }));
+        }
+    } catch (e) { console.warn('Стріми: сервер недоступний, показуємо демо'); }
+
+    const allStreams = [...liveStreams, ...activeStreamsData];
     
-    activeStreamsData.forEach(stream => {
+    allStreams.forEach((stream, idx) => {
         const card = document.createElement('div');
-        card.className = 'stream-card';
+        card.className = 'stream-card post-pop-in';
+        card.style.animationDelay = `${Math.min(idx * 70, 500)}ms`;
         card.innerHTML = `
             <div class="stream-thumbnail">
-                <div class="stream-live-badge">LIVE</div>
-                <img src="${stream.thumb}" onerror="this.src='img/default_avatar.png'">
+                <div class="stream-live-badge ${stream.isReal ? 'live-real' : ''}">${stream.isReal ? '🔴 LIVE' : 'LIVE'}</div>
+                <img src="${stream.thumb}" loading="lazy" onerror="this.src='img/default_avatar.png'">
                 <span class="stream-viewers"><span class="red-dot"></span> ${stream.viewers}</span>
             </div>
             <div class="stream-info">
-                <img src="${stream.avatar}" class="streamer-avatar" onerror="this.src='img/default_avatar.png'">
+                <img src="${stream.avatar}" class="streamer-avatar" loading="lazy" onerror="this.src='img/default_avatar.png'">
                 <div class="stream-text">
                     <h4 class="stream-title">${stream.title}</h4>
                     <span class="streamer-name">${stream.streamer}</span>
@@ -8381,6 +8522,75 @@ window.renderStreams = function() {
         `;
         grid.appendChild(card);
     });
+};
+
+// ==========================================
+// 📡 ПУБЛІКАЦІЯ СТРІМУ (GO LIVE / завершення)
+// ==========================================
+window.isLiveBroadcasting = false;
+window.liveHeartbeatTimer = null;
+
+window.toggleLiveBroadcast = async function() {
+    const btn = document.getElementById('btn-go-live');
+    if (!window.isLiveBroadcasting) {
+        // ▶️ ПОЧАТИ ТРАНСЛЯЦІЮ
+        const title = document.getElementById('stream-main-title')?.innerText?.trim() || 'Мій стрім';
+        const subtitle = document.getElementById('stream-sub-title')?.innerText?.trim() || '';
+        try {
+            const res = await fetch('streams.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    action: 'start',
+                    title: title,
+                    subtitle: subtitle === 'Введіть опис...' ? '' : subtitle,
+                    category: 'Just Chatting',
+                    streamer: localStorage.getItem('user_name') || 'Streamer',
+                    avatar: localStorage.getItem('user_avatar') || 'img/default_avatar.png'
+                })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Помилка сервера');
+
+            window.isLiveBroadcasting = true;
+            if (btn) { btn.classList.add('is-live'); btn.querySelector('.studio-btn-label').innerText = 'В ЕФІРІ'; }
+
+            // 💓 Heartbeat кожні 25 сек, щоб стрім не зникав зі списку
+            window.liveHeartbeatTimer = setInterval(() => {
+                fetch('streams.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        action: 'heartbeat',
+                        title: document.getElementById('stream-main-title')?.innerText?.trim(),
+                        subtitle: document.getElementById('stream-sub-title')?.innerText?.trim()
+                    })
+                }).catch(() => {});
+            }, 25000);
+        } catch (e) {
+            alert('Не вдалося опублікувати стрім: ' + e.message);
+        }
+    } else {
+        // ⏹️ ЗУПИНИТИ ТРАНСЛЯЦІЮ
+        await window.stopLiveBroadcast();
+        if (btn) { btn.classList.remove('is-live'); btn.querySelector('.studio-btn-label').innerText = 'GO LIVE'; }
+    }
+};
+
+window.stopLiveBroadcast = async function() {
+    if (window.liveHeartbeatTimer) { clearInterval(window.liveHeartbeatTimer); window.liveHeartbeatTimer = null; }
+    if (!window.isLiveBroadcasting) return;
+    window.isLiveBroadcasting = false;
+    try {
+        await fetch('streams.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'stop' })
+        });
+    } catch (e) {}
 };
 // ==========================================
 // 🔴 ФУНКЦИИ СТУДИИ СТРИМА (ФІНАЛЬНА ЧИСТА ВЕРСІЯ)
@@ -8417,6 +8627,11 @@ window.openStreamStudio = function() {
 }
 
 window.closeStreamStudio = function() {
+    // 📡 Якщо йшла трансляція — знімаємо її з ефіру
+    if (typeof window.stopLiveBroadcast === 'function') window.stopLiveBroadcast();
+    const liveBtn = document.getElementById('btn-go-live');
+    if (liveBtn) { liveBtn.classList.remove('is-live'); const l = liveBtn.querySelector('.studio-btn-label'); if (l) l.innerText = 'GO LIVE'; }
+
     const studio = document.getElementById('stream-studio-container');
     if (studio) studio.style.setProperty('display', 'none', 'important');
     
@@ -8978,3 +9193,288 @@ window.buyGiftForPost = async function(postId, giftType) {
         return false;
     }
 };
+// ==========================================================
+// 👥 ГРУПИ ТА КАНАЛИ (повна реалізація: створення, список, чат)
+// ==========================================================
+window.currentGroupChat = null;      // {id, name, type, owner_id}
+window.lastGroupMsgId = 0;
+window.groupPollTimer = null;
+window.creationFlowType = 'group';
+
+function escapeGroupHTML(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// === 1. ЕКРАН СТВОРЕННЯ ===
+window.openCreateFlow = function(type) {
+    window.creationFlowType = type === 'channel' ? 'channel' : 'group';
+    const screen = document.getElementById('chat-creation-screen');
+    if (!screen) return;
+
+    const header = document.getElementById('creation-screen-header');
+    const title = document.getElementById('creation-screen-title');
+    const input = document.getElementById('creation-name-input');
+
+    if (header) header.innerText = window.creationFlowType === 'channel' ? 'Створення каналу' : 'Створення групи';
+    if (title) title.innerText = window.creationFlowType === 'channel' ? '📣 Новий канал' : '👥 Нова група';
+    if (input) { 
+        input.value = ''; 
+        input.placeholder = window.creationFlowType === 'channel' ? 'Назва каналу...' : 'Назва групи...';
+    }
+
+    // Показуємо поверх контенту
+    const parentBox = screen.parentElement;
+    if (parentBox) { parentBox.style.position = 'relative'; parentBox.style.overflow = 'hidden'; }
+    screen.style.display = 'flex';
+    screen.style.flexDirection = 'column';
+    setTimeout(() => input && input.focus(), 100);
+
+    // Enter = створити
+    if (input && !input.hasAttribute('data-enter-bound')) {
+        input.setAttribute('data-enter-bound', '1');
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') window.submitChatCreation(); });
+    }
+};
+
+window.closeChatCreation = function() {
+    const screen = document.getElementById('chat-creation-screen');
+    if (screen) {
+        screen.style.display = 'none';
+        if (screen.parentElement) screen.parentElement.style.overflow = 'auto';
+    }
+};
+
+window.submitChatCreation = async function() {
+    const input = document.getElementById('creation-name-input');
+    const name = input ? input.value.trim() : '';
+    if (!name) { 
+        if (input) { input.style.borderColor = '#ff3358'; setTimeout(() => input.style.borderColor = 'rgba(240, 4, 127, 0.3)', 1200); }
+        return; 
+    }
+
+    try {
+        const res = await fetch('groups_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'create', name: name, type: window.creationFlowType })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Помилка створення');
+
+        window.closeChatCreation();
+        await window.loadMyGroupChats();
+        // Одразу відкриваємо новостворений чат
+        if (data.group) window.openGroupChat(data.group);
+    } catch (e) {
+        alert('Не вдалося створити: ' + e.message);
+    }
+};
+
+// === 2. СПИСОК У САЙДБАРІ ===
+window.loadMyGroupChats = async function() {
+    try {
+        const res = await fetch('groups_api.php?action=my_list', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) return;
+
+        const channelsList = document.getElementById('channels-list');
+        const groupsList = document.getElementById('groups-list');
+
+        // Прибираємо старі елементи (залишаємо кнопки "Створити")
+        [channelsList, groupsList].forEach(list => {
+            if (!list) return;
+            list.querySelectorAll('.group-chat-item').forEach(el => el.remove());
+        });
+
+        (data.groups || []).forEach(g => {
+            const isChannel = g.type === 'channel';
+            const list = isChannel ? channelsList : groupsList;
+            if (!list) return;
+
+            const item = document.createElement('div');
+            item.className = 'chat-item group-chat-item';
+            item.id = `group-item-${g.id}`;
+            item.onclick = () => window.openGroupChat(g);
+
+            const lastMsg = g.last_message ? escapeGroupHTML(String(g.last_message).slice(0, 28)) : (isChannel ? 'Канал' : `${g.members || 1} учасн.`);
+            const icon = isChannel ? '📣' : '👥';
+
+            item.innerHTML = `
+                <div class="group-avatar-circle">${icon}</div>
+                <div class="chat-info" style="overflow: hidden;">
+                    <span class="chat-name" style="display:block; font-weight:700; color:#eaeaea; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeGroupHTML(g.name)}</span>
+                    <span style="display:block; font-size:11px; color:rgba(255,255,255,0.4); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${lastMsg}</span>
+                </div>`;
+
+            // Вставляємо ПЕРЕД кнопкою "Створити", щоб вона завжди була внизу
+            const createBtn = list.querySelector('.create-chat-btn');
+            if (createBtn) list.insertBefore(item, createBtn);
+            else list.appendChild(item);
+        });
+    } catch (e) { console.warn('Групи: не вдалося завантажити список', e); }
+};
+
+// === 3. ВІДКРИТТЯ ГРУПОВОГО ЧАТУ (повторно використовуємо вікно чату) ===
+window.openGroupChat = function(g) {
+    window.currentGroupChat = { id: parseInt(g.id), name: g.name, type: g.type, owner_id: parseInt(g.owner_id) };
+    window.currentChatUserId = null; // вимикаємо логіку особистих чатів
+    window.lastGroupMsgId = 0;
+
+    // Видимість вкладок як у openChatUI
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    const postPanel = document.getElementById('create-post-panel');
+    if (postPanel) postPanel.style.display = 'none';
+    document.querySelectorAll('.chat-item').forEach(item => item.style.background = 'transparent');
+    const activeItem = document.getElementById(`group-item-${g.id}`);
+    if (activeItem) activeItem.style.background = '#2A1520';
+
+    const chatWin = document.getElementById('chat-window');
+    if (!chatWin) return;
+    const parentBox = chatWin.parentElement;
+    if (parentBox) { parentBox.style.position = 'relative'; parentBox.style.overflow = 'hidden'; }
+    chatWin.style.display = 'flex';
+
+    // Шапка
+    const targetName = document.getElementById('chat-target-name');
+    const targetAvatar = document.getElementById('chat-target-avatar');
+    if (targetName) { 
+        targetName.innerText = (g.type === 'channel' ? '📣 ' : '👥 ') + g.name; 
+        targetName.onclick = null; targetName.style.cursor = 'default';
+    }
+    if (targetAvatar) { targetAvatar.style.display = 'none'; }
+
+    // У групових чатах ховаємо дзвінки/блокування (це функції особистих чатів)
+    document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = 'none');
+
+    // Канал: писати може лише власник
+    const myId = parseInt(localStorage.getItem('user_id') || 0);
+    const input = document.getElementById('msg-input');
+    const sendBtn = document.getElementById('send-btn');
+    const readOnly = (g.type === 'channel' && myId !== parseInt(g.owner_id));
+    if (input) {
+        input.style.display = readOnly ? 'none' : 'block';
+        input.placeholder = g.type === 'channel' ? 'Опублікувати в каналі...' : 'Написати в групу...';
+        input.value = '';
+    }
+    if (sendBtn) sendBtn.style.display = readOnly ? 'none' : 'block';
+
+    // Зона повідомлень
+    const msgContainer = document.getElementById('chat-messages');
+    if (msgContainer) {
+        msgContainer.style.background = '#170A11';
+        msgContainer.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:30px 0;">Завантаження...</div>`;
+        if (readOnly) {
+            msgContainer.insertAdjacentHTML('afterbegin', `<div class="group-readonly-note">📣 Це канал — публікації робить лише власник</div>`);
+        }
+    }
+
+    // Поллінг повідомлень
+    if (window.groupPollTimer) clearInterval(window.groupPollTimer);
+    window.fetchGroupMessages(true);
+    window.groupPollTimer = setInterval(() => window.fetchGroupMessages(false), 3000);
+};
+
+window.fetchGroupMessages = async function(initial) {
+    const g = window.currentGroupChat;
+    if (!g) return;
+    try {
+        const res = await fetch(`groups_api.php?action=get_messages&group_id=${g.id}&since_id=${window.lastGroupMsgId}`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success) return;
+        if (!window.currentGroupChat || window.currentGroupChat.id !== g.id) return; // чат уже закрили
+
+        const msgContainer = document.getElementById('chat-messages');
+        if (!msgContainer) return;
+        if (initial) msgContainer.innerHTML = '';
+
+        const myId = parseInt(localStorage.getItem('user_id') || 0);
+        const msgs = data.messages || [];
+        if (initial && msgs.length === 0) {
+            msgContainer.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.35); font-size:13px; padding:30px 0;">${g.type === 'channel' ? 'У каналі поки немає публікацій' : 'Повідомлень поки немає — напишіть першим! 💬'}</div>`;
+        }
+
+        const wasAtBottom = Math.abs(msgContainer.scrollHeight - msgContainer.scrollTop - msgContainer.clientHeight) <= 80;
+
+        msgs.forEach(m => {
+            window.lastGroupMsgId = Math.max(window.lastGroupMsgId, parseInt(m.id));
+            if (msgContainer.querySelector(`.msg-row[data-gid="${m.id}"]`)) return;
+
+            const isMe = parseInt(m.user_id) === myId;
+            const time = (m.created_at || '').slice(11, 16);
+            const senderLine = (!isMe && g.type !== 'channel')
+                ? `<div class="group-msg-sender">${escapeGroupHTML(m.username || 'Користувач')}</div>` : '';
+
+            msgContainer.insertAdjacentHTML('beforeend', `
+                <div class="msg-row" data-gid="${m.id}" style="display:flex; flex-direction:column; width:100%; margin-bottom:6px; align-items:${isMe ? 'flex-end' : 'flex-start'};">
+                    <div class="msg-bubble ${isMe ? 'msg-sent' : 'msg-received'} msg-anim-in">
+                        ${senderLine}
+                        <span class="text-bubble">${escapeGroupHTML(m.message)}</span>
+                        <span class="group-msg-time">${time}</span>
+                    </div>
+                </div>`);
+        });
+
+        if (msgs.length && (initial || wasAtBottom)) {
+            msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+    } catch (e) {}
+};
+
+// === 4. ВІДПРАВКА: перехоплюємо sendMessage для групового режиму ===
+(function hookGroupSend() {
+    const originalSend = window.sendMessage;
+    window.sendMessage = async function() {
+        if (window.currentGroupChat) {
+            const input = document.getElementById('msg-input');
+            const text = input ? input.value.trim() : '';
+            if (!text) return;
+            input.value = '';
+            try {
+                const res = await fetch('groups_api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        action: 'send_message',
+                        group_id: window.currentGroupChat.id,
+                        text: text,
+                        username: localStorage.getItem('user_name') || 'Користувач',
+                        avatar: localStorage.getItem('user_avatar') || null
+                    })
+                });
+                const data = await res.json();
+                if (!data.success) { alert(data.message || 'Не вдалося надіслати'); return; }
+                window.fetchGroupMessages(false); // миттєво показуємо
+            } catch (e) { console.error(e); }
+            return;
+        }
+        return originalSend.apply(this, arguments);
+    };
+})();
+
+// === 5. ЗАКРИТТЯ: чистимо груповий режим ===
+(function hookGroupClose() {
+    const originalClose = window.closeChat;
+    window.closeChat = function() {
+        if (window.groupPollTimer) { clearInterval(window.groupPollTimer); window.groupPollTimer = null; }
+        window.currentGroupChat = null;
+        window.lastGroupMsgId = 0;
+        // Повертаємо елементи особистого чату
+        document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = '');
+        const targetAvatar = document.getElementById('chat-target-avatar');
+        if (targetAvatar) targetAvatar.style.display = '';
+        const input = document.getElementById('msg-input');
+        if (input) { input.style.display = 'block'; input.placeholder = 'Напишіть повідомлення...'; }
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn) sendBtn.style.display = 'block';
+        return originalClose.apply(this, arguments);
+    };
+})();
+
+// === 6. ІНІЦІАЛІЗАЦІЯ ===
+document.addEventListener('DOMContentLoaded', () => {
+    window.loadMyGroupChats();
+    setInterval(window.loadMyGroupChats, 30000); // оновлюємо список раз на 30с
+});

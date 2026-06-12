@@ -228,11 +228,29 @@ document.addEventListener('DOMContentLoaded', () => {
         <div id="stream-studio-overlay" class="tab-content chat-overlay-container" style="display: none; background: #0a0008 !important; z-index: 9999; border-radius: 20px !important; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px); position: absolute; overflow: hidden; flex-direction: column;">
             
             <div class="stream-controls" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(240, 4, 127, 0.3);">
-                <button onclick="startScreenShare()" class="studio-btn neon-blue">💻 Захопити гру (Екран)</button>
-                <button onclick="startCamera()" class="studio-btn neon-pink">📷 Увімкнути камеру</button>
-                <button onclick="toggleBackgroundRemoval()" class="studio-btn neon-green">✂️ Вирізати фон</button>
-                <button onclick="toggleCameraSize()" class="studio-btn neon-purple">🔲 Камера в кут / На весь екран</button>
-                <button onclick="closeStreamStudio()" class="studio-btn neon-red">❌ Завершити стрім</button>
+                <button onclick="toggleLiveBroadcast()" class="studio-btn studio-btn-live" title="Опублікувати стрім у списку">
+                    <span class="live-dot"></span><span class="studio-btn-label">GO LIVE</span>
+                </button>
+                <button onclick="startScreenShare()" class="studio-btn" title="Захопити гру (Екран)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    <span class="studio-btn-label">Екран</span>
+                </button>
+                <button onclick="startCamera()" class="studio-btn" title="Увімкнути камеру">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                    <span class="studio-btn-label">Камера</span>
+                </button>
+                <button onclick="toggleBackgroundRemoval()" class="studio-btn" title="Вирізати фон">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                    <span class="studio-btn-label">Фон</span>
+                </button>
+                <button onclick="toggleCameraSize()" class="studio-btn" title="Камера в кут / На весь екран">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                    <span class="studio-btn-label">Розмір</span>
+                </button>
+                <button onclick="closeStreamStudio()" class="studio-btn studio-btn-end" title="Завершити стрім">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span class="studio-btn-label">Завершити</span>
+                </button>
             
             </div>
 
@@ -694,11 +712,29 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <div class="stream-controls" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 40; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(240, 4, 127, 0.3);">
-                <button onclick="startScreenShare()" class="studio-btn neon-blue">💻 Захопити гру (Екран)</button>
-                <button onclick="startCamera()" class="studio-btn neon-pink">📷 Увімкнути камеру</button>
-                <button onclick="toggleBackgroundRemoval()" class="studio-btn neon-green">✂️ Вирізати фон</button>
-                <button onclick="toggleCameraSize()" class="studio-btn neon-purple">🔲 Камера в кут / На весь екран</button>
-                <button onclick="closeStreamStudio()" class="studio-btn neon-red">❌ Завершити стрім</button>
+                <button onclick="toggleLiveBroadcast()" id="btn-go-live" class="studio-btn studio-btn-live" title="Опублікувати стрім у списку">
+                    <span class="live-dot"></span><span class="studio-btn-label">GO LIVE</span>
+                </button>
+                <button onclick="startScreenShare()" class="studio-btn" title="Захопити гру (Екран)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    <span class="studio-btn-label">Екран</span>
+                </button>
+                <button onclick="startCamera()" class="studio-btn" title="Увімкнути камеру">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                    <span class="studio-btn-label">Камера</span>
+                </button>
+                <button onclick="toggleBackgroundRemoval()" class="studio-btn" title="Вирізати фон">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                    <span class="studio-btn-label">Фон</span>
+                </button>
+                <button onclick="toggleCameraSize()" class="studio-btn" title="Камера в кут / На весь екран">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                    <span class="studio-btn-label">Розмір</span>
+                </button>
+                <button onclick="closeStreamStudio()" class="studio-btn studio-btn-end" title="Завершити стрім">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span class="studio-btn-label">Завершити</span>
+                </button>
             </div>
 
             <div id="stream-video-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1;">

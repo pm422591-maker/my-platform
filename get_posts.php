@@ -14,11 +14,15 @@ try {
         $pdo->exec("DELETE FROM posts WHERE post_type = 'requests' AND created_at <= NOW() - INTERVAL 1 HOUR");
     }
 
-    // --- ПАГИНАЦИЯ (порционная загрузка) ---
-    $limit = 10; 
+    // --- ПАГИНАЦИЯ (порционная загрузка, TikTok-style) ---
+    // ✨ Фронтенд може запросити менший ліміт для блискавичного першого рендеру
+    $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
+    if ($limit < 1) $limit = 1;
+    if ($limit > 15) $limit = 15;
     $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
     if ($page < 1) $page = 1;
-    $offset = ($page - 1) * $limit; 
+    $offset = isset($_GET['offset']) ? intval($_GET['offset']) : (($page - 1) * $limit);
+    if ($offset < 0) $offset = 0; 
 
     // Отримуємо тип (requests, feed або blog)
     $post_type = isset($_GET['type']) ? $_GET['type'] : 'feed';
