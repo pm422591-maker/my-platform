@@ -7457,3 +7457,25 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     z-index: 5;
     position: relative;
 }
+
+/* 📐 МЕДІА В ПОВІДОМЛЕННЯХ: компактні розміри, нічого не випадає з бульбашки */
+.msg-bubble { box-sizing: border-box; }
+.msg-bubble .group-msg-image {
+    max-width: min(220px, 100%) !important;
+    max-height: 240px !important;
+    width: auto;
+    height: auto;
+    border-radius: 10px;
+}
+.msg-bubble .group-msg-voice,
+.group-msg-voice {
+    width: 220px !important;
+    max-width: 100% !important;
+    height: 34px !important;
+    display: block;
+}
+/* Стікери теж трохи компактніші */
+.group-msg-sticker { width: 120px; height: 120px; }
+/* Колонка повідомлення не дає вмісту вилазити */
+.group-msg-row > div { min-width: 0; }
+.msg-bubble { max-width: 100%; overflow: hidden; }

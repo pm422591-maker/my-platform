@@ -9708,7 +9708,7 @@ window.renderAllReactions = function() {
 // ⚠️ Стилі вшиті інлайн — меню виглядає правильно навіть зі старим CSS у кеші
 // 🧹 Закрити меню повідомлення + зняти 3D-фокус і блюр з чату
 window.closeMsgCtx = function() {
-    window.closeMsgCtx();
+    document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
     document.querySelectorAll('.msg-ctx-focused').forEach(r => r.classList.remove('msg-ctx-focused'));
     document.getElementById('chat-messages')?.classList.remove('msg-ctx-focus-mode');
 };
@@ -10621,6 +10621,12 @@ window.deleteGroup = async function() {
 
 // (делегування ПКМ перенесено в головний window-обробник)
 
+
+// 🧹 Страховки закриття меню: Escape, скрол чату, ПКМ деінде
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closeMsgCtx && window.closeMsgCtx(); });
+document.addEventListener('scroll', (e) => {
+    if (e.target && e.target.id === 'chat-messages') window.closeMsgCtx && window.closeMsgCtx();
+}, true);
 
 // === 13. ВСТУП ЗА ПОСИЛАННЯМ + ІНІЦІАЛІЗАЦІЯ ===
 document.addEventListener('DOMContentLoaded', () => {
