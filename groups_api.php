@@ -1,8 +1,7 @@
 <?php
-// groups_api.php v2 — ГРУПИ ТА КАНАЛИ В СТИЛІ TELEGRAM
-// Дії: create | my_list | get_info | update_info | upload_avatar | get_members |
-//      set_role | set_role_titles | invite | join_by_link | toggle_notifications |
-//      get_messages | send_message | send_media | get_media | join | leave | delete
+// groups_api.php v3 — ГРУПИ ТА КАНАЛИ В СТИЛІ TELEGRAM
+// Нове у v3: роль "співвласник", підписники каналів, прив'язана група обговорення,
+// слаг з назви, реакції на повідомлення, стікери
 require_once __DIR__ . '/cors_session.php';
 header('Content-Type: application/json; charset=utf-8');
 session_start();
@@ -40,20 +39,32 @@ try {
         INDEX idx_group (group_id, id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-    // 🧬 МІГРАЦІЇ v2 (нові колонки; помилку "вже існує" — ігноруємо)
+    // ❤️ Реакції
+    $pdo->exec("CREATE TABLE IF NOT EXISTS chat_group_reactions (
+        message_id INT NOT NULL,
+        user_id INT NOT NULL,
+        emoji VARCHAR(32) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (message_id, user_id, emoji),
+        INDEX idx_msg (message_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // 🧬 МІГРАЦІЇ (помилку "вже існує" ігноруємо)
     $migrations = [
         "ALTER TABLE chat_groups ADD COLUMN description TEXT DEFAULT NULL",
         "ALTER TABLE chat_groups ADD COLUMN slug VARCHAR(50) DEFAULT NULL",
         "ALTER TABLE chat_groups ADD COLUMN privacy ENUM('public','private') NOT NULL DEFAULT 'private'",
         "ALTER TABLE chat_groups ADD COLUMN role_titles TEXT DEFAULT NULL",
+        "ALTER TABLE chat_groups ADD COLUMN linked_group_id INT DEFAULT NULL",
         "ALTER TABLE chat_groups ADD UNIQUE INDEX idx_slug (slug)",
         "ALTER TABLE chat_group_members ADD COLUMN role ENUM('owner','moderator','member') NOT NULL DEFAULT 'member'",
+        "ALTER TABLE chat_group_members MODIFY COLUMN role ENUM('owner','coowner','moderator','member') NOT NULL DEFAULT 'member'",
         "ALTER TABLE chat_group_members ADD COLUMN notifications TINYINT(1) NOT NULL DEFAULT 1",
         "ALTER TABLE chat_group_messages ADD COLUMN media_type VARCHAR(12) NOT NULL DEFAULT 'text'",
         "ALTER TABLE chat_group_messages ADD COLUMN media_url VARCHAR(255) DEFAULT NULL",
     ];
     foreach ($migrations as $sql) {
-        try { $pdo->exec($sql); } catch (Throwable $e) { /* колонка вже є */ }
+        try { $pdo->exec($sql); } catch (Throwable $e) { /* вже застосовано */ }
     }
 
     if (!isset($_SESSION['user_id'])) {
@@ -67,14 +78,30 @@ try {
     $action = $data['action'] ?? $_POST['action'] ?? $_GET['action'] ?? '';
 
     // ===== ХЕЛПЕРИ =====
-    function makeSlug($pdo) {
-        for ($i = 0; $i < 10; $i++) {
-            $slug = 'g' . substr(bin2hex(random_bytes(5)), 0, 8);
+
+    // 🔗 СЛАГ З НАЗВИ: транслітерація + випадковий хвіст
+    function slugFromName($pdo, $name) {
+        $map = [
+            'а'=>'a','б'=>'b','в'=>'v','г'=>'h','ґ'=>'g','д'=>'d','е'=>'e','є'=>'ye','ж'=>'zh',
+            'з'=>'z','и'=>'y','і'=>'i','ї'=>'yi','й'=>'y','к'=>'k','л'=>'l','м'=>'m','н'=>'n',
+            'о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u','ф'=>'f','х'=>'kh','ц'=>'ts',
+            'ч'=>'ch','ш'=>'sh','щ'=>'shch','ь'=>'','ю'=>'yu','я'=>'ya','ы'=>'y','э'=>'e','ё'=>'yo','ъ'=>''
+        ];
+        $base = mb_strtolower(trim($name));
+        $base = strtr($base, $map);
+        $base = preg_replace('/[^a-z0-9_]+/', '_', $base);
+        $base = trim(preg_replace('/_+/', '_', $base), '_');
+        $base = substr($base, 0, 24);
+        if (strlen($base) < 3) $base = 'chat';
+
+        for ($i = 0; $i < 12; $i++) {
+            $tail = substr(bin2hex(random_bytes(3)), 0, 4);
+            $slug = $base . '_' . $tail;
             $st = $pdo->prepare("SELECT id FROM chat_groups WHERE slug = :s");
             $st->execute([':s' => $slug]);
             if (!$st->fetch()) return $slug;
         }
-        return 'g' . bin2hex(random_bytes(6));
+        return $base . '_' . bin2hex(random_bytes(4));
     }
 
     function getGroup($pdo, $gid) {
@@ -84,16 +111,16 @@ try {
     }
 
     function myRole($pdo, $gid, $uid, $grp = null) {
+        if ($grp === null) $grp = getGroup($pdo, $gid);
         if ($grp && intval($grp['owner_id']) === $uid) return 'owner';
         $st = $pdo->prepare("SELECT role FROM chat_group_members WHERE group_id = :g AND user_id = :u");
         $st->execute([':g' => intval($gid), ':u' => $uid]);
         $r = $st->fetchColumn();
-        if ($grp === null) {
-            $g2 = getGroup($pdo, $gid);
-            if ($g2 && intval($g2['owner_id']) === $uid) return 'owner';
-        }
         return $r ?: null;
     }
+
+    // Адміни: пишуть у канал, міняють назву/опис/аватар, запрошують
+    function isAdminRole($role) { return in_array($role, ['owner', 'coowner', 'moderator']); }
 
     function addSystemMessage($pdo, $gid, $text) {
         $st = $pdo->prepare("INSERT INTO chat_group_messages (group_id, user_id, username, message, media_type)
@@ -101,15 +128,20 @@ try {
         $st->execute([':g' => intval($gid), ':m' => mb_substr($text, 0, 300)]);
     }
 
-    function defaultTitles() {
-        return ['owner' => 'Власник', 'moderator' => 'Модератор', 'member' => 'Учасник'];
+    function defaultTitles($type = 'group') {
+        return [
+            'owner' => 'Власник',
+            'coowner' => 'Співвласник',
+            'moderator' => 'Модератор',
+            'member' => $type === 'channel' ? 'Підписник' : 'Учасник'
+        ];
     }
 
     function groupTitles($grp) {
-        $t = defaultTitles();
+        $t = defaultTitles($grp['type'] ?? 'group');
         if (!empty($grp['role_titles'])) {
             $j = json_decode($grp['role_titles'], true);
-            if (is_array($j)) foreach (['owner','moderator','member'] as $k)
+            if (is_array($j)) foreach (['owner','coowner','moderator','member'] as $k)
                 if (!empty($j[$k])) $t[$k] = mb_substr($j[$k], 0, 30);
         }
         return $t;
@@ -129,7 +161,7 @@ try {
         $type = ($data['type'] ?? 'group') === 'channel' ? 'channel' : 'group';
         if ($name === '') { echo json_encode(['success' => false, 'message' => 'Введіть назву']); exit; }
 
-        $slug = makeSlug($pdo);
+        $slug = slugFromName($pdo, $name); // ✨ слаг з назви
         $st = $pdo->prepare("INSERT INTO chat_groups (owner_id, name, type, slug, privacy) VALUES (:o, :n, :t, :s, 'private')");
         $st->execute([':o' => $my_id, ':n' => $name, ':t' => $type, ':s' => $slug]);
         $gid = intval($pdo->lastInsertId());
@@ -147,7 +179,7 @@ try {
     // ===== МОЇ ГРУПИ =====
     if ($action === 'my_list') {
         $stmt = $pdo->prepare("
-            SELECT g.id, g.name, g.type, g.owner_id, g.avatar, g.slug, g.privacy, g.description,
+            SELECT g.id, g.name, g.type, g.owner_id, g.avatar, g.slug, g.privacy, g.description, g.linked_group_id,
                    (SELECT COUNT(*) FROM chat_group_members m WHERE m.group_id = g.id) AS members,
                    (SELECT message FROM chat_group_messages gm WHERE gm.group_id = g.id ORDER BY gm.id DESC LIMIT 1) AS last_message
             FROM chat_groups g
@@ -160,7 +192,7 @@ try {
         exit;
     }
 
-    // ===== ІНФО ПРО ГРУПУ =====
+    // ===== ІНФО =====
     if ($action === 'get_info') {
         $gid = intval($data['group_id'] ?? $_GET['group_id'] ?? 0);
         $grp = getGroup($pdo, $gid);
@@ -174,6 +206,15 @@ try {
         $st->execute([':g' => $gid, ':u' => $my_id]);
         $notif = $st->fetchColumn();
 
+        // 💬 Прив'язана група обговорення (для каналів)
+        $linked = null;
+        if (!empty($grp['linked_group_id'])) {
+            $lg = getGroup($pdo, intval($grp['linked_group_id']));
+            if ($lg && $lg['type'] === 'group') {
+                $linked = ['id' => intval($lg['id']), 'name' => $lg['name'], 'owner_id' => intval($lg['owner_id'])];
+            }
+        }
+
         echo json_encode(['success' => true, 'group' => [
             'id' => intval($grp['id']),
             'name' => $grp['name'],
@@ -186,22 +227,20 @@ try {
             'role_titles' => groupTitles($grp),
             'members' => $count,
             'my_role' => myRole($pdo, $gid, $my_id, $grp),
-            'my_notifications' => ($notif === false ? 1 : intval($notif))
+            'my_notifications' => ($notif === false ? 1 : intval($notif)),
+            'linked_group' => $linked
         ]]);
         exit;
     }
 
-    // ===== ОНОВИТИ НАЗВУ / ОПИС / ПОСИЛАННЯ / ПРИВАТНІСТЬ =====
+    // ===== ОНОВЛЕННЯ ІНФО =====
     if ($action === 'update_info') {
         $gid = intval($data['group_id'] ?? 0);
         $grp = getGroup($pdo, $gid);
         if (!$grp) { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
         $role = myRole($pdo, $gid, $my_id, $grp);
 
-        // Назву та опис можуть змінювати власник і модератор
-        if (!in_array($role, ['owner', 'moderator'])) {
-            echo json_encode(['success' => false, 'message' => 'Недостатньо прав']); exit;
-        }
+        if (!isAdminRole($role)) { echo json_encode(['success' => false, 'message' => 'Недостатньо прав']); exit; }
 
         $fields = []; $params = [':g' => $gid];
 
@@ -214,14 +253,14 @@ try {
             $params[':d'] = trim(mb_substr($data['description'] ?? '', 0, 500));
         }
 
-        // Посилання та приватність — лише власник
+        // Посилання та приватність — лише власник; слаг змінюється ЛИШЕ якщо вільний
         if (isset($data['slug']) && $role === 'owner') {
             $slug = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $data['slug']));
-            $slug = mb_substr($slug, 0, 40);
+            $slug = substr($slug, 0, 40);
             if (strlen($slug) < 4) { echo json_encode(['success' => false, 'message' => 'Посилання мінімум 4 символи (латиниця, цифри, _)']); exit; }
             $st = $pdo->prepare("SELECT id FROM chat_groups WHERE slug = :s AND id != :g");
             $st->execute([':s' => $slug, ':g' => $gid]);
-            if ($st->fetch()) { echo json_encode(['success' => false, 'message' => 'Це посилання вже зайняте']); exit; }
+            if ($st->fetch()) { echo json_encode(['success' => false, 'message' => '❌ Це посилання вже зайняте, оберіть інше']); exit; }
             $fields[] = "slug = :s"; $params[':s'] = $slug;
         }
         if (isset($data['privacy']) && $role === 'owner') {
@@ -236,12 +275,33 @@ try {
         exit;
     }
 
-    // ===== АВАТАР ГРУПИ (multipart) =====
+    // ===== 💬 ГРУПА ОБГОВОРЕННЯ КАНАЛУ (лише власник) =====
+    if ($action === 'set_linked_group') {
+        $gid = intval($data['group_id'] ?? 0);          // канал
+        $lid = intval($data['linked_group_id'] ?? 0);   // група (0 = відв'язати)
+        $grp = getGroup($pdo, $gid);
+        if (!$grp || $grp['type'] !== 'channel') { echo json_encode(['success' => false, 'message' => 'Це не канал']); exit; }
+        if (myRole($pdo, $gid, $my_id, $grp) !== 'owner') { echo json_encode(['success' => false, 'message' => 'Лише власник каналу']); exit; }
+
+        if ($lid > 0) {
+            $lg = getGroup($pdo, $lid);
+            if (!$lg || $lg['type'] !== 'group') { echo json_encode(['success' => false, 'message' => 'Оберіть саме групу']); exit; }
+            if (!isAdminRole(myRole($pdo, $lid, $my_id, $lg))) { echo json_encode(['success' => false, 'message' => 'Ви маєте бути адміном цієї групи']); exit; }
+            $pdo->prepare("UPDATE chat_groups SET linked_group_id = :l WHERE id = :g")->execute([':l' => $lid, ':g' => $gid]);
+            addSystemMessage($pdo, $gid, "💬 До каналу прив'язано групу обговорення «{$lg['name']}»");
+        } else {
+            $pdo->prepare("UPDATE chat_groups SET linked_group_id = NULL WHERE id = :g")->execute([':g' => $gid]);
+        }
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    // ===== АВАТАР =====
     if ($action === 'upload_avatar') {
         $gid = intval($_POST['group_id'] ?? 0);
         $grp = getGroup($pdo, $gid);
         if (!$grp) { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
-        if (!in_array(myRole($pdo, $gid, $my_id, $grp), ['owner', 'moderator'])) {
+        if (!isAdminRole(myRole($pdo, $gid, $my_id, $grp))) {
             echo json_encode(['success' => false, 'message' => 'Недостатньо прав']); exit;
         }
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -274,42 +334,47 @@ try {
             FROM chat_group_members m
             LEFT JOIN users u ON u.id = m.user_id
             WHERE m.group_id = :g
-            ORDER BY FIELD(m.role, 'owner', 'moderator', 'member'), m.joined_at ASC
+            ORDER BY FIELD(m.role, 'owner', 'coowner', 'moderator', 'member'), m.joined_at ASC
         ");
         $st->execute([':g' => $gid]);
         $members = $st->fetchAll(PDO::FETCH_ASSOC);
         foreach ($members as &$m) {
             if (intval($m['user_id']) === intval($grp['owner_id'])) $m['role'] = 'owner';
         }
-        echo json_encode(['success' => true, 'members' => $members, 'role_titles' => groupTitles($grp)]);
+        echo json_encode(['success' => true, 'members' => $members, 'role_titles' => groupTitles($grp), 'type' => $grp['type']]);
         exit;
     }
 
-    // ===== РОЛІ (лише власник) =====
+    // ===== РОЛІ: призначає ЛИШЕ ВЛАСНИК (автор) =====
     if ($action === 'set_role') {
         $gid = intval($data['group_id'] ?? 0);
         $uid = intval($data['user_id'] ?? 0);
-        $role = in_array($data['role'] ?? '', ['moderator', 'member']) ? $data['role'] : 'member';
+        $role = in_array($data['role'] ?? '', ['coowner', 'moderator', 'member']) ? $data['role'] : 'member';
         $grp = getGroup($pdo, $gid);
         if (!$grp || myRole($pdo, $gid, $my_id, $grp) !== 'owner') {
-            echo json_encode(['success' => false, 'message' => 'Лише власник змінює ролі']); exit;
+            echo json_encode(['success' => false, 'message' => 'Лише власник призначає ролі']); exit;
         }
         if ($uid === intval($grp['owner_id'])) { echo json_encode(['success' => false, 'message' => 'Власника не можна змінити']); exit; }
         $pdo->prepare("UPDATE chat_group_members SET role = :r WHERE group_id = :g AND user_id = :u")
             ->execute([':r' => $role, ':g' => $gid, ':u' => $uid]);
+
+        $titles = groupTitles($grp);
+        $them = userInfo($pdo, $uid);
+        addSystemMessage($pdo, $gid, "⭐ {$them['username']} тепер «{$titles[$role]}»");
         echo json_encode(['success' => true]);
         exit;
     }
 
+    // Перейменування ОДНІЄЇ ролі (лише власник)
     if ($action === 'set_role_titles') {
         $gid = intval($data['group_id'] ?? 0);
         $grp = getGroup($pdo, $gid);
         if (!$grp || myRole($pdo, $gid, $my_id, $grp) !== 'owner') {
             echo json_encode(['success' => false, 'message' => 'Лише власник']); exit;
         }
-        $t = defaultTitles();
+        $t = groupTitles($grp); // поточні (включно з кастомними)
         $in = $data['titles'] ?? [];
-        foreach (['owner','moderator','member'] as $k) {
+        foreach (['owner','coowner','moderator','member'] as $k) {
             if (!empty($in[$k])) $t[$k] = trim(mb_substr($in[$k], 0, 30));
         }
         $pdo->prepare("UPDATE chat_groups SET role_titles = :t WHERE id = :g")
@@ -318,16 +383,18 @@ try {
         exit;
     }
 
-    // ===== ЗАПРОСИТИ ДРУГА =====
+    // ===== ЗАПРОСИТИ =====
     if ($action === 'invite') {
         $gid = intval($data['group_id'] ?? 0);
         $uid = intval($data['user_id'] ?? 0);
         $grp = getGroup($pdo, $gid);
         if (!$grp) { echo json_encode(['success' => false]); exit; }
-        if (!myRole($pdo, $gid, $my_id, $grp)) {
-            echo json_encode(['success' => false, 'message' => 'Ви не учасник']); exit;
+        $role = myRole($pdo, $gid, $my_id, $grp);
+        if (!$role) { echo json_encode(['success' => false, 'message' => 'Ви не учасник']); exit; }
+        // У канал запрошують лише адміни; у групу — будь-який учасник
+        if ($grp['type'] === 'channel' && !isAdminRole($role)) {
+            echo json_encode(['success' => false, 'message' => 'У канал запрошують лише адміністратори']); exit;
         }
-        // Чи вже учасник?
         $st = $pdo->prepare("SELECT 1 FROM chat_group_members WHERE group_id = :g AND user_id = :u");
         $st->execute([':g' => $gid, ':u' => $uid]);
         if ($st->fetch()) { echo json_encode(['success' => false, 'message' => 'Уже в групі']); exit; }
@@ -342,7 +409,7 @@ try {
         exit;
     }
 
-    // ===== ВСТУП ЗА ПОСИЛАННЯМ =====
+    // ===== ВСТУП ЗА ПОСИЛАННЯМ (у канал — як підписник без прав) =====
     if ($action === 'join_by_link') {
         $slug = trim($data['slug'] ?? $_GET['slug'] ?? '');
         if ($slug === '') { echo json_encode(['success' => false]); exit; }
@@ -360,7 +427,11 @@ try {
             $pdo->prepare("INSERT INTO chat_group_members (group_id, user_id, role) VALUES (:g, :u, 'member')")
                 ->execute([':g' => $gid, ':u' => $my_id]);
             $me = userInfo($pdo, $my_id);
-            addSystemMessage($pdo, $gid, "🔗 {$me['username']} приєднався(лась) за посиланням");
+            if ($grp['type'] === 'channel') {
+                addSystemMessage($pdo, $gid, "🔔 {$me['username']} підписався(лась) на канал");
+            } else {
+                addSystemMessage($pdo, $gid, "🔗 {$me['username']} приєднався(лась) за посиланням");
+            }
         }
         echo json_encode(['success' => true, 'already' => $already, 'group' => [
             'id' => $gid, 'name' => $grp['name'], 'type' => $grp['type'], 'owner_id' => intval($grp['owner_id'])
@@ -368,7 +439,7 @@ try {
         exit;
     }
 
-    // ===== СПОВІЩЕННЯ ON/OFF =====
+    // ===== СПОВІЩЕННЯ =====
     if ($action === 'toggle_notifications') {
         $gid = intval($data['group_id'] ?? 0);
         $on = !empty($data['enabled']) ? 1 : 0;
@@ -378,7 +449,7 @@ try {
         exit;
     }
 
-    // ===== ПОВІДОМЛЕННЯ =====
+    // ===== ПОВІДОМЛЕННЯ (+ реакції) =====
     if ($action === 'get_messages') {
         $gid = intval($data['group_id'] ?? $_GET['group_id'] ?? 0);
         $since = intval($data['since_id'] ?? $_GET['since_id'] ?? 0);
@@ -391,7 +462,54 @@ try {
             ORDER BY gm.id ASC LIMIT 100
         ");
         $stmt->execute([':g' => $gid, ':s' => $since]);
-        echo json_encode(['success' => true, 'messages' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // ❤️ Реакції для останніх 100 повідомлень групи (щоб бачити зміни на старих)
+        $rs = $pdo->prepare("
+            SELECT r.message_id, r.emoji,
+                   COUNT(*) AS cnt,
+                   MAX(r.user_id = :me) AS mine
+            FROM chat_group_reactions r
+            WHERE r.message_id IN (
+                SELECT id FROM (
+                    SELECT id FROM chat_group_messages WHERE group_id = :g ORDER BY id DESC LIMIT 100
+                ) AS last_ids
+            )
+            GROUP BY r.message_id, r.emoji
+            ORDER BY MIN(r.created_at) ASC
+        ");
+        $rs->execute([':me' => $my_id, ':g' => $gid]);
+        $reactions = $rs->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(['success' => true, 'messages' => $messages, 'reactions' => $reactions]);
+        exit;
+    }
+
+    // ❤️ ПОСТАВИТИ/ЗНЯТИ РЕАКЦІЮ
+    if ($action === 'toggle_reaction') {
+        $mid = intval($data['message_id'] ?? 0);
+        $emoji = trim(mb_substr($data['emoji'] ?? '', 0, 32));
+        if ($mid <= 0 || $emoji === '') { echo json_encode(['success' => false]); exit; }
+
+        // Перевірка членства через групу повідомлення
+        $st = $pdo->prepare("SELECT group_id FROM chat_group_messages WHERE id = :m");
+        $st->execute([':m' => $mid]);
+        $gid = intval($st->fetchColumn());
+        if (!$gid || !myRole($pdo, $gid, $my_id)) {
+            echo json_encode(['success' => false, 'message' => 'Ви не учасник']); exit;
+        }
+
+        $st = $pdo->prepare("SELECT 1 FROM chat_group_reactions WHERE message_id = :m AND user_id = :u AND emoji = :e");
+        $st->execute([':m' => $mid, ':u' => $my_id, ':e' => $emoji]);
+        if ($st->fetch()) {
+            $pdo->prepare("DELETE FROM chat_group_reactions WHERE message_id = :m AND user_id = :u AND emoji = :e")
+                ->execute([':m' => $mid, ':u' => $my_id, ':e' => $emoji]);
+            echo json_encode(['success' => true, 'state' => 'removed']);
+        } else {
+            $pdo->prepare("INSERT IGNORE INTO chat_group_reactions (message_id, user_id, emoji) VALUES (:m, :u, :e)")
+                ->execute([':m' => $mid, ':u' => $my_id, ':e' => $emoji]);
+            echo json_encode(['success' => true, 'state' => 'added']);
+        }
         exit;
     }
 
@@ -404,7 +522,7 @@ try {
         if (!$grp) { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
         $role = myRole($pdo, $gid, $my_id, $grp);
         if (!$role) { echo json_encode(['success' => false, 'message' => 'Ви не учасник']); exit; }
-        if ($grp['type'] === 'channel' && !in_array($role, ['owner', 'moderator'])) {
+        if ($grp['type'] === 'channel' && !isAdminRole($role)) {
             echo json_encode(['success' => false, 'message' => 'У каналі публікують лише адміністратори']); exit;
         }
 
@@ -417,6 +535,32 @@ try {
         exit;
     }
 
+    // 🎨 СТІКЕР (без завантаження — URL зі стікерпаку сайту)
+    if ($action === 'send_sticker') {
+        $gid = intval($data['group_id'] ?? 0);
+        $url = trim($data['url'] ?? '');
+        // Дозволяємо лише локальні шляхи сайту
+        if ($gid <= 0 || $url === '' || preg_match('#^(https?:)?//#', $url) || strpos($url, '..') !== false
+            || !(strpos($url, 'img/') === 0 || strpos($url, 'uploads/') === 0)) {
+            echo json_encode(['success' => false, 'message' => 'Невірний стікер']); exit;
+        }
+        $grp = getGroup($pdo, $gid);
+        if (!$grp) { echo json_encode(['success' => false]); exit; }
+        $role = myRole($pdo, $gid, $my_id, $grp);
+        if (!$role) { echo json_encode(['success' => false, 'message' => 'Ви не учасник']); exit; }
+        if ($grp['type'] === 'channel' && !isAdminRole($role)) {
+            echo json_encode(['success' => false, 'message' => 'У каналі публікують лише адміністратори']); exit;
+        }
+
+        $uname = $data['username'] ?? ($_SESSION['username'] ?? 'Користувач');
+        $uavatar = $data['avatar'] ?? null;
+        $stmt = $pdo->prepare("INSERT INTO chat_group_messages (group_id, user_id, username, avatar, message, media_type, media_url)
+                               VALUES (:g, :u, :n, :a, '', 'sticker', :url)");
+        $stmt->execute([':g' => $gid, ':u' => $my_id, ':n' => mb_substr($uname, 0, 80), ':a' => $uavatar, ':url' => mb_substr($url, 0, 255)]);
+        echo json_encode(['success' => true, 'id' => intval($pdo->lastInsertId())]);
+        exit;
+    }
+
     // ===== МЕДІА: ФОТО ТА ГОЛОСОВІ (multipart) =====
     if ($action === 'send_media') {
         $gid = intval($_POST['group_id'] ?? 0);
@@ -425,7 +569,7 @@ try {
         if (!$grp) { echo json_encode(['success' => false]); exit; }
         $role = myRole($pdo, $gid, $my_id, $grp);
         if (!$role) { echo json_encode(['success' => false, 'message' => 'Ви не учасник']); exit; }
-        if ($grp['type'] === 'channel' && !in_array($role, ['owner', 'moderator'])) {
+        if ($grp['type'] === 'channel' && !isAdminRole($role)) {
             echo json_encode(['success' => false, 'message' => 'У каналі публікують лише адміністратори']); exit;
         }
         if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -476,8 +620,16 @@ try {
     if ($action === 'join') {
         $gid = intval($data['group_id'] ?? 0);
         if ($gid > 0) {
-            $pdo->prepare("INSERT IGNORE INTO chat_group_members (group_id, user_id, role) VALUES (:g, :u, 'member')")
-                ->execute([':g' => $gid, ':u' => $my_id]);
+            $st = $pdo->prepare("SELECT 1 FROM chat_group_members WHERE group_id = :g AND user_id = :u");
+            $st->execute([':g' => $gid, ':u' => $my_id]);
+            if (!$st->fetch()) {
+                $pdo->prepare("INSERT INTO chat_group_members (group_id, user_id, role) VALUES (:g, :u, 'member')")
+                    ->execute([':g' => $gid, ':u' => $my_id]);
+                $grp = getGroup($pdo, $gid);
+                $me = userInfo($pdo, $my_id);
+                if ($grp && $grp['type'] === 'channel') addSystemMessage($pdo, $gid, "🔔 {$me['username']} підписався(лась) на канал");
+                else addSystemMessage($pdo, $gid, "👋 {$me['username']} приєднався(лась)");
+            }
         }
         echo json_encode(['success' => true]);
         exit;
@@ -487,13 +639,14 @@ try {
         $gid = intval($data['group_id'] ?? 0);
         $grp = getGroup($pdo, $gid);
         if ($grp && intval($grp['owner_id']) === $my_id) {
-            echo json_encode(['success' => false, 'message' => 'Власник не може вийти. Видаліть групу або передайте права.']); exit;
+            echo json_encode(['success' => false, 'message' => 'Власник не може вийти. Видаліть або передайте права.']); exit;
         }
         if ($gid > 0) {
             $pdo->prepare("DELETE FROM chat_group_members WHERE group_id = :g AND user_id = :u")
                 ->execute([':g' => $gid, ':u' => $my_id]);
             $me = userInfo($pdo, $my_id);
-            addSystemMessage($pdo, $gid, "🚪 {$me['username']} вийшов(ла) з " . ($grp && $grp['type'] === 'channel' ? 'каналу' : 'групи'));
+            if ($grp && $grp['type'] === 'channel') addSystemMessage($pdo, $gid, "🔕 {$me['username']} відписався(лась) від каналу");
+            else addSystemMessage($pdo, $gid, "🚪 {$me['username']} вийшов(ла) з групи");
         }
         echo json_encode(['success' => true]);
         exit;
@@ -505,7 +658,10 @@ try {
         if ($grp && intval($grp['owner_id']) === $my_id) {
             $pdo->prepare("DELETE FROM chat_groups WHERE id = :g")->execute([':g' => $gid]);
             $pdo->prepare("DELETE FROM chat_group_members WHERE group_id = :g")->execute([':g' => $gid]);
+            $pdo->prepare("DELETE FROM chat_group_reactions WHERE message_id IN (SELECT id FROM chat_group_messages WHERE group_id = " . intval($gid) . ")");
             $pdo->prepare("DELETE FROM chat_group_messages WHERE group_id = :g")->execute([':g' => $gid]);
+            // Відв'язуємо від каналів, де ця група була обговоренням
+            $pdo->prepare("UPDATE chat_groups SET linked_group_id = NULL WHERE linked_group_id = :g")->execute([':g' => $gid]);
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Лише власник може видалити']);
