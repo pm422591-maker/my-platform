@@ -9706,6 +9706,13 @@ window.renderAllReactions = function() {
 
 // 🖱️ КОНТЕКСТНЕ МЕНЮ (ПКМ): реакції + редагувати + переслати + видалити
 // ⚠️ Стилі вшиті інлайн — меню виглядає правильно навіть зі старим CSS у кеші
+// 🧹 Закрити меню повідомлення + зняти 3D-фокус і блюр з чату
+window.closeMsgCtx = function() {
+    window.closeMsgCtx();
+    document.querySelectorAll('.msg-ctx-focused').forEach(r => r.classList.remove('msg-ctx-focused'));
+    document.getElementById('chat-messages')?.classList.remove('msg-ctx-focus-mode');
+};
+
 window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
     event.preventDefault();
     event.stopPropagation();
@@ -9731,7 +9738,7 @@ window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
     const standard = Object.entries(window.appleEmojis || {});
     const custom = Object.entries(window.customEmojis || {}).slice(0, 3);
     const reactItem = (key, url) => `
-        <span onclick="window.toggleReaction(${msgId}, '${escapeGroupHTML(key)}'); document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());"
+        <span onclick="window.toggleReaction(${msgId}, '${escapeGroupHTML(key)}'); window.closeMsgCtx();"
               onmouseover="this.style.transform='scale(1.3)'; this.style.background='rgba(240,4,127,0.3)';"
               onmouseout="this.style.transform='scale(1)'; this.style.background='transparent';"
               style="width:25px; height:25px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:50%; transition:0.15s; flex-shrink:0;">
@@ -9759,24 +9766,41 @@ window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
     menu.innerHTML = reactionsRow + items;
     document.body.appendChild(menu);
 
-    // 📌 СТАБІЛЬНА ПОЗИЦІЯ (як у Telegram): за замовчуванням ВНИЗ-ПРАВОРУЧ від курсора;
-    // якщо не влазить — відкривається вгору/вліво дзеркально, без стрибків
+    // ✨ TELEGRAM-ФОКУС: вибране повідомлення спливає в 3D, решта чату блюриться
+    const focusRow = document.querySelector(`.msg-row[data-gid="${msgId}"]`);
+    if (focusRow) {
+        focusRow.classList.add('msg-ctx-focused');
+        document.getElementById('chat-messages')?.classList.add('msg-ctx-focus-mode');
+    }
+
+    // 📌 ПОЗИЦІЯ: у СВОЇХ повідомлень меню кріпиться ЗНИЗУ ПІД бульбашкою;
+    // у чужих — вниз-праворуч від курсора. Без стрибків: міряємо і ставимо один раз.
     menu.style.visibility = 'hidden';
     const mw = menu.offsetWidth || 232;
     const mh = menu.offsetHeight || 180;
-    let x = event.clientX + 4;
-    let y = event.clientY + 4;
-    if (x + mw > window.innerWidth - 8) x = event.clientX - mw - 4;   // не влазить праворуч → вліво
-    if (y + mh > window.innerHeight - 8) y = event.clientY - mh - 4;  // не влазить знизу → вгору
+    let x, y;
+    const bubbleEl = focusRow ? focusRow.querySelector('.msg-bubble, .msg-sticker-wrap') : null;
+    if (isMe && bubbleEl) {
+        const r = bubbleEl.getBoundingClientRect();
+        x = r.right - mw;                                  // вирівнюємо по правому краю бульбашки
+        y = r.bottom + 8;                                  // одразу під повідомленням
+        if (y + mh > window.innerHeight - 8) y = r.top - mh - 8; // знизу нема місця → над бульбашкою
+    } else {
+        x = event.clientX + 4;
+        y = event.clientY + 4;
+        if (x + mw > window.innerWidth - 8) x = event.clientX - mw - 4;
+        if (y + mh > window.innerHeight - 8) y = event.clientY - mh - 4;
+    }
     if (x < 8) x = 8;
     if (y < 8) y = 8;
+    if (x + mw > window.innerWidth - 8) x = window.innerWidth - mw - 8;
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
     menu.style.visibility = 'visible';
 
     setTimeout(() => {
         document.addEventListener('click', function closeCtx(e) {
-            if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', closeCtx); }
+            if (!menu.contains(e.target)) { window.closeMsgCtx(); document.removeEventListener('click', closeCtx); }
         });
     }, 50);
 };
@@ -9785,7 +9809,7 @@ window.openMsgContextMenu = function(event, msgId, isMe, canEdit) {
 window.editingGroupMsg = null;
 
 window.startEditGroupMessage = function(msgId) {
-    document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
+    window.closeMsgCtx();
     const row = document.querySelector(`.msg-row[data-gid="${msgId}"]`);
     const input = document.getElementById('msg-input');
     if (!row || !input) return;
@@ -9816,7 +9840,7 @@ window.cancelEditGroupMessage = function() {
 
 // ↪️ ПЕРЕСИЛКА: вибір групи/каналу зі своїх чатів
 window.openForwardModal = function(msgId) {
-    document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
+    window.closeMsgCtx();
     let modal = document.getElementById('group-forward-modal');
     if (modal) modal.remove();
 
@@ -9865,7 +9889,7 @@ window.forwardGroupMessage = async function(msgId, toGroupId, rowEl) {
 };
 
 window.deleteGroupMessage = async function(msgId) {
-    document.querySelectorAll('.msg-context-menu').forEach(m => m.remove());
+    window.closeMsgCtx();
     const data = await groupApiPost({ action: 'delete_message', message_id: msgId });
     if (!data.success) { window.showGroupToast(data.message || 'Помилка'); return; }
     document.querySelector(`.msg-row[data-gid="${msgId}"]`)?.remove();
