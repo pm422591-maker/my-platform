@@ -2504,14 +2504,201 @@ const friendItem = `
                 }
             });
         } else {
-            chatList.innerHTML = '<div style="padding:10px; color:#666; font-size:12px; text-align:center;">Немає взаємних підписок</div>';
+            // Якщо немає взаємних підписок — показуємо напис, але НЕ затираємо тимчасові чати
+            const hasTemp = chatList.querySelector('.temp-chat-item');
+            const hasPlaceholder = chatList.querySelector('.no-friends-note');
+            if (!hasTemp && !hasPlaceholder) {
+                chatList.innerHTML = '<div class="no-friends-note" style="padding:10px; color:#666; font-size:12px; text-align:center;">Немає взаємних підписок</div>';
+            }
         }
     } catch (e) {
         console.error("Помилка завантаження друзів:", e);
     }
 }
-// === 1. ГЛОБАЛЬНІ ЗМІННІ (Обов'язково на початку) ===
-window.currentChatUserId = null;
+
+/* ═══════════════════════════════════════════════════════════════
+   ТИМЧАСОВІ ЧАТИ (1 година, з можливістю продовжити)
+   ═══════════════════════════════════════════════════════════════ */
+window._activeTempChat = null;            // {other_id, seconds_left, anchor, my_extend, other_extend}
+window._tempChatTimerInterval = null;
+
+function fmtMMSS(totalSec) {
+    if (totalSec < 0) totalSec = 0;
+    const m = Math.floor(totalSec / 60);
+    const s = Math.floor(totalSec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+// Перевіряємо при відкритті чату — це тимчасовий чат чи звичайний
+window.checkTempChat = async function(otherId) {
+    const banner = document.getElementById('temp-chat-banner');
+    if (window._tempChatTimerInterval) { clearInterval(window._tempChatTimerInterval); window._tempChatTimerInterval = null; }
+
+    try {
+        const res = await fetch(`temp_chat_api.php?action=check&other_id=${encodeURIComponent(otherId)}&t=${Date.now()}`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (!data.success || !data.is_temp) {
+            if (banner) banner.style.display = 'none';
+            window._activeTempChat = null;
+            return;
+        }
+
+        window._activeTempChat = {
+            other_id: otherId,
+            seconds_left: data.seconds_left,
+            anchor: Date.now(),
+            my_extend: data.my_extend,
+            other_extend: data.other_extend
+        };
+
+        if (banner) banner.style.display = 'flex';
+        window.renderTempChatState();
+
+        // Локальний відлік + періодична синхронізація з сервером
+        window._tempChatTimerInterval = setInterval(() => {
+            if (!window._activeTempChat) return;
+            const elapsed = Math.floor((Date.now() - window._activeTempChat.anchor) / 1000);
+            const left = window._activeTempChat.seconds_left - elapsed;
+            const timerEl = document.getElementById('temp-chat-timer');
+            if (timerEl) timerEl.innerText = fmtMMSS(left);
+            if (left <= 0) {
+                // Час вийшов — чат згорає
+                clearInterval(window._tempChatTimerInterval);
+                window._tempChatTimerInterval = null;
+                if (typeof window.showGroupToast === 'function') window.showGroupToast('⏳ Час тимчасового чату вийшов');
+                if (typeof window.closeChat === 'function') window.closeChat();
+                if (typeof loadMutualFriends === 'function') loadMutualFriends();
+            }
+        }, 1000);
+
+        // Кожні 15с звіряємось із сервером (раптом співрозмовник продовжив)
+        setTimeout(function syncLoop() {
+            if (!window._activeTempChat || window._activeTempChat.other_id != otherId) return;
+            fetch(`temp_chat_api.php?action=check&other_id=${encodeURIComponent(otherId)}&t=${Date.now()}`, { credentials: 'include' })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success && d.is_temp && window._activeTempChat && window._activeTempChat.other_id == otherId) {
+                        window._activeTempChat.seconds_left = d.seconds_left;
+                        window._activeTempChat.anchor = Date.now();
+                        window._activeTempChat.my_extend = d.my_extend;
+                        window._activeTempChat.other_extend = d.other_extend;
+                        window.renderTempChatState();
+                        setTimeout(syncLoop, 15000);
+                    }
+                })
+                .catch(() => setTimeout(syncLoop, 15000));
+        }, 15000);
+
+    } catch (e) {
+        if (banner) banner.style.display = 'none';
+        window._activeTempChat = null;
+    }
+};
+
+// Оновлює текст підказки і стан кнопки "Продовжити"
+window.renderTempChatState = function() {
+    const t = window._activeTempChat;
+    if (!t) return;
+    const hint = document.getElementById('temp-chat-hint');
+    const btn  = document.getElementById('temp-chat-extend-btn');
+    const timerEl = document.getElementById('temp-chat-timer');
+    if (timerEl) timerEl.innerText = fmtMMSS(t.seconds_left);
+
+    if (t.my_extend) {
+        if (btn) { btn.innerText = 'Очікуємо…'; btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'default'; }
+        if (hint) hint.innerText = t.other_extend ? '✅ Обидва погодились' : 'Ви погодились. Чекаємо співрозмовника…';
+    } else {
+        if (btn) { btn.innerText = 'Продовжити'; btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+        if (hint) hint.innerText = t.other_extend ? 'Співрозмовник хоче продовжити 👉' : 'Згорає, якщо обидва не натиснуть «Продовжити»';
+    }
+};
+
+// Натискання "Продовжити"
+window.extendTempChat = async function() {
+    const t = window._activeTempChat;
+    if (!t) return;
+    const btn = document.getElementById('temp-chat-extend-btn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    try {
+        const res = await fetch('temp_chat_api.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'extend', other_id: t.other_id })
+        });
+        const data = await res.json();
+        if (data.success) {
+            t.seconds_left = data.seconds_left;
+            t.anchor = Date.now();
+            t.my_extend = data.my_extend;
+            t.other_extend = data.other_extend;
+            window.renderTempChatState();
+            if (data.extended && typeof window.showGroupToast === 'function') {
+                window.showGroupToast('✅ Чат продовжено на 1 годину');
+            } else if (typeof window.showGroupToast === 'function') {
+                window.showGroupToast('⏳ Чекаємо згоди співрозмовника');
+            }
+        } else {
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+        }
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    }
+};
+
+// Додає тимчасові чати у список особистих чатів (з таймером)
+window.loadTempChats = async function() {
+    const chatList = document.getElementById('personal-chats');
+    if (!chatList) return;
+    try {
+        const res = await fetch('temp_chat_api.php?action=list&t=' + Date.now(), { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success || !data.chats) return;
+
+        // Прибираємо старі temp-елементи, яких уже немає
+        const activeIds = new Set(data.chats.map(c => String(c.other_id)));
+        chatList.querySelectorAll('.temp-chat-item').forEach(el => {
+            const id = el.getAttribute('data-other-id');
+            if (!activeIds.has(id)) el.remove();
+        });
+
+        if (data.chats.length && chatList.innerHTML.includes('Немає взаємних підписок')) {
+            const note = chatList.querySelector('.no-friends-note');
+            if (note) note.remove();
+        }
+
+        data.chats.forEach(c => {
+            const avatar = window.getSafeAvatarUrl ? window.getSafeAvatarUrl(c.avatar_url) : (c.avatar_url || 'img/default_avatar.png');
+            let item = document.getElementById('temp-chat-item-' + c.other_id);
+            const mins = Math.max(0, Math.ceil(c.seconds_left / 60));
+            const badgeHTML = `<span class="temp-timer-badge" style="background:rgba(240,4,127,0.2); border:1px solid rgba(240,4,127,0.5); color:#ff80bf; font-size:10px; font-weight:700; border-radius:50px; padding:2px 7px; flex-shrink:0; margin-left:6px;">⏳ ${mins}m</span>`;
+
+            if (item) {
+                const badge = item.querySelector('.temp-timer-badge');
+                if (badge) badge.innerText = `⏳ ${mins}m`;
+            } else {
+                const html = `
+                    <div class="chat-item temp-chat-item" id="temp-chat-item-${c.other_id}" data-other-id="${c.other_id}" onclick="window.openChatUI('${c.other_id}', '${(c.username||'').replace(/'/g,"\\'")}', '${avatar}')" style="display:flex; align-items:center; padding:8px 12px; cursor:pointer; border-radius:10px; transition:background 0.2s; border:1px solid rgba(240,4,127,0.15);">
+                        <div style="display:flex; align-items:center; gap:8px; overflow:hidden; max-width:100%;">
+                            <img src="${avatar}" onerror="this.src='img/default_avatar.png'" style="width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1px solid rgba(240,4,127,0.3);">
+                            <span class="chat-name" style="font-weight:600; color:#eaeaea; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.username || ('user'+c.other_id)}</span>
+                            ${badgeHTML}
+                        </div>
+                    </div>`;
+                chatList.insertAdjacentHTML('afterbegin', html);
+            }
+        });
+    } catch (e) { /* тихо */ }
+};
+
+// Періодично оновлюємо список тимчасових чатів
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.loadTempChats === 'function') {
+        setTimeout(window.loadTempChats, 1200);
+        setInterval(window.loadTempChats, 30000);
+    }
+});
+
 window.mediaRecorder = null;
 window.audioChunks = [];
 window.isRecording = false;
@@ -2624,6 +2811,9 @@ window.openChatUI = function(userId, userName, userAvatar) {
 
     // 6. Завантаження повідомлень
     loadChatMessages(userId, true); 
+
+    // 6.1 Перевірка чи це тимчасовий чат (з таймером)
+    if (typeof window.checkTempChat === 'function') window.checkTempChat(userId);
 
     // 7. Перевірка блокування (залишено один раз, дубль видалено)
     fetch(`check_block.php?target_id=${userId}`, { credentials: 'include' })
@@ -3737,6 +3927,12 @@ window.closeChat = function() {
             chatWin.parentElement.style.overflow = 'auto'; 
         }
     }
+
+    // Ховаємо банер тимчасового чату і зупиняємо його таймер
+    const banner = document.getElementById('temp-chat-banner');
+    if (banner) banner.style.display = 'none';
+    if (window._tempChatTimerInterval) { clearInterval(window._tempChatTimerInterval); window._tempChatTimerInterval = null; }
+    window._activeTempChat = null;
     
     // Повертаємо панель публікації постів
     const postPanel = document.getElementById('create-post-panel');
@@ -8529,8 +8725,15 @@ window.respondToApplication = async function(appId, action, btnEl) {
         });
         const data = await res.json();
         if (data.success) {
-            if (typeof window.showGroupToast === 'function')
-                window.showGroupToast(action === 'accept' ? '✅ Заявку прийнято' : '✕ Заявку відхилено');
+            if (action === 'accept') {
+                if (typeof window.showGroupToast === 'function')
+                    window.showGroupToast('✅ Заявку прийнято — створено тимчасовий чат (1 год)');
+                // Одразу підтягуємо новий тимчасовий чат у список
+                if (typeof window.loadTempChats === 'function') setTimeout(window.loadTempChats, 300);
+            } else {
+                if (typeof window.showGroupToast === 'function')
+                    window.showGroupToast('✕ Заявку відхилено');
+            }
             // Перезавантажуємо список — розуміємо, яка модалка відкрита
             if (window._currentPostInboxId) {
                 window.loadPostInboxApps(window._currentPostInboxId);

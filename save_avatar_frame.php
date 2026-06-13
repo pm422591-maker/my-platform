@@ -25,9 +25,7 @@ try {
     $frame = $input['avatar_frame'] ?? '';
 
     // Whitelist allowed frames (only files from img/custom/)
-    $allowed = ['', 'img/custom/cat1.gif', 'img/custom/cat2.gif', 'img/custom/cat3.gif',
-        'img/custom/cat4.gif', 'img/custom/cat5.gif', 'img/custom/cat6.gif',
-        'img/custom/cat7.gif', 'img/custom/cat8.gif', 'img/custom/cat9.gif'];
+    $allowed = ['', 'img/custom/frame_ender.webm', 'img/custom/frame_creeper.webm'];
 
     if (!in_array($frame, $allowed)) {
         echo json_encode(['success' => false, 'message' => 'Недопустима рамка']);

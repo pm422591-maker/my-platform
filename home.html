@@ -1,114 +1,28 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SYNCORA</title>
-    <link rel="stylesheet" href="css/home.css?v=40">
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  
-  
-  
-
-  // ТВОЯ НОВА КОНФІГУРАЦІЯ (має бути 1 в 1 як в index.html)
-  const firebaseConfig = {
-    apiKey: "AIzaSyAnc1n52-LVhZ72vYSmvWv97enqqrqBBi4",
-    authDomain: "mneploho-7ff8b.firebaseapp.com",
-    projectId: "mneploho-7ff8b",
-    storageBucket: "mneploho-7ff8b.firebasestorage.app",
-    messagingSenderId: "554377149418",
-    appId: "1:554377149418:web:44f345329d803c674c9093",
-    measurementId: "G-LM2032YE2W"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  window.db = db; 
-
-  // 1. СНАЧАЛА ПРОВЕРЯЕМ, ЗАШЕЛ ЛИ ЧЕЛОВЕК ЧЕРЕЗ PHP (Email)
-  const savedName = localStorage.getItem('user_name');
-  
-  if (savedName) {
-      console.log("✅ Успешный вход через PHP:", savedName);
-      
-      // Ждем загрузки страницы и вставляем данные
-      document.addEventListener('DOMContentLoaded', () => {
-          const userNickSpans = document.querySelectorAll('.user-nick');
-          const topAvatar = document.getElementById('top-bar-avatar');
-          const savedAvatar = localStorage.getItem('user_avatar') || 'img/default_avatar.png';
-
-          userNickSpans.forEach(span => span.textContent = savedName);
-          if (topAvatar) topAvatar.src = savedAvatar;
-      });
-
-  } else {
-      // 2. ЕСЛИ В ПАМЯТИ ПУСТО, ПРОВЕРЯЕМ FIREBASE (Google)
-      onAuthStateChanged(auth, (user) => {
-          if (user) {
-              console.log("✅ Успешный вход через Google:", user.email);
-              
-              const userNickSpans = document.querySelectorAll('.user-nick');
-              const topAvatar = document.getElementById('top-bar-avatar');
-              const displayName = user.displayName || user.email.split('@')[0];
-              const displayAvatar = user.photoURL || 'img/default_avatar.png';
-
-              userNickSpans.forEach(span => span.textContent = displayName);
-              if (topAvatar) topAvatar.src = displayAvatar;
-
-          } else {
-              // 3. НИ PHP, НИ GOOGLE -> ТОГДА ТОЧНО ВЫКИДЫВАЕМ
-              console.warn("❌ Доступа нет, возвращаем на логин.");
-              window.location.replace("index.html"); 
-          }
-      });
-  }
-  // Ждем загрузки документа
-document.addEventListener('DOMContentLoaded', () => {
-    const profileBtn = document.getElementById('user-profile-btn');
-    
-    if (profileBtn) {
-        profileBtn.onclick = () => {
-            // Переход на страницу профиля
-            window.location.href = "profile.html";
-        };
-    }
-});
-
-
-  // 2. ФУНКЦИЯ ВЫХОДА (привяжем к кнопке в контекстном меню)
-  window.logoutUser = function() {
-    // Очищаємо дані PHP
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('user_avatar');
-    localStorage.removeItem('user_banner');
-
-    // Виходимо з Firebase і йдемо на головну
-    signOut(auth).then(() => {
-      window.location.href = "index.html";
-    }).catch((error) => {
-      console.error("Ошибка при выходе:", error);
-      window.location.href = "index.html"; // Все одно йдемо, навіть якщо помилка
-    });
-  };
-  
-</script>
+    <link rel="stylesheet" href="css/profile.css">
+    <style>
+        /* Запобігає стрибкам контенту при завантаженні */
+        .user-name-wrapper, .user-bio-display { min-height: 20px; }
+        .profile-container { position: relative; } /* Важливо для позиціонування */
+    </style>
 </head>
+
 <body>
-    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;600&display=swap" rel="stylesheet">
-    <audio id="spotify-audio-engine" crossorigin="anonymous" preload="auto"></audio>
-    <div id="alert-top" class="custom-alert">
-       Більше 500 символів ввести не можна!
-    </div>
 
     <div class="top-bar">
     <div class="top-bar-left">
+        <a href="home.html?v=1" class="back-home-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </a>
         <div class="lang-switcher">
             <button class="lang-btn active" onclick="setLanguage('uk')">Укр</button>
             <button class="lang-btn" onclick="setLanguage('en')">Eng</button>
@@ -124,880 +38,1231 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     </div>
 
-    <div class="top-bar-center">
-    <img src="img/logo.png" alt="Syncora" class="header-logo" style="height: 40px !important; max-height: 40px !important; width: auto !important; max-width: 150px !important; object-fit: contain !important; filter: drop-shadow(0 0 6px rgba(240, 4, 127, 0.5));">
-</div>
-
-    <div class="top-bar-right" style="display: flex; align-items: center; gap: 15px;">
-    <!-- Кнопка Премиум подписки -->
-    <button id="premium-open-btn" class="premium-top-btn" onclick="openPremiumModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px; color: #ffbc00;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-        <span>Premium</span>
-    </button>
-
-    <!-- Значок валюты (Коинсы) -->
-    <div class="coins-display-container" title="Натисни, щоб поповнити баланс" onclick="window.openCoinShop()" style="cursor:pointer;">
-        <span class="coin-icon" id="top-bar-coin-icon">🪙</span>
-        <span id="top-bar-coins">0</span>
-    </div>
-
-    <button id="user-profile-btn" class="profile-avatar-btn">
-        <img id="top-bar-avatar" class="current-user-avatar" src="img/default_avatar.png" alt="Profile">
-    </button>
-</div>
-</div>
-   </div>
-
-   <div class="side-panel-top" id="main-sidebar">
-    
-   <div class="nav-container-vertical"> 
-    <button id="btn-feed" class="nav-button active-tab" onclick="setLudoraPage('feed');">СТРІЧКА</button>
-    
-    <button id="btn-requests" class="nav-button" onclick="setLudoraPage('requests');">ЗАЯВКИ</button>
-    
-    <button id="btn-blog" class="nav-button" onclick="setLudoraPage('blog');">БЛОГ</button>
-    
-    <button id="btn-streams" class="nav-button" onclick="setLudoraPage('streams');">СТРІМИ</button>
-</div>
-</div>
-</div>
-
-<div class="side-panel-post-btn">
-  <button type="button" class="custom-button-action" id="add-post-btn" onclick="togglePostEditor();">
-    <div class="icon-circle"></div> 
-    <span id="txt-add-post" class="text-wrapper">Додати пост</span>
-</button>
-</div>
-<div class="side-panel-bottom">
-   <div class="sidebar-sections-container">
-        
-    <div id="txt-header-channels" class="section-header">КАНАЛИ</div>
-    <div class="chat-list" id="channels-list">
-        
-        <div id="btn-create-channel" class="chat-item create-chat-btn" onclick="openCreateFlow('channel')">
-            <div class="avatar-wrapper">
-                <div class="create-icon-placeholder">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                </div>
-            </div>
-            <div class="chat-info">
-                <span class="chat-name-placeholder" style="color: #f0047f; font-weight: 700;">Створити канал</span>
-            </div>
-        </div>
-    </div>
-
-    <div id="txt-header-personal" class="section-header">ОСОБИСТІ ЧАТИ</div>
-    <div id="personal-chats" class="chat-list">
-        <div class="chat-item">
-            <div class="chat-info"><span class="chat-name-placeholder inactive">Немає взаємних підписок</span></div>
-        </div>
-    </div>
-
-    <div id="txt-header-groups" class="section-header">ГРУПИ</div>
-    <div class="chat-list" id="groups-list">
-        
-        <div id="btn-create-group" class="chat-item create-chat-btn" onclick="openCreateFlow('group')">
-            <div class="avatar-wrapper">
-                <div class="create-icon-placeholder">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                </div>
-            </div>
-            <div class="chat-info">
-                <span class="chat-name-placeholder" style="color: #f0047f; font-weight: 700;">Створити групу</span>
-            </div>
-        </div>
-    </div>
-
-</div>
-</div>
-    <div id="custom-context-menu" class="context-menu">
-        <div id="mute-toggle-text" class="context-menu-item" onclick="mutePhoto()">Заглушити</div>
-        <div class="context-menu-item" onclick="removePhoto()">Вийти</div>
-    </div>
-
-    <div class="overlay-header"></div> 
-    
-    <div class="main-content-block">
-        
-        <div id="stream-studio-overlay" class="tab-content chat-overlay-container" style="display: none; background: #0a0008 !important; z-index: 9999; border-radius: 20px !important; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px); position: absolute; overflow: hidden; flex-direction: column;">
-            
-            <div class="stream-controls" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(240, 4, 127, 0.3);">
-                <button onclick="toggleLiveBroadcast()" class="studio-btn studio-btn-live" title="Опублікувати стрім у списку">
-                    <span class="live-dot"></span><span class="studio-btn-label">GO LIVE</span>
-                </button>
-                <button onclick="startScreenShare()" class="studio-btn" title="Захопити гру (Екран)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                    <span class="studio-btn-label">Екран</span>
-                </button>
-                <button onclick="startCamera()" class="studio-btn" title="Увімкнути камеру">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                    <span class="studio-btn-label">Камера</span>
-                </button>
-                <button onclick="toggleBackgroundRemoval()" class="studio-btn" title="Вирізати фон">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
-                    <span class="studio-btn-label">Фон</span>
-                </button>
-                <button onclick="toggleCameraSize()" class="studio-btn" title="Камера в кут / На весь екран">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-                    <span class="studio-btn-label">Розмір</span>
-                </button>
-                <button onclick="closeStreamStudio()" class="studio-btn studio-btn-end" title="Завершити стрім">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    <span class="studio-btn-label">Завершити</span>
-                </button>
-            
-            </div>
-
-            <div id="stream-video-container" style="position: relative; width: 100%; height: 100%; overflow: hidden;">
-                <video id="screen-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
-                <video id="camera-video" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
-            </div>
-            
-        </div>
-        <div id="top-game-filter" style="position: relative; z-index: 10; margin-top: -30px; padding: 8px 20px; border-radius: 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
-        
-        <div style="display: flex; align-items: center; gap: 15px; flex: 1; overflow: hidden;">
-        
-            
-            <div id="media-upload-container" style="display: flex; gap: 15px; overflow-x: auto; align-items: center; padding: 15px 5px; scrollbar-width: none;">
-                </div>
-        </div>
-
-        <div style="display: flex; justify-content: center; flex: 1;">
-          <div class="filter-center-section">
-            <div class="search-container-premium">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    <div class="top-bar-right">
+        <div class="notifications-wrapper">
+            <button class="notif-btn" onclick="toggleNotifDropdown(event)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
-                <input type="text" id="game-search-input" class="premium-search-input" placeholder="Шукати користувачів..." autocomplete="off">
-                <div id="search-results-dropdown" class="premium-search-dropdown"></div>
+                <span class="notif-badge" id="notif-count" style="display: none;">0</span>
+            </button>
+
+            <div class="notif-dropdown" id="notif-dropdown" >
+                <div class="notif-header">Сповіщення</div>
+                <div class="notif-list" id="notif-list">
+                    <div class="notif-empty">Немає нових сповіщень</div>
+                </div>
             </div>
         </div>
+    </div>
+</div>
+
+    <div class="profile-container">
+
+        <div class="right-sidebar-container" style="z-index: 10;">
+    <div class="user-stats-plate">
+    <div class="stat-group">
+        <span class="stat-value" id="reputation-val">0</span>
+        <span class="stat-label">репутація</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-group">
+        <span class="stat-value" id="followers-count">0</span> <span class="stat-label">підписники</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-group">
+        <span class="stat-value" id="following-count">0</span> <span class="stat-label">підписки</span>
+    </div>
+</div>
+</div>
+
+        <div class="time-picker-panel" id="timePicker">
+            <div class="panel-header">Виберіть час (проведіть мишкою)</div>
+            <div class="time-grid" id="timeGrid"></div>
+            <button class="close-panel" id="closePicker">Зберегти</button>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: 1;">
-           <div class="filter-right-section" style="display: flex !important; align-items: center !important; gap: 10px;">
-            <div id="active-filter-icons" style="display: flex; gap: 6px; align-items: center;"></div>
-            <div style="position: relative; display: flex; align-items: center; flex-shrink: 0;">
-            <button onclick="openExtraFilters()" class="mini-filter-btn" onmousedown="event.preventDefault()" 
-        style="width: 45px; height: 45px; margin-top: -10px; display: flex; align-items: center; justify-content: center; padding: 0; background: linear-gradient(90deg, rgba(29, 0, 22, 0.6) 0%, rgba(26, 26, 29, 0) 80%) !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; transition: 0.2s;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="color: #ccc;">
-        <path d="M3 6H21M6 12H18M10 18H14"/>
+        <div class="black-block main-gradient-bg"></div>
+        <div class="light-card" id="profile-banner-bg"></div>
+
+        <div id="avatar-container">
+    <img src="" id="top-nav-avatar" alt="">
+    
+    <div class="transparent-square" style="display: block;">
+        <video src="img/avatarka1.mp4" autoplay loop muted playsinline disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback" style="width:100%; height:100%; object-fit:cover; mix-blend-mode:screen; pointer-events:none;">
+        </video>
+    </div>
+    <div id="status-dot" class="status-offline"></div>
+</div>
+
+       <div class="blog-btn-wrapper discord-channel" onclick="window.location.href = 'home.html?tab=blog'" 
+     style="
+        cursor: pointer; 
+        display: flex; 
+        align-items: center; 
+        gap: 10px; /* Відступ між фото і назвою */
+        padding: 6px 8px; /* Компактні відступи як у Дискорді */
+        border-radius: 8px;
+        transition: all 0.2s ease; /* Плавна анімація */
+     ">
+    
+    <img src="img/blog-avatar.jpg" class="blog-avatar-img" onerror="this.src='https://placehold.co/32'" 
+         style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
+    
+    <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="color: #8e9297; font-size: 20px; line-height: 1; font-weight: 300;">#</span>
+        
+        <span id="profile-blog-name" class="blog-name" style="color: #8e9297; font-weight: 500; font-size: 15px;">Завантаження...</span>
+    </div>
+</div>
+
+        <div class="micro-level-container" style="top: -50px;">
+            <div class="micro-level-circle">
+                <span id="currentLevel">1</span>
+            </div>
+            <div class="micro-level-track">
+                <div class="micro-level-fill" id="userProgressBar" style="width: 45%;">
+                    <div class="micro-shine"></div>
+                </div>
+                <div class="micro-xp-text">
+                    <span id="currentXP">450</span> / <span id="maxXP">1000</span> XP
+                </div>
+            </div>
+        </div>
+
+        <div id="games-main-wrapper" style="display: none; position: relative; width: 100%;">
+            <div class="games-integration-panel" style="position: relative; width: 100%; min-height: 50px;">
+                <div id="no-games-placeholder" class="placeholder-text">Вибраних ігор немає</div>
+                <div id="selected-games-container" class="games-grid" style="display: none !important;"></div>
+                <div class="edit-overlay owner-only" onclick="openAuthModal()" style="display: none; cursor: pointer;">
+                    <span>Налаштувати авторизацію (Steam, Roblox...)</span>
+                </div>
+            </div>
+        </div>
+
+       
+    <div class="user-name-wrapper" style="display: flex; align-items: center; gap: 8px; min-height: 24px;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;       /* Оптимальний розмір для перемикача */ font-weight: 700;      /* Жирний шрифт для кращої читабельності */ text-transform: uppercase;">
+        <span id="userName">Завантаження...</span>
+    </div>
+
+    <div id="userHandle" class="user-handle-text" style="font-size: 13px; color: #666; margin-top: -2px; margin-bottom: 4px; font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">@username</div>
+
+    <div style="display: flex; align-items: center; gap: 10px; pointer-events: none;">
+    
+     <div id="userRegistrationDate" style="min-height: 15px; margin-left: -20px; pointer-events: auto;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">Загрузка даты...</div>
+    
+     <div id="userFlags" class="flags-container" style="position: absolute; top: 708px; left: 280px; display: flex; align-items: center; gap: 5px; pointer-events: auto; width: max-content;"></div>
+     
+</div>
+
+        <div id="userBioDisplay" class="user-bio-display" style="min-height: 20px; gap: 20px;">
+        </div>
+        <div style="height: 20px; min-height: 20px;"></div>
+
+        <div class="user-description-wrapper">
+            <span id="userDescription"></span>
+        </div>
+
+        <div class="profile-sidebar-card">
+            
+            <div class="activity-block inactive-now" id="activityTrigger">
+                <div class="activity-content">
+                    <span id="activityText">Додати час активності</span>
+                </div>
+                <div class="activity-status-icon" id="statusIcon">🕒</div>
+            </div>
+
+            <div class="empty-wide-block" id="badges-display-area">
+                <span style="font-size: 12px; color: #444;">Немає бейджів</span>
+            </div>
+        </div>
+
+        <div class="gifts-wide-block">
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+    <div class="gift-cell">+</div>
+</div>
+
+      <div class="profile-actions-container">
+   <button id="edit-profile-btn" class="settings-btn" onclick="openSettings()" style="display: none;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">
+    <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
     </svg>
+    <span>Редагувати профіль</span>
 </button>
 
-        <div id="filter-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #f0047f; color: white; font-size: 10px; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; align-items: center; justify-content: center; border: 2px solid #1d0016; z-index: 20; box-shadow: 0 0 8px #f0047f;">0</div>
-        </div>
-
-    <div id="extraFiltersModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;     background: rgba(10, 0, 8, 0.85); backdrop-filter: blur(12px); z-index: 70000; justify-content: center; align-items: center; font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
-    
-    <div class="modal-filters-content">
-        
-        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
-            <h3 style="color: #fff; margin: 0; font-weight: 800; letter-spacing: 1px; font-size: 18px; text-transform: uppercase; font-family: 'Geologica', sans-serif; text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);">
-                ФІЛЬТРИ ПОШУКУ
-            </h3>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Вік тімейта</label>
-            <div class="filter-chips-container" id="chips-age" style="font-family: 'Geologica', sans-serif;">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="12-16" data-active-src="img\free-icon-font-child-head.png" style="font-weight: 600;">
-                    <img src="img\free-icon-font-child-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 12-16
-                </div>
-                <div class="filter-chip" data-value="16-18" data-active-src="img\free-icon-font-man-head.png" style="font-weight: 600;">
-                    <img src="img\free-icon-font-man-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 16-18
-                </div>
-                <div class="filter-chip" data-value="18+" data-active-src="img\free-icon-font-woman-head.png" style="font-weight: 600;">
-                    <img src="img\free-icon-font-woman-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 18+
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Тип зв'язку</label>
-            <div class="filter-chips-container" id="chips-style" style="font-family: 'Geologica', sans-serif;">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="micro" data-active-src="img\microphone-black-shape.png" style="font-weight: 600;">
-                    <img src="img\microphone.png" style="width: 16px; height: 16px; margin-right: 5px;"> Мікро
-                </div>
-                <div class="filter-chip" data-value="microoff" data-active-src="img\microphone-off (1).png" style="font-weight: 600;">
-                    <img src="img\microphone-off.png" style="width: 16px; height: 16px; margin-right: 5px;"> Без мікро
-                </div>
-                <div class="filter-chip" data-value="discord" data-active-src="img\discord.png" style="font-weight: 600;">
-                    <img src="img/free-icon-font-discord.png" style="width: 16px; height: 16px; margin-right: 5px;"> Discord
-                </div>
-                <div class="filter-chip" data-value="telegram" data-active-src="img\telegram.png" style="font-weight: 600;">
-                    <img src="img\telegram (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Telegram
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 25px;">
-            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Рівень скіла</label>
-            <div class="filter-chips-container" id="chips-genre" style="font-family: 'Geologica', sans-serif;">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="shooter" data-active-src="img\free-icon-font-bolt.png" style="font-weight: 600;">
-                    <img src="img\free-icon-font-bolt (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Новачок
-                </div>
-                <div class="filter-chip" data-value="moba" data-active-src="img\free-icon-font-flame.png" style="font-weight: 600;">
-                    <img src="img\free-icon-font-flame (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Середній
-                </div>
-                <div class="filter-chip" data-value="profi" data-active-src="img\free-icon-font-trophy.png" style="font-weight: 600;">
-                    <img src="img\free-icon-font-trophy (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Профі
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 30px;">
-            <label style="color: rgba(223, 176, 199, 0.7); font-size: 11px; display: block; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Мова спілкування</label>
-            <div class="filter-chips-container" id="chips-voice" style="font-family: 'Geologica', sans-serif;">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="yes" data-active-src="img\ukraine (1).png" style="font-weight: 600;">
-                    <img src="img\ukraine.png" style="width: 16px; height: 16px; margin-right: 5px;"> UA
-                </div>
-                <div class="filter-chip" data-value="no" data-active-src="img\usa-flag.png" style="font-weight: 600;">
-                    <img src="img\usa-flag (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> EN
-                </div>
-            </div>
-        </div>
-
-        <div style="display: flex; gap: 15px; font-family: 'Geologica', sans-serif;">
-            <button onclick="closeExtraFilters()" style="flex: 1; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 14px; transition: 0.2s;">Скасувати</button>
-            <button onclick="applyExtraFilters()" style="flex: 2; background: #f0047f; color: white; border: none; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 800; font-size: 14px; box-shadow: 0 4px 20px rgba(240, 4, 127, 0.5); transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;">Застосувати</button>
-        </div>
-        
-    </div>
-</div>
-        </div>
-        </div>
-
-    </div>
-
-       <div id="create-post-panel" class="create-post-wrapper" data-selected-color="pink" style="font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
-    <div class="ludora-pro-card">
-        
-        <div class="user-profile-mini">
-            <div class="user-avatar-box">
-                <img class="current-user-avatar" src="img/default_avatar.png" onerror="this.src='img/default_avatar.png'" alt="User" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-            <div class="user-name-text" style="font-weight: 700;">polinamoiseeva22</div>
-        </div>
-
-        <div class="post-settings-row">
-            
-            <button id="btn-toggle-group" class="filter-toggle-btn" onclick="togglePostPanel('group')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                Група: <span id="current-group-label" style="color: #f0047f; margin-left: 4px; font-weight: 700;">Усі групи</span>
-            </button>
-
-            <input type="file" id="post-file-input" style="display: none;" accept="image/*,video/*" onchange="handlePostFileSelect(this)">
-
-            <button id="btn-toggle-extra" class="filter-toggle-btn" onclick="togglePostPanel('extra')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                Додатково
-            </button>
-            
-            <button id="btn-toggle-requests-filters" class="filter-toggle-btn" onclick="toggleRequestPanel('anketa')" style="display: none;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
-                </svg>
-                Параметри тімейта
-            </button>
-
-            <button id="btn-req-mode-group" class="filter-toggle-btn" onclick="toggleRequestPanel('group')" style="display: none;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Для групи
-            </button>
-
-            <div id="req-mode-toggle-wrapper" style="display: none; margin-left: auto; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); align-items: center; gap: 5px;">
-                <button type="button" id="req-mode-anketa" class="filter-toggle-btn active" onclick="switchRequestPublishMode('anketa')" style="margin: 0; padding: 6px 12px; background: #f0047f; color: white; border-radius: 8px;">Анкета</button>
-                <button type="button" id="req-mode-group" class="filter-toggle-btn" onclick="switchRequestPublishMode('group')" style="margin: 0; padding: 6px 12px; background: transparent; color: #ccc; border-radius: 8px;">Для групи</button>
-            </div>
-        </div>
-        
-        <div id="post-filters-area" class="hidden-panel-area" style="display: none;"></div>
-
-        <div id="requests-filters-area" class="hidden-panel-area" style="display: none; margin-top: 10px;">
-    <div id="req-anketa-fields-block">
-        <div style="margin-bottom: 15px;">
-            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Вік тімейта</label>
-            <div class="filter-chips-container" id="req-chips-age">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="12-16" data-active-src="img\free-icon-font-child-head.png" style="font-weight: 600;"> 
-                    <img src="img\free-icon-font-child-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 12-16
-                </div>
-                <div class="filter-chip" data-value="16-18" data-active-src="img\free-icon-font-man-head.png" style="font-weight: 600;"> 
-                    <img src="img\free-icon-font-man-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 16-18
-                </div>
-                <div class="filter-chip" data-value="18+" data-active-src="img\free-icon-font-woman-head.png" style="font-weight: 600;"> 
-                    <img src="img\free-icon-font-woman-head (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> 18+
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Тип зв'язку</label>
-            <div class="filter-chips-container" id="chips-comm">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="micro" data-active-src="img\microphone-black-shape.png" style="font-weight: 600;"> 
-                    <img src="img\microphone.png" style="width: 16px; height: 16px; margin-right: 5px;"> Мікро
-                </div>
-                <div class="filter-chip" data-value="microoff" data-active-src="img\microphone-off (1).png" style="font-weight: 600;"> 
-                    <img src="img\microphone-off.png" style="width: 16px; height: 16px; margin-right: 5px;"> Без мікро
-                </div>
-                <div class="filter-chip" data-value="discord" data-active-src="img\discord.png" style="font-weight: 600;"> 
-                    <img src="img/free-icon-font-discord.png" style="width: 16px; height: 16px; margin-right: 5px;"> Discord
-                </div>
-                <div class="filter-chip" data-value="telegram" data-active-src="img\telegram.png" style="font-weight: 600;"> 
-                    <img src="img\telegram (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Telegram
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Рівень скіла</label>
-            <div class="filter-chips-container" id="chips-level">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="shooter" data-active-src="img\free-icon-font-bolt.png" style="font-weight: 600;"> 
-                    <img src="img\free-icon-font-bolt (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Новачок
-                </div>
-                <div class="filter-chip" data-value="moba" data-active-src="img\free-icon-font-flame.png" style="font-weight: 600;"> 
-                    <img src="img\free-icon-font-flame (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Середній
-                </div>
-                <div class="filter-chip" data-value="profi" data-active-src="img\free-icon-font-trophy.png" style="font-weight: 600;"> 
-                    <img src="img\free-icon-font-trophy (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> Профі
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label class="premium-label" style="font-weight: 700; text-transform: uppercase; font-size: 11px;">Мова спілкування</label>
-            <div class="filter-chips-container" id="chips-lang">
-                <div class="filter-chip active" data-value="any" style="font-weight: 600;">Всі</div>
-                <div class="filter-chip" data-value="yes" data-active-src="img\ukraine (1).png" style="font-weight: 600;"> 
-                    <img src="img\ukraine.png" style="width: 16px; height: 16px; margin-right: 5px;"> UA
-                </div>
-                <div class="filter-chip" data-value="no" data-active-src="img\usa-flag.png" style="font-weight: 600;"> 
-                    <img src="img\usa-flag (1).png" style="width: 16px; height: 16px; margin-right: 5px;"> EN
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="requests-group-list-area" class="hidden-panel-area" style="display: none; margin-top: 10px;">
-            <div id="req-simple-group-list-block" style="margin-bottom: 15px;">
-                <label class="premium-label" style="font-weight: 700; font-size: 11px; text-transform: uppercase;">Список груп</label>
-                <div id="future-group-list-container" class="filter-chips-container" style="margin-top: 5px;">
-                    <span style="color: rgba(255,255,255,0.4); font-size: 12px;">Тут буде список...</span>
-                </div>
-            </div>
-        </div>
-</div>
-
-        <div id="group-settings-area" class="hidden-panel-area">
-            <div style="margin-bottom: 5px;">
-                <label class="premium-label" style="font-weight: 700; font-size: 11px;">Оберіть групу для публікації</label>
-                <div class="filter-chips-container" id="custom-group-list"></div>
-                <select id="post-target-group" style="display: none;">
-                    <option value="all">Усі групи</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="extra-settings-area" class="hidden-panel-area">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="music-search-wrapper">
-                    <label class="premium-label" style="display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 11px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg> 
-                        Знайти трек
-                    </label>
-                    <input type="text" id="music-search-input" class="premium-input-sm" placeholder="Назва пісні або виконавець..." oninput="searchMockMusic()" autocomplete="off">
-                    <div id="music-search-dropdown" class="music-search-dropdown"></div>
-                </div>
-
-                <div class="mention-search-wrapper" style="position: relative;">
-                    <label class="premium-label" style="display: flex; align-items: center; gap: 5px; font-weight: 700; font-size: 11px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        Відмітити друга
-                    </label>
-                    <input type="text" id="mention-search-input" class="premium-input-sm" placeholder="@нікнейм" autocomplete="off">
-                    <div id="mention-dropdown" class="mention-dropdown-menu" style="display: none;"></div>
-                </div>
-            </div>
-        </div>
-
-        <textarea id="new-post-body" class="clean-textarea-separated" maxlength="501" placeholder="Про що думаєте?" autocomplete="off" style="font-size: 15px; font-weight: 400; line-height: 1.5;"></textarea>
-
-        <div id="active-music-player" style="margin-bottom: 20px; display: none;"></div>
-
-        <div class="photo-center-wrapper">
-            <div id="post-image-preview-large" class="square-photo-upload" onclick="document.getElementById('post-file-input').click()">
-                <img id="preview-img-tag" class="preview-img-tag" src="">
-                <div id="upload-icon-content" style="text-align: center;">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    <br>
-                    <span style="font-size: 12px; font-weight: 600;">Додати фото</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="post-bottom-row">
-            <div class="color-picker-mini">
-                <span class="premium-label" style="margin:0; font-weight: 700; font-size: 11px;">КОЛІР:</span>
-                <div class="color-swatch-sm active" style="background: #f0047f; color: #f0047f;" onclick="selectPostColor(this, 'pink')"></div>
-                <div class="color-swatch-sm" style="background: #ffffff; color: #ffffff; border: 1px solid rgba(0,0,0,0.2);" onclick="selectPostColor(this, 'white')"></div>
-                <div class="color-swatch-sm" style="background: #000000; color: #000000; border: 1px solid rgba(255,255,255,0.2);" onclick="selectPostColor(this, 'black')"></div>
-                <div class="color-swatch-sm" style="background: #ff0000; color: #ff0000;" onclick="selectPostColor(this, 'red')"></div>
-            </div>
-            
-            <div class="post-footer-actions">
-                <button id="btn-cancel-post" class="btn-cancel-sm" onclick="togglePostEditor()" style="font-weight: 600;">Скасувати</button>
-                <button id="submit-post-btn" class="btn-publish-sm" onclick="window.publishPost(event)" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Опублікувати</button>
-            </div>
-        </div>
-        
-    </div>
-</div>
-<div id="search-results-container" style="display: none; padding: 20px;">
-    <div id="search-people-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
-    </div>
-</div>
-
-<div id="search-dashboard" class="gaming-dashboard" style="display: none;">
-    <div class="dashboard-grid">
-        
-        <div class="dashboard-column left-dash">
-            
-            <div class="dash-block wide-block popular-games">
-                <div class="block-header">
-                    <h4>Популярні ігри</h4>
-                </div>
-                <div class="games-mini-list">
-                    <div class="game-item-card neon-square-pink" style="background-image: url('img/valorant.jpg')">
-                        <div class="game-overlay"><span class="game-title">Valorant</span></div>
-                    </div>
-                    <div class="game-item-card neon-square-cyan" style="background-image: url('img/Dead by Daylight.jpg')">
-                        <div class="game-overlay"><span class="game-title">Dead by Daylight</span></div>
-                    </div>
-                    <div class="game-item-card neon-square-purple" style="background-image: url('img/silent hill.jpg')">
-                        <div class="game-overlay"><span class="game-title">Silent hill</span></div>
-                    </div>
-                    <div class="game-item-card neon-square-purple" style="background-image: url('img/Resident Evil.jpg')">
-                        <div class="game-overlay"><span class="game-title">Resident Evil</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="middle-row">
-                
-                <div class="dash-block groups-block neon-border-pink">
-                    <div class="block-header">
-                        <h4>Топ групи</h4>
-                    </div>
-                    <div class="mini-list thick-cards" id="top-groups-list">
-                        <div style="color: rgba(255,255,255,0.35); font-size: 12px; padding: 10px;">Завантаження...</div>
-                    </div>
-                </div>
-
-                <div class="dash-block channels-block neon-border-cyan">
-                    <div class="block-header">
-                        <h4>Канали</h4>
-                    </div>
-                    <div class="mini-list thick-cards" id="top-channels-list">
-                        <div style="color: rgba(255,255,255,0.35); font-size: 12px; padding: 10px;">Завантаження...</div>
-                    </div>
-                </div>
-
-            </div> 
-            
-        </div> 
-
-        <div class="dashboard-column right-dash">
-            <div class="dash-block history-block">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h4 style="margin: 0;"> Ви переглядали</h4>
-                    <span onclick="window.clearSearchHistory()" title="Очистити історію" style="cursor: pointer; color: #555; font-size: 14px; transition: 0.2s;" onmouseover="this.style.color='#f0047f'" onmouseout="this.style.color='#555'">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </span>
-                </div>
-                <div id="real-history-list" class="history-list"></div>
-            </div>
-
-            <div class="dash-block recs-block">
-    <h4>Рекомендовані для вас</h4>
-    
-    <!-- Залишаємо ТОЛЬКИ контейнер. Сюди JavaScript вставить реальні картки! -->
-    <div class="recs-list">
-        
-        <!-- Опціонально: можна додати текст завантаження, який буде видно, поки сервер шукає людей -->
-        <span style="color: rgba(255,255,255,0.5); font-size: 12px; padding: 10px; font-family: 'Geologica', sans-serif;">
-            Шукаємо ідеальних тімейтів...
-        </span>
-        
-    </div>
-</div>
-        </div> 
-
-    </div>
-</div>
-
-        <div id="feed-content" class="tab-content active">
-        </div>
-
-        <div id="requests-content" class="tab-content">
-        </div>
-
-        <div id="streams-content" class="tab-content" style="display: none;">
-    
-    <div id="streams-header" class="streams-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="color: white; margin: 0; font-family: 'Geologica', sans-serif;">🔴 Активні трансляції</h2>
-        <div class="streams-filter" style="display: flex; gap: 10px; overflow-x: auto;">
-            <button class="stream-cat-btn active" style="background: #f0047f; color: white; border: none; padding: 6px 15px; border-radius: 20px;">Всі</button>
-            <button class="stream-cat-btn" style="background: rgba(255,255,255,0.1); color: #ccc; border: none; padding: 6px 15px; border-radius: 20px;">Dota 2</button>
-        </div>
-    </div>
-    
-    <div id="streams-grid" class="streams-grid"></div>
-
-    <div id="stream-studio-container" style="display: none; position: relative; width: 100%; height: 75vh; background: #050004; border-radius: 16px; overflow: hidden; border: 1px solid rgba(240, 4, 127, 0.3); flex-direction: column;">
-            
-            <div id="stream-info-overlay" style="position: absolute; top: 15px; left: 20px; z-index: 40; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 12px; backdrop-filter: blur(10px); border: none;">
-                <div style="display: flex; flex-direction: column; gap: 0px; min-width: 200px;">
-                    <h3 id="stream-main-title" style="margin: 0; color: white; font-family: 'Geologica', sans-serif; font-size: 18px; font-weight: 800; text-shadow: 0 2px 5px rgba(0,0,0,0.8); outline: none; padding: 2px 4px; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; line-height: 1.2;">Мій перший стрім</h3>
-                    <span id="stream-sub-title" style="margin: 0; color: rgba(255,255,255,0.7); font-family: 'Geologica', sans-serif; font-size: 13px; outline: none; padding: 2px 4px; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; line-height: 1.2;">Спілкуємося та граємо разом!</span>
-                </div>
-                
-                <button id="btn-edit-stream-info" onclick="toggleStreamInfoEdit()" style="background: rgba(240, 4, 127, 0.1); border: 1px solid rgba(240, 4, 127, 0.3); color: #f0047f; cursor: pointer; padding: 6px 8px; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; margin-left: auto;" onmouseover="this.style.filter='brightness(1.5)'" onmouseout="this.style.filter='none'">
-                    <svg id="icon-edit-pencil" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    <svg id="icon-save-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: none;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </button>
-            </div>
-
-            <div class="stream-controls" style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 40; display: flex; gap: 15px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(240, 4, 127, 0.3);">
-                <button onclick="toggleLiveBroadcast()" id="btn-go-live" class="studio-btn studio-btn-live" title="Опублікувати стрім у списку">
-                    <span class="live-dot"></span><span class="studio-btn-label">GO LIVE</span>
-                </button>
-                <button onclick="startScreenShare()" class="studio-btn" title="Захопити гру (Екран)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                    <span class="studio-btn-label">Екран</span>
-                </button>
-                <button onclick="startCamera()" class="studio-btn" title="Увімкнути камеру">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                    <span class="studio-btn-label">Камера</span>
-                </button>
-                <button onclick="toggleBackgroundRemoval()" class="studio-btn" title="Вирізати фон">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
-                    <span class="studio-btn-label">Фон</span>
-                </button>
-                <button onclick="toggleCameraSize()" class="studio-btn" title="Камера в кут / На весь екран">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-                    <span class="studio-btn-label">Розмір</span>
-                </button>
-                <button onclick="closeStreamStudio()" class="studio-btn studio-btn-end" title="Завершити стрім">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    <span class="studio-btn-label">Завершити</span>
-                </button>
-            </div>
-
-            <div id="stream-video-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 1;">
-                <video id="screen-video" autoplay playsinline muted style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: #000; z-index: 2;"></video>
-                <video id="camera-video" autoplay playsinline muted class="camera-full" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5;"></video>
-            </div>
-            
-        </div>
-</div>
-
-        <div id="blog-content" class="tab-content" style="display: none;">
-            
-   <div id="blog-setup-view" style="display: none; position: fixed; top: 0px; left: 0px; width: 100%; height: 100%; background: rgba(10, 0, 8, 0.85); backdrop-filter: blur(12px); z-index: 70000; justify-content: center; align-items: center;">
-    
-    <div class="blog-setup-content">
-        
-        <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 25px;">
-            <h2 id="setup-blog-header" style="color: #fff; margin: 0; font-weight: 800; letter-spacing: 1px; font-size: 18px; text-transform: uppercase; text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);">
-                Редагувати блог ✏️
-            </h2>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-            <label class="neon-blog-label">Назва блогу</label>
-            <input type="text" id="setup-blog-title" class="neon-blog-input" placeholder="Мій крутий геймерський блог" autocomplete="off">
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label class="neon-blog-label">Опис блогу</label>
-            <textarea id="setup-blog-desc" class="neon-blog-input" placeholder="Про що будете писати?" rows="2" style="resize: none;"></textarea>
-        </div>
-
-        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-            <div style="flex: 1;">
-                <label class="neon-blog-label">Приватність</label>
-                <select id="setup-blog-privacy" class="neon-blog-input" style="cursor: pointer; appearance: none;">
-                    <option value="public" style="background: #1d0016;">Публічний</option>
-                    <option value="private" style="background: #1d0016;">Приватний</option>
-                </select>
-            </div>
-            <div style="flex: 1;">
-                <label class="neon-blog-label">Колір фону <button type="button" class="home-premium-lock-btn" onclick="openPremiumModal()" title="Колір блогу — тільки для Syncora Premium"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></label>
-                <input type="color" id="setup-blog-bg" value="#f0047f" class="neon-blog-input" style="height: 41px; padding: 2px; cursor: pointer;">
-            </div>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label class="neon-blog-label">Фон (поверх кольору) <button type="button" class="home-premium-lock-btn" onclick="openPremiumModal()" title="Фото блогу — тільки для Syncora Premium"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></button></label>
-            <div class="blog-image-upload-box" onclick="document.getElementById('setup-blog-image').click()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                <span id="blog-image-filename" style="font-size: 12px; font-weight: 600;">Вибрати картинку</span>
-            </div>
-            <input type="file" id="setup-blog-image" accept="image/*" style="display: none;" onchange="updateBlogFileName(this)">
-        </div>
-
-        <div style="margin-bottom: 25px;">
-            <label class="neon-blog-label">Власне посилання (URL)</label>
-            <div style="display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; overflow: hidden; transition: 0.3s;">
-                <span style="padding: 12px 8px 12px 15px; color: rgba(255,255,255,0.4); background: rgba(0,0,0,0.5); font-size: 13px;">ludora.com/</span>
-                <input type="text" id="setup-blog-slug" placeholder="my-blog" style="flex: 1; padding: 12px 15px 12px 4px; background: transparent; border: none; color: white; outline: none; font-family: 'Geologica', sans-serif; font-size: 13px;">
-            </div>
-        </div>
-
-        <div style="display: flex; gap: 15px;">
-            <button id="cancel-edit-btn" onclick="cancelBlogEdit()" style="flex: 1; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 14px; transition: 0.2s;">Скасувати</button>
-            <button id="submit-blog-btn" onclick="createNewBlog()" style="flex: 2; background: #f0047f; color: white; border: none; padding: 14px; border-radius: 14px; cursor: pointer; font-weight: 800; font-size: 14px; box-shadow: 0 4px 20px rgba(240, 4, 127, 0.5); transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;">Зберегти</button>
-        </div>
-        
-    </div>
-</div>
-
-    <div id="blog-active-view" style="display: none; border-radius: 16px; min-height: 100vh; margin: -20px; padding: 20px;">
-    <div id="active-blog-banner" style="background: transparent; ; padding: 40px 20px; margin-bottom: 20px; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 20px; font-family: 'Geologica', sans-serif;">
-    
-    <div>
-        <h2 id="display-blog-title" style="margin: 0; font-size: 32px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">dvsdvsdv</h2>
-        <p id="display-blog-desc" style="margin: 10px 0 0 0; color: rgba(255,255,255,0.7); font-size: 15px; max-width: 600px; line-height: 1.5;"></p>
-    </div>
-    
-    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-        
-        
-        
-        <button id="txt-edit-label" onclick="editBlogSettings()" style="background: rgba(240, 4, 127, 0.05); border: 1px solid #f0047f; color: #fff; padding: 10px 24px; border-radius: 50px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 0 12px rgba(240, 4, 127, 0.4), inset 0 0 8px rgba(240, 4, 127, 0.2); display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px); font-family: 'Geologica', sans-serif; text-transform: uppercase; letter-spacing: 1px;" onmouseover="this.style.boxShadow='0 0 20px rgba(240, 4, 127, 0.8), inset 0 0 15px rgba(240, 4, 127, 0.4)'; this.style.background='rgba(240, 4, 127, 0.15)'" onmouseout="this.style.boxShadow='0 0 12px rgba(240, 4, 127, 0.4), inset 0 0 8px rgba(240, 4, 127, 0.2)'; this.style.background='rgba(240, 4, 127, 0.05)'">
-            ✏️ Редагувати
+    <div id="visitor-actions" style="display: none; gap: 8px; align-items: center;">
+        <button class="settings-btn subscribe-btn" onclick="followUser()">
+            <span>Підписатися</span>
         </button>
-        
-    </div>
-</div>
-    <div id="blog-posts-feed" style="padding: 0 30px;">
-        <p style="color: #888;">Пока записей нет...</p>
-    </div>
-</div>
-
-</div>
-
-<div id="msg-context-menu" class="chat-context-menu">
-    <div id="btn-ctx-edit" class="ctx-menu-item" onclick="window.startEditMessage()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-        <span id="txt-ctx-edit">Редагувати</span> 
-    </div>
-    <div id="btn-ctx-delete" class="ctx-menu-item item-delete" onclick="window.confirmDeleteMessage()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        <span id="txt-ctx-delete">Видалити</span> 
-    </div>
-</div>
-<div id="chat-creation-screen" class="tab-content chat-overlay-container" style="display: none; background: #0a0008 !important; z-index: 9999; border-radius: 20px !important; top: -1px; left: -1px; width: calc(100% + 2px); height: calc(100% + 2px);">
-    
-    <div class="chat-header">
-        <span id="creation-screen-header" style="color: rgba(255,255,255,0.6); font-weight: 700; font-size: 14px; text-transform: uppercase;">Створення...</span>
-        
-        <button onclick="closeChatCreation()" class="close-chat-x" style="margin-left: auto;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <button class="settings-btn" onclick="checkChatAccess()">
+         <span>Повідомлення</span>
+        </button>
+        <button class="settings-btn report-btn" style="width: 40px;" title="Поскаржитися">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
         </button>
     </div>
-    
-    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
-        <div style="width: 100%; max-width: 400px; text-align: center;">
-            
-            <div style="width: 80px; height: 80px; border-radius: 50%; border: 2px dashed #f0047f; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #f0047f; background: rgba(240, 4, 127, 0.05);">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            </div>
-            
-            <h2 id="creation-screen-title" style="color: #fff; margin-top: 0; margin-bottom: 30px; font-weight: 700; font-size: 22px;">Новий...</h2>
-            
-            <input type="text" id="creation-name-input" class="premium-input-sm" placeholder="Назва..." autocomplete="off" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(240, 4, 127, 0.3); color: #fff; padding: 15px; border-radius: 12px; font-size: 15px; margin-bottom: 20px; text-align: center; outline: none;">
-            
-            <div style="display: flex; justify-content: center; gap: 10px;">
-                <button class="btn-cancel-sm" onclick="closeChatCreation()" style="padding: 12px 25px; font-size: 14px; font-weight: 600;">Скасувати</button>
-                <button class="btn-publish-sm" onclick="submitChatCreation()" style="padding: 12px 30px; font-size: 14px; font-weight: 700; text-transform: uppercase;">Створити</button>
-            </div>
-            
-        </div>
-    </div>
 </div>
-
-<div id="chat-window" class="tab-content chat-overlay-container">
+    </div> 
     
-    <div class="chat-header">
-        <img src="" id="chat-target-avatar" class="chat-head-img" onerror="this.src='img/default_avatar.png'; this.style.backgroundColor='#E6AEC9';">
-        <span id="chat-target-name" class="chat-title">Піпіпі</span>
-        
-        <div class="chat-header-icons">
-    <svg id="btn-start-call" onclick="startTelegramCall()" style="cursor: pointer; transition: 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" onmouseover="this.style.color='#f0047f'" onmouseout="this.style.color='currentColor'">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    <div id="games-modal" class="modal-games-overlay">
+        <div class="modal-games-content">
+            <div class="modal-games-header">
+    <div class="modal-header-top">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button id="modal-back-button" class="back-btn" onclick="loadMainLibrary()" style="display: none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
     </svg>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-</div>
-
-        <button onclick="closeChat()" class="close-chat-x">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+</button>
+            <h3 id="modal-games-main-title">Оберіть гру</h3>
+        </div>
+        
+        <button class="modal-close-btn" onclick="closeGamesModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"></path></svg>
         </button>
     </div>
+
+    <div class="search-container">
+    <input type="text" id="game-search-input" placeholder="Пошук гри...">
     
-    <div class="messages-container" id="chat-messages">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="M21 21l-4.3-4.3"></path>
+    </svg>
+</div>
+</div>
+            <div id="media-grid" class="media-grid"></div>
+            <div id="modal-footer-actions" style="margin-top: auto; display: none; padding-top: 20px; text-align: center;">
+                <button onclick="confirmSelection()" style="display: block; margin: 0 auto; background: #ff4500; color: white; border: none; padding: 12px 40px; border-radius: 12px; font-weight: bold; cursor: pointer;">Підтвердити вибір</button>
+            </div>
+            
+        </div>
     </div>
 
-    <div id="edit-msg-panel" class="edit-msg-panel">
-        <div class="edit-msg-info">
-            <div class="edit-msg-label">Редагування</div>
-            <div id="edit-msg-preview" class="edit-msg-preview-text">Текст повідомлення...</div>
+
+<!-- ─── SETTINGS OVERLAY (new) ─── -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-modal" id="settingsModal">
+
+    <!-- SIDEBAR -->
+    <div class="sm-sidebar">
+      <div class="sm-sidebar-top">
+        <div class="sm-user-mini">
+          <div class="sm-user-avatar" id="sm-user-avatar-mini">
+            <img id="sm-user-avatar-img" src="" alt="" style="display:none;">
+            <span id="sm-user-avatar-letter">U</span>
+          </div>
+          <div class="sm-user-info">
+            <div class="sm-user-name" id="sm-username-display">Username</div>
+            <div class="sm-user-tag" id="sm-usertag-display">@username</div>
+          </div>
         </div>
-        <button onclick="window.cancelEditMessage()" class="cancel-edit-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </div>
+
+      <nav class="sm-nav">
+        <div class="sm-nav-group-label">Обліковий запис</div>
+
+        <button class="sm-nav-item active" onclick="smSwitchTab(this,'profile')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Профіль
         </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'security')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Безпека
+        </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'integrations')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Інтеграції
+        </button>
+
+        <div class="sm-nav-divider"></div>
+        <div class="sm-nav-group-label">Персоналізація</div>
+
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'appearance')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          Зовнішній вигляд
+        </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'notifications')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Сповіщення
+        </button>
+        <button class="sm-nav-item" onclick="smSwitchTab(this,'privacy')">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Приватність
+        </button>
+
+        <div class="sm-nav-divider" style="margin-top: auto;"></div>
+        <button class="sm-nav-item sm-danger-item" onclick="smCloseSettings()">
+          <svg class="sm-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Вийти
+        </button>
+      </nav>
     </div>
 
-    <div class="chat-input-area">
-        <div class="chat-input-icons">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+    <!-- BODY -->
+    <div class="sm-body">
+      <div class="sm-body-header">
+        <div class="sm-body-header-left">
+          <div class="sm-header-dot"></div>
+          <span class="sm-header-title" id="smTabTitle">Профіль</span>
+        </div>
+        <button class="sm-close-btn" onclick="smCloseSettings()" title="Закрити">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="sm-content">
+
+        <!-- PROFILE TAB -->
+        <div class="sm-tab active" id="sm-tab-profile">
+          <div class="sm-section-title">Фото та банер</div>
+          <div class="sm-card">
+            <div class="sm-avatar-row">
+              <div class="sm-avatar-preview" id="sm-avatar-preview">
+                <img id="sm-avatar-preview-img" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                <span id="sm-avatar-preview-letter">U</span>
+              </div>
+              <img id="settings-avatar-img" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%; position:absolute; top:0; left:0;">
+              <div class="sm-avatar-actions">
+                <div class="sm-avatar-btns">
+                  <button class="sm-inline-btn accent" onclick="document.getElementById('avatar-input').click()">Змінити фото</button>
+                  <button class="sm-inline-btn" onclick="deleteAvatar()">Видалити</button>
+                </div>
+                <p>JPG, PNG або GIF · Не більше 8 МБ</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Обводка аватарки</div>
+          <div class="sm-card">
+            <div class="sm-field-hint" style="margin-bottom:12px;">Оберіть рамку, яка відображатиметься навколо вашого аватара</div>
+            <div class="sm-avatar-frame-grid" id="avatar-frame-grid">
+              <div class="sm-frame-item selected" data-frame="" onclick="selectAvatarFrame(this, '')">
+                <div class="sm-frame-preview no-frame">
+                  <span style="font-size:18px;color:rgba(255,255,255,0.4);">✕</span>
+                </div>
+                <span class="sm-frame-label">Без обводки</span>
+              </div>
+              <div class="sm-frame-item" data-frame="img/custom/frame_ender.webm" onclick="selectAvatarFrame(this, 'img/custom/frame_ender.webm')">
+                <div class="sm-frame-preview"><video src="img/custom/frame_ender.webm" autoplay loop muted playsinline disablePictureInPicture style="width:100%;height:100%;object-fit:contain;"></video></div>
+                <span class="sm-frame-label">Ендермен</span>
+              </div>
+              <div class="sm-frame-item" data-frame="img/custom/frame_creeper.webm" onclick="selectAvatarFrame(this, 'img/custom/frame_creeper.webm')">
+                <div class="sm-frame-preview"><video src="img/custom/frame_creeper.webm" autoplay loop muted playsinline disablePictureInPicture style="width:100%;height:100%;object-fit:contain;"></video></div>
+                <span class="sm-frame-label">Кріпер</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px;">
+              <button class="sm-inline-btn accent" id="save-avatar-frame-btn" onclick="saveAvatarFrame()">Зберегти обводку</button>
+              <span id="avatar-frame-status" style="font-size:12px; color:rgba(255,255,255,0.5);"></span>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Відображуване ім'я</div>
+          <div class="sm-card">
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:10px;">
+              <div class="sm-field-hint">Це ім'я відображається у шапці профілю</div>
+              <div style="display:flex; gap:10px; width:100%; align-items:center;">
+                <input type="text" id="edit-display-name"
+                  placeholder="Ваше ім'я"
+                  style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; color:#fff; font-size:14px; font-family:inherit; outline:none;">
+                <button class="sm-inline-btn accent" id="save-name-btn" onclick="smSaveDisplayName()">Зберегти</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Ім'я користувача (логін)</div>
+          <div class="sm-card">
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:10px;">
+              <div class="sm-field-hint">Унікальний нікнейм — відображається як @username</div>
+              <div style="display:flex; gap:10px; width:100%; align-items:center;">
+                <input type="text" id="edit-username"
+                  placeholder="username"
+                  style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; color:#fff; font-size:14px; font-family:inherit; outline:none;">
+                <button class="sm-inline-btn accent" id="btn-save-username" onclick="smSaveUsername()">Зберегти</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Про себе</div>
+          <div class="sm-card">
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:10px;">
+              <div class="sm-field-hint">Розкажіть щось цікаве — до 231 символу</div>
+              <textarea id="sm-bio-input"
+                placeholder="Напишіть щось про себе..."
+                maxlength="231"
+                style="width:100%; min-height:90px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; color:#fff; font-size:13px; font-family:inherit; outline:none; resize:vertical; box-sizing:border-box;"></textarea>
+              <div style="display:flex; justify-content:flex-end; width:100%;">
+                <button class="sm-inline-btn accent" onclick="smSaveBio()">Зберегти біо</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Дата народження</div>
+          <div class="sm-card">
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:10px;">
+              <div class="sm-field-hint">Видно тільки вам · Формат: день / місяць / рік</div>
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <input type="number" id="birth-day" placeholder="ДД" min="1" max="31"
+                  style="width:70px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 12px; color:#fff; font-size:14px; font-family:inherit; outline:none; text-align:center;">
+                <input type="number" id="birth-month" placeholder="ММ" min="1" max="12"
+                  style="width:70px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 12px; color:#fff; font-size:14px; font-family:inherit; outline:none; text-align:center;">
+                <input type="number" id="birth-year" placeholder="РРРР" min="1900" max="2099"
+                  style="width:90px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 12px; color:#fff; font-size:14px; font-family:inherit; outline:none; text-align:center;">
+                <button class="sm-inline-btn accent" id="btn-save-birthday" onclick="smSaveBirthday()">Зберегти</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Додаткова пошта</div>
+          <div class="sm-card">
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:10px;">
+              <div class="sm-field-hint">Для відновлення доступу або сповіщень</div>
+              <div style="display:flex; gap:10px; width:100%; align-items:center;">
+                <input type="email" id="edit-secondary-email"
+                  placeholder="example@email.com"
+                  style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; color:#fff; font-size:14px; font-family:inherit; outline:none;">
+                <button class="sm-inline-btn accent" id="btn-save-email" onclick="smSaveEmail()">Зберегти</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Керування обліковим записом</div>
+          <div class="sm-danger-card">
+            <div class="sm-danger-title">Небезпечна зона</div>
+            <div class="sm-danger-row">
+              <button class="sm-btn-danger outline" onclick="freezeAccount()">Заморозити акаунт</button>
+              <button class="sm-btn-danger solid" onclick="deleteAccount()">Видалити акаунт</button>
+            </div>
+          </div>
         </div>
 
-        <input type="text" id="msg-input" placeholder="Напишіть повідомлення...">
-        <button id="send-btn" class="chat-send-btn">Надіслати</button>
+        <!-- SECURITY TAB -->
+        <div class="sm-tab" id="sm-tab-security">
+          <div class="sm-section-title">Захист акаунта</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Пароль</div>
+                <div class="sm-field-hint">Змінюйте пароль регулярно для безпеки</div>
+              </div>
+              <button class="sm-inline-btn accent">Змінити пароль</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Двофакторна автентифікація</div>
+                <div class="sm-sec-status">
+                  <div class="sm-sec-dot off"></div>
+                  <span style="color:rgba(255,255,255,0.3);">Вимкнено</span>
+                </div>
+              </div>
+              <button class="sm-inline-btn">Увімкнути 2FA</button>
+            </div>
+          </div>
+
+          <div class="sm-section-title">Підключені пристрої</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Windows · Chrome</div>
+                <div class="sm-field-hint">Поточна сесія</div>
+              </div>
+              <div class="sm-sec-status">
+                <div class="sm-sec-dot on"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INTEGRATIONS TAB -->
+        <div class="sm-tab" id="sm-tab-integrations">
+          <div class="sm-section-title">Ігрові платформи</div>
+          <div class="sm-card">
+            <div class="sm-platform-row">
+              <div class="sm-platform-icon steam">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" alt="Steam">
+              </div>
+              <div class="sm-platform-info">
+                <div class="sm-platform-name">Steam</div>
+                <div class="sm-platform-status" id="sm-steam-status">Не підключено</div>
+              </div>
+              <button class="sm-connect-btn" id="btn-steam-auth-sm" onclick="var b = document.getElementById('btn-steam-auth'); if(b) b.click();">Підключити</button>
+            </div>
+            <div class="sm-platform-row">
+              <div class="sm-platform-icon roblox">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg" alt="Roblox" style="filter:invert(1)">
+              </div>
+              <div class="sm-platform-info">
+                <div class="sm-platform-name">Roblox</div>
+                <div class="sm-platform-status" id="sm-roblox-status">Не підключено</div>
+              </div>
+              <button class="sm-connect-btn" onclick="startRobloxAuth()">Підключити</button>
+            </div>
+            <div class="sm-platform-row">
+              <div class="sm-platform-icon epic">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/31/Epic_Games_logo.svg" alt="Epic" style="filter:invert(1)">
+              </div>
+              <div class="sm-platform-info">
+                <div class="sm-platform-name">Epic Games</div>
+                <div class="sm-platform-status">Не підключено</div>
+              </div>
+              <button class="sm-connect-btn" onclick="if(typeof linkPlatform === 'function') linkPlatform('Epic Games')">Підключити</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPEARANCE TAB -->
+        <div class="sm-tab" id="sm-tab-appearance">
+          <div class="sm-section-title">Зовнішній вигляд</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Банер профілю</div>
+                <div class="sm-field-hint">Зображення у шапці профілю</div>
+              </div>
+              <button class="sm-inline-btn accent" onclick="document.getElementById('banner-input').click()">Змінити банер</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Фон сторінки</div>
+                <div class="sm-field-hint">Фонове зображення всього сайту</div>
+              </div>
+              <button class="sm-inline-btn" onclick="document.getElementById('background-input').click()">Змінити фон</button>
+            </div>
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:12px;">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Градієнт профілю</div>
+                <div class="sm-field-hint">Кольорова схема фону та карток</div>
+              </div>
+              <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                <label style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; color:rgba(255,255,255,0.4);">
+                  Лівий
+                  <input type="color" id="color-left" value="#222222"
+                    style="width:44px; height:44px; border:none; border-radius:50%; cursor:pointer; background:none; padding:0;"
+                    oninput="smPreviewGradient()">
+                </label>
+                <div id="gradient-preview-box"
+                  style="flex:1; min-width:120px; height:44px; border-radius:12px; background:linear-gradient(135deg,#222,#000); border:1px solid rgba(255,255,255,0.1);"></div>
+                <label style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; color:rgba(255,255,255,0.4);">
+                  Правий
+                  <input type="color" id="color-right" value="#000000"
+                    style="width:44px; height:44px; border:none; border-radius:50%; cursor:pointer; background:none; padding:0;"
+                    oninput="smPreviewGradient()">
+                </label>
+                <button class="sm-inline-btn accent" onclick="smSaveGradient()">Зберегти</button>
+              </div>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Мова та країна</div>
+                <div class="sm-field-hint">Регіональні налаштування</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smCloseSettings(); setTimeout(openCountryModal, 200)">Налаштувати</button>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Бейджі</div>
+                <div class="sm-field-hint">Оберіть значки для відображення</div>
+              </div>
+              <button class="sm-inline-btn" onclick="smCloseSettings(); setTimeout(openBadgesModal, 200)">Змінити бейджі</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICATIONS TAB -->
+        <div class="sm-tab" id="sm-tab-notifications">
+          <div class="sm-section-title">Типи сповіщень</div>
+          <div class="sm-card">
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-likes">❤️</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Лайки</div>
+                <div class="sm-field-hint">Коли хтось лайкає ваш пост</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-comments">💬</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Коментарі</div>
+                <div class="sm-field-hint">Нові коментарі до ваших постів</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-follows">👥</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Підписники</div>
+                <div class="sm-field-hint">Коли хтось підписується на вас</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-messages">✉️</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Повідомлення</div>
+                <div class="sm-field-hint">Нові особисті повідомлення</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-notif-icon ni-system">🔔</div>
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Системні</div>
+                <div class="sm-field-hint">Оновлення платформи та безпека</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRIVACY TAB -->
+        <div class="sm-tab" id="sm-tab-privacy">
+          <div class="sm-section-title">Видимість профілю</div>
+          <div class="sm-card">
+            <div class="sm-field" style="flex-direction:column; align-items:flex-start; gap:12px;">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Хто може бачити мій профіль</div>
+              </div>
+              <div class="sm-privacy-bar">
+                <button class="sm-privacy-opt active" onclick="smSelectPrivacy(this)">Всі</button>
+                <button class="sm-privacy-opt" onclick="smSelectPrivacy(this)">Друзі</button>
+                <button class="sm-privacy-opt" onclick="smSelectPrivacy(this)">Тільки я</button>
+              </div>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Показувати онлайн-статус</div>
+                <div class="sm-field-hint">Інші бачитимуть, коли ви в мережі</div>
+              </div>
+              <label class="sm-toggle"><input type="checkbox" checked><div class="sm-toggle-track"></div></label>
+            </div>
+            <div class="sm-field">
+              <div class="sm-field-label-wrap">
+                <div class="sm-field-label">Дозволити особисті повідомлення</div>
+              </div>
+              <select class="sm-select">
+                <option>Всі</option>
+                <option>Підписники</option>
+                <option>Ніхто</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end sm-content -->
+
+      <div class="sm-save-footer">
+        <span class="sm-save-hint">Зміни зберігаються автоматично</span>
+        <button class="sm-discard-btn" onclick="smCloseSettings()">Закрити</button>
+      </div>
+    </div><!-- end sm-body -->
+
+  </div><!-- end settings-modal -->
+</div><!-- end overlay -->
+
+<!-- SM Toast -->
+<div class="sm-toast" id="smToast">
+  <div class="sm-toast-dot"></div>
+  <span id="smToastMsg">Зміни збережено!</span>
+</div>
+
+<script>
+// ─── NEW SETTINGS MODAL FUNCTIONS ───
+const smTabTitles = {
+  profile: 'Профіль',
+  security: 'Безпека',
+  integrations: 'Інтеграції',
+  appearance: 'Зовнішній вигляд',
+  notifications: 'Сповіщення',
+  privacy: 'Приватність',
+};
+
+window.openSettings = function() {
+  const overlay = document.getElementById('settingsOverlay');
+  overlay.classList.add('active');
+  smSyncUserInfo();
+  smSwitchTabById('profile');
+};
+
+function smCloseSettings() {
+  document.getElementById('settingsOverlay').classList.remove('active');
+}
+
+function smSwitchTab(btn, tabId) {
+  document.querySelectorAll('.sm-nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  smSwitchTabById(tabId);
+}
+
+function smSwitchTabById(tabId) {
+  document.querySelectorAll('.sm-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('sm-tab-' + tabId);
+  if (tab) tab.classList.add('active');
+  const titleEl = document.getElementById('smTabTitle');
+  if (titleEl) titleEl.textContent = smTabTitles[tabId] || tabId;
+}
+
+// smSwitchToEditorTab — тепер перемикає вкладки нового модалу (editor-modal видалено)
+function smSwitchToEditorTab(tabName) {
+  const tabMap = { 'profile': 'profile', 'design': 'appearance', 'integrations': 'integrations' };
+  const target = tabMap[tabName] || tabName;
+  smSwitchTabById(target);
+  // Highlight the correct sidebar nav item
+  document.querySelectorAll('.sm-nav-item').forEach(btn => {
+    const onclickAttr = btn.getAttribute('onclick') || '';
+    const isActive = onclickAttr.includes("'" + target + "'") || onclickAttr.includes('"' + target + '"');
+    btn.classList.toggle('active', isActive);
+  });
+}
+
+function smSyncUserInfo() {
+  // Populate sidebar mini-card from profile data
+  const smName = document.getElementById('sm-username-display');
+  const smTag = document.getElementById('sm-usertag-display');
+  const smAvatarImg = document.getElementById('sm-user-avatar-img');
+  const smAvatarLetter = document.getElementById('sm-user-avatar-letter');
+  const smPreviewImg = document.getElementById('sm-avatar-preview-img');
+  const smPreviewLetter = document.getElementById('sm-avatar-preview-letter');
+
+  // Get values from profile page elements (set by loadUserData)
+  const nameHeader = document.getElementById('userName');
+  const handleEl   = document.getElementById('userHandle');
+  const mainAvatar = document.getElementById('settings-avatar-img');
+
+  const displayName = nameHeader ? nameHeader.textContent.trim() : '';
+  const username    = handleEl  ? handleEl.textContent.replace('@','').trim() : '';
+
+  if (smName) smName.textContent = displayName || username || 'User';
+  if (smTag)  smTag.textContent  = '@' + (username || 'username');
+
+  // Populate the new input fields inside the modal
+  const inputDisplayName = document.getElementById('edit-display-name');
+  const inputUsername    = document.getElementById('edit-username');
+  const inputEmail       = document.getElementById('edit-secondary-email');
+  const inputBio         = document.getElementById('sm-bio-input');
+
+  if (inputDisplayName && !inputDisplayName.dataset.dirty) inputDisplayName.value = displayName;
+  if (inputUsername    && !inputUsername.dataset.dirty)    inputUsername.value    = username;
+
+  // Populate from global profile data if available
+  if (window._profileData) {
+    const d = window._profileData;
+    if (inputEmail && !inputEmail.dataset.dirty) inputEmail.value = d.secondary_email || '';
+    if (inputBio   && !inputBio.dataset.dirty)   inputBio.value   = d.bio || '';
+
+    // Fill birthday fields
+    if (d.birthday) {
+      // birthday comes from DB as YYYY-MM-DD — but we don't expose it in get_user.php,
+      // so only fill if the fields are empty already
+    }
+  }
+
+  // Avatar sync — читаємо з глобальної змінної (встановлюється в loadUserData)
+  const avatarSrc = window._currentAvatarSrc;
+  const hasAvatar = !!avatarSrc && !avatarSrc.includes('default_avatar.png');
+
+  if (hasAvatar) {
+    if (smAvatarImg)     { smAvatarImg.src = avatarSrc; smAvatarImg.style.display = 'block'; }
+    if (smAvatarLetter)    smAvatarLetter.style.display = 'none';
+    if (smPreviewImg)    { smPreviewImg.src = avatarSrc; smPreviewImg.style.display = 'block'; }
+    if (smPreviewLetter)   smPreviewLetter.style.display = 'none';
+  } else {
+    const letter = (displayName || username || 'U')[0].toUpperCase();
+    if (smAvatarImg)     smAvatarImg.style.display = 'none';
+    if (smAvatarLetter)  { smAvatarLetter.textContent = letter; smAvatarLetter.style.display = ''; }
+    if (smPreviewImg)    smPreviewImg.style.display = 'none';
+    if (smPreviewLetter) { smPreviewLetter.textContent = letter; smPreviewLetter.style.display = ''; }
+  }
+
+  // Mark inputs as "touched" when user types so we don't overwrite on re-sync
+  [inputDisplayName, inputUsername, inputEmail, inputBio].forEach(el => {
+    if (el && !el._smListenerAdded) {
+      el.addEventListener('input', () => el.dataset.dirty = '1');
+      el._smListenerAdded = true;
+    }
+  });
+}
+
+function smSelectPrivacy(btn) {
+  btn.closest('.sm-privacy-bar').querySelectorAll('.sm-privacy-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function smShowToast(msg) {
+  const toast = document.getElementById('smToast');
+  document.getElementById('smToastMsg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+// ─── AVATAR FRAME ───
+function selectAvatarFrame(el, framePath) {
+  document.querySelectorAll('#avatar-frame-grid .sm-frame-item').forEach(item => item.classList.remove('selected'));
+  el.classList.add('selected');
+  window._selectedAvatarFrame = framePath;
+}
+
+async function saveAvatarFrame() {
+  const btn = document.getElementById('save-avatar-frame-btn');
+  const status = document.getElementById('avatar-frame-status');
+  const frame = window._selectedAvatarFrame !== undefined ? window._selectedAvatarFrame : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Збереження...'; }
+  try {
+    const res = await fetch('save_avatar_frame.php', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar_frame: frame })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (status) { status.textContent = '✓ Збережено!'; status.style.color = '#4caf50'; }
+      window._currentAvatarFrame = frame;
+      applyAvatarFrameToUI(frame);
+    } else {
+      if (status) { status.textContent = '✗ Помилка'; status.style.color = '#f44'; }
+    }
+  } catch(e) {
+    if (status) { status.textContent = '✗ Помилка'; status.style.color = '#f44'; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Зберегти обводку'; }
+    setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+  }
+}
+
+function applyAvatarFrameToUI(framePath) {
+  const frameEls = document.querySelectorAll('.avatar-frame-overlay');
+  const isVideo = framePath && /\.(webm|mp4)$/i.test(framePath);
+  frameEls.forEach(el => {
+    if (!framePath) { el.style.display = 'none'; return; }
+
+    if (isVideo) {
+      // Якщо поточний елемент — не <video>, замінюємо на <video>
+      if (el.tagName.toLowerCase() !== 'video') {
+        const v = document.createElement('video');
+        v.className = el.className;
+        v.setAttribute('autoplay',''); v.setAttribute('loop','');
+        v.setAttribute('muted',''); v.muted = true;
+        v.setAttribute('playsinline',''); v.setAttribute('disablePictureInPicture','');
+        v.style.cssText = el.style.cssText;
+        el.replaceWith(v);
+        v.src = framePath;
+        v.style.display = 'block';
+        v.play && v.play().catch(()=>{});
+      } else {
+        el.src = framePath;
+        el.style.display = 'block';
+        el.play && el.play().catch(()=>{});
+      }
+    } else {
+      // Звичайна картинка
+      if (el.tagName.toLowerCase() !== 'img') {
+        const img = document.createElement('img');
+        img.className = el.className;
+        img.style.cssText = el.style.cssText;
+        el.replaceWith(img);
+        img.src = framePath + '?t=' + Date.now();
+        img.style.display = 'block';
+      } else {
+        el.src = framePath + '?t=' + Date.now();
+        el.style.display = 'block';
+      }
+    }
+  });
+}
+
+// ─── SETTINGS SAVE FUNCTIONS ───
+
+async function smSaveDisplayName() {
+  const input = document.getElementById('edit-display-name');
+  const btn   = document.getElementById('save-name-btn');
+  const newName = input ? input.value.trim() : '';
+  if (!newName) { smShowToast('Імʼя не може бути порожнім'); return; }
+
+  const orig = btn.textContent; btn.textContent = 'Збереження...'; btn.disabled = true;
+  try {
+    const res  = await fetch('update_user.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_name: newName }),
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.success) {
+      // Оновити шапку профілю
+      const nameHeader = document.getElementById('userName');
+      if (nameHeader) nameHeader.textContent = newName;
+      // Оновити міні-картку в сайдбарі
+      const smName = document.getElementById('sm-username-display');
+      if (smName) smName.textContent = newName;
+      if (input) delete input.dataset.dirty;
+      smShowToast('Імʼя збережено ✓');
+    } else {
+      smShowToast('Помилка: ' + (data.message || 'невідома'));
+    }
+  } catch(e) { smShowToast('Помилка зʼєднання'); }
+  finally { btn.textContent = orig; btn.disabled = false; }
+}
+
+async function smSaveUsername() {
+  const input = document.getElementById('edit-username');
+  const btn   = document.getElementById('btn-save-username');
+  const newName = input ? input.value.trim() : '';
+  if (!newName) { smShowToast('Нікнейм не може бути порожнім'); return; }
+
+  const orig = btn.textContent; btn.textContent = 'Збереження...'; btn.disabled = true;
+  try {
+    const res  = await fetch('update_username.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: newName }),
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.success) {
+      const handleEl = document.getElementById('userHandle');
+      if (handleEl) handleEl.textContent = '@' + newName;
+      const smTag = document.getElementById('sm-usertag-display');
+      if (smTag) smTag.textContent = '@' + newName;
+      if (input) delete input.dataset.dirty;
+      smShowToast('Нікнейм збережено ✓');
+    } else {
+      smShowToast('Помилка: ' + (data.message || 'невідома'));
+    }
+  } catch(e) { smShowToast('Помилка зʼєднання'); }
+  finally { btn.textContent = orig; btn.disabled = false; }
+}
+
+async function smSaveBio() {
+  const input = document.getElementById('sm-bio-input');
+  const text  = input ? input.value.trim() : '';
+
+  if (typeof saveBioToServer !== 'function') {
+    smShowToast('Помилка: скрипт не завантажено — оновіть сторінку');
+    return;
+  }
+
+  const ok = await saveBioToServer(text);
+  if (ok) {
+    // Sync to the visible bio block on the page
+    const bioDisplay = document.getElementById('userBioDisplay');
+    const bioTextEl  = document.getElementById('userBioText');
+    const bioInput   = document.getElementById('user-bio');
+    if (bioDisplay) bioDisplay.textContent = text || 'Про себе нічого не вказано';
+    if (bioTextEl)  bioTextEl.innerText    = text || 'Опис відсутній';
+    if (bioInput)   bioInput.value         = text;
+    if (window._profileData) window._profileData.bio = text;
+    if (input) delete input.dataset.dirty;
+    smShowToast('Біо збережено ✓');
+  } else {
+    smShowToast('Не вдалося зберегти біо');
+  }
+}
+
+async function smSaveBirthday() {
+  const day   = document.getElementById('birth-day')   ? parseInt(document.getElementById('birth-day').value)   : 0;
+  const month = document.getElementById('birth-month') ? parseInt(document.getElementById('birth-month').value) : 0;
+  const year  = document.getElementById('birth-year')  ? parseInt(document.getElementById('birth-year').value)  : 0;
+  const btn   = document.getElementById('btn-save-birthday');
+
+  if (!day || !month || !year) { smShowToast('Заповніть всі поля дати'); return; }
+  if (day < 1 || day > 31)     { smShowToast('Невірний день (1–31)'); return; }
+  if (month < 1 || month > 12) { smShowToast('Невірний місяць (1–12)'); return; }
+  if (year < 1900 || year > new Date().getFullYear()) { smShowToast('Невірний рік'); return; }
+
+  const orig = btn.textContent; btn.textContent = 'Збереження...'; btn.disabled = true;
+  try {
+    const res  = await fetch('update_birthday.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ day, month, year }),
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.success) {
+      smShowToast('Дату народження збережено ✓');
+    } else {
+      smShowToast('Помилка: ' + (data.message || 'невідома'));
+    }
+  } catch(e) { smShowToast('Помилка зʼєднання'); }
+  finally { btn.textContent = orig; btn.disabled = false; }
+}
+
+async function smSaveEmail() {
+  const input = document.getElementById('edit-secondary-email');
+  const btn   = document.getElementById('btn-save-email');
+  const email = input ? input.value.trim() : '';
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) { smShowToast('Введіть коректну пошту'); return; }
+
+  const orig = btn.textContent; btn.textContent = 'Збереження...'; btn.disabled = true;
+  try {
+    const res  = await fetch('update_email.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.success) {
+      try { localStorage.setItem('user_secondary_email', email); } catch(_) {}
+      if (window._profileData) window._profileData.secondary_email = email;
+      if (input) delete input.dataset.dirty;
+      smShowToast('Пошту збережено ✓');
+    } else {
+      smShowToast('Помилка: ' + (data.message || 'невідома'));
+    }
+  } catch(e) { smShowToast('Помилка зʼєднання'); }
+  finally { btn.textContent = orig; btn.disabled = false; }
+}
+
+function smPreviewGradient() {
+  const l = document.getElementById('color-left')  ? document.getElementById('color-left').value  : '#222222';
+  const r = document.getElementById('color-right') ? document.getElementById('color-right').value : '#000000';
+  const box = document.getElementById('gradient-preview-box');
+  if (box) box.style.background = `linear-gradient(135deg, ${l}, ${r})`;
+}
+
+async function smSaveGradient() {
+  const l = document.getElementById('color-left')  ? document.getElementById('color-left').value  : '#222222';
+  const r = document.getElementById('color-right') ? document.getElementById('color-right').value : '#000000';
+
+  try {
+    const res  = await fetch('update_gradient.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color_left: l, color_right: r }),
+      credentials: 'include'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.success) {
+      // Apply gradient to the page immediately
+      const grad = `linear-gradient(135deg, ${l}, ${r})`;
+      const fadeRect = document.querySelector('.fade-rectangle');
+      const bioBlock = document.getElementById('userBioDisplay');
+      const gamesSection = document.querySelector('.roblox-profile-section');
+      const sidebarCard  = document.querySelector('.profile-sidebar-card');
+      if (fadeRect)     fadeRect.style.setProperty('background', grad, 'important');
+      if (bioBlock)     bioBlock.style.setProperty('background', grad, 'important');
+      if (gamesSection) gamesSection.style.setProperty('background', grad, 'important');
+      if (sidebarCard)  sidebarCard.style.setProperty('background', grad, 'important');
+      smShowToast('Градієнт збережено ✓');
+    } else {
+      smShowToast('Помилка: ' + (data.message || 'невідома'));
+    }
+  } catch(e) { smShowToast('Помилка зʼєднання'); }
+}
+
+// Close on overlay click
+document.getElementById('settingsOverlay').addEventListener('click', function(e) {
+  if (e.target === this) smCloseSettings();
+});
+
+// Close on Escape — only if settings overlay is active
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay && overlay.classList.contains('active')) smCloseSettings();
+  }
+});
+</script>
+
+
+        <div class="fade-rectangle" style="top: 70px;"></div>
+
+    <input type="file" id="avatar-input" style="display: none;" accept="image/*">
+    <input type="file" id="banner-input" style="display: none;" accept="image/*">
+    <input type="file" id="background-input" style="display: none;" accept="image/*">
+    <div class="modal-overlay" id="region-modal" style="display: none;">
+        <div class="modal-content country-modal-size">
+            <div class="modal-header-center">
+                <h3>Регіональні налаштування</h3>
+                <div class="search-container">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="country-search-input" placeholder="Пошук країни..." oninput="filterCountries()">
+                </div>
+                <button class="close-modal-btn" onclick="closeCountryModal()">&times;</button>
+            </div>
+
+            <div class="modal-split-body">
+                <div class="split-column">
+                    <h4 class="column-title">Язики спілкування</h4>
+                    <div class="scrollable-list" id="language-list-container"></div>
+                </div>
+                <div class="vertical-divider"></div>
+                <div class="split-column">
+                    <h4 class="column-title">Країна проживання</h4>
+                    <div class="scrollable-list" id="country-list-container"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer-save">
+                <button class="save-btn" onclick="saveRegionSettings()">Зберегти зміни</button>
+            </div>
+        </div>
     </div>
+
+   <div class="roblox-profile-section">
+    <h3 class="games-header">Мої ігри</h3>
+    
+    <button id="edit-games-btn" class="games-settings-btn" onclick="openGamesModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+        </svg>
+    </button>
+    
+    <div id="roblox-games-render-zone" class="games-render-zone">
+        
+</div>
 </div>
 
-<div id="telegram-call-screen" class="tg-call-overlay">
-    <div class="tg-call-content">
-        <div class="tg-call-header">
-            <h2 id="call-username">Співрозмовник</h2>
-            <p id="call-status">Телефонуємо...</p>
-        </div>
-
-       <div id="video-call-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;">
-    <video id="remote-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-    <video id="local-video" autoplay muted playsinline style="position: absolute; bottom: 120px; right: 20px; width: 100px; height: 140px; object-fit: cover; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2);"></video>
 </div>
-        <div class="tg-call-avatar-wrapper">
-            <div class="tg-pulse-ring"></div>
-            <div class="tg-pulse-ring delay"></div>
-            <img id="call-avatar-img" src="img/default_avatar.png" alt="Avatar">
-        </div>
 
-        <div class="tg-call-actions-container" style="width: 100%; display: flex; justify-content: center; margin-bottom: 50px;">
-            
-            <div id="call-outgoing-actions" style="display: flex; justify-content: center; width: 100%;">
-                <button class="tg-end-call-btn" onclick="endTelegramCall()">
-                    <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none" style="transform: rotate(135deg);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+</div>
+
+    <div id="deco-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 400px; text-align: center;">
+            <h3 style="color: white; margin-bottom: 20px;">Оберіть прикрасу</h3>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap;">
+                <div class="deco-item" onclick="window.applyDecoration('img/1.webm')" style="width: 120px; height: 120px; background: #222; border: 1px solid #444; cursor: pointer; overflow: hidden; border-radius: 10px;">
+                    <video src="img/1.webm" loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                </div>
+                <div class="deco-item" onclick="window.applyDecoration('img/2.webm')" style="width: 120px; height: 120px; background: #222; border: 1px solid #444; cursor: pointer; overflow: hidden; border-radius: 10px;">
+                    <video src="img/2.webm" loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; opacity: 0.5;"></video>
+                </div>
+            </div>
+            <button type="button" onclick="window.toggleDecoModal(false)" style="color: #ff4444; background: none; border: 1px solid #ff4444; padding: 8px 20px; cursor: pointer; border-radius: 5px;">
+                Закрити
+            </button>
+        </div>
+    </div>
+
+    <div id="badges-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 450px; text-align: center;">
+            <h3 style="color: white; margin-bottom: 10px;">Оберіть бейджі</h3>
+            <p style="color: #888; font-size: 13px; margin-bottom: 20px;">Натисніть, щоб обрати (макс. 5)</p>
+
+            <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap;">
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="vip" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 1.png" alt="VIP" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="admin" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 2.png" alt="Admin" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="verified" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 3.png" alt="Verified" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="bug_hunter" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 4.png" alt="Bug Hunter" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+                <div class="badge-item" onclick="toggleBadge(this)" data-badge="creative" style="width: 80px; height: 80px; background: #222; border: 2px solid #444; cursor: pointer; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                    <img src="img/badge 5.png" alt="Creative" style="width: 50px; height: 50px; pointer-events: none;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button type="button" onclick="closeBadgesModal()" style="color: #ccc; background: none; border: 1px solid #555; padding: 10px 25px; cursor: pointer; border-radius: 8px;">
+                    Скасувати
+                </button>
+                <button type="button" onclick="saveBadgesSelection()" style="color: white; background: #ff4500; border: none; padding: 10px 25px; cursor: pointer; border-radius: 8px; font-weight: bold;">
+                    Зберегти
                 </button>
             </div>
+        </div>
+    </div>
 
-            <div id="call-incoming-actions" style="display: none; gap: 40px; justify-content: center; width: 100%;">
-                <button class="tg-accept-call-btn" onclick="acceptTelegramCall()">
-                    <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                </button>
-                <button class="tg-end-call-btn" onclick="endTelegramCall()">
-                    <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none" style="transform: rotate(135deg);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                </button>
-            </div>
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
+    <script>
+(function startBlogFetch() {
+    const blogSpan = document.getElementById('profile-blog-name');
+    
+    if (!blogSpan) {
+        setTimeout(startBlogFetch, 500);
+        return;
+    }
 
-           <div id="call-active-actions" style="display: none; gap: 30px; justify-content: center; width: 100%; align-items: center;">
-    <button id="btn-speaker" class="tg-action-btn" onclick="toggleSpeaker()">
-        <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="1.5" fill="none">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-        </svg>
-    </button>
+    blogSpan.innerText = "З'єднання...";
 
-    <button class="tg-end-call-btn" onclick="endTelegramCall()">
-        <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" stroke-width="2" fill="none" style="transform: rotate(135deg);">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-        </svg>
-    </button>
-
-    <button id="btn-mic" class="tg-action-btn" onclick="toggleMic()">
-        <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="1.5" fill="none">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
-        </svg>
-    </button>
-</div>
+    async function loadIt() {
+        try {
+            // 1. Дивимось, чи є ID в адресі
+            const targetId = new URLSearchParams(window.location.search).get('id');
             
-        </div>
-    </div>
-</div>
-</div>
-    </div>
+            // 2. Вибираємо ПРАВИЛЬНИЙ файл
+            // Якщо чужий профіль -> беремо get_user_blog_info.php
+            // Якщо свій профіль -> беремо get_my_blog.php (який ідеально працює на home.html!)
+            const fetchUrl = targetId ? `get_user_blog_info.php?user_id=${targetId}` : 'get_my_blog.php';
 
-    <button id="back-to-top" class="back-to-top">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <polyline points="18 15 12 9 6 15"></polyline>
-        </svg>
-    </button>
-</body>
+            // 3. Робимо запит
+            const res = await fetch(fetchUrl, { credentials: 'include' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
 
-   <div id="games-modal" class="modal-games-overlay" style="display: none;">
-    <div class="modal-games-content">
-        <div class="modal-games-header">
-            <h3 id="modal-games-main-title">ВИБЕРІТЬ ГРУ</h3>
-            <button class="close-games" onclick="closeGamesModal()">&times;</button>
-        </div>
-        <div class="search-row">
-            <div id="modal-back-button" onclick="goBackToList()" style="display: none;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            </div>
-            
-            <div class="modal-input-wrapper">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input type="text" id="modal-search" placeholder="Пошук гри..." autocomplete="off" oninput="filterMedia()">
-            </div>
-        </div>
-        <div id="media-grid" class="media-grid"></div>
-    </div>
-</div>
-<!-- МОДАЛЬНОЕ ОКНО: Анимация получения 100 коинсов -->
-<div id="coin-reward-modal" class="coin-reward-overlay" style="display: none;">
-    <div class="coin-reward-content">
-        <div class="coin-icon-large">🪙</div>
-        <h2>Поздравляем! 🎉</h2>
-        <p>Вы успешно завершили или пропустили обучение и заработали <span style="color: #ffbc00; font-weight: 800;">100 коинсов</span>!</p>
-        <button class="coin-reward-btn" onclick="closeCoinRewardModal()">Отлично, забрать!</button>
-    </div>
-</div>
+            // 4. Оскільки файли віддають дані трохи по-різному, дістаємо назву універсально:
+            const blogTitle = (data.blog && data.blog.title) ? data.blog.title : data.blog_title;
+            const hasBlog = data.has_blog || (data.success && data.blog_title);
 
-<div id="premium-modal" class="premium-modal-overlay" style="display:none;">
+            const blogWrapper = blogSpan.closest('.blog-btn-wrapper');
+
+            if (hasBlog && blogTitle) {
+                // ✅ Успіх! Блог є
+                blogSpan.innerText = blogTitle.length > 15 ? blogTitle.substring(0, 15) + '...' : blogTitle;
+                blogSpan.style.color = '#ffffff';
+                
+                if (blogWrapper) {
+                    blogWrapper.removeAttribute('onclick');
+                    blogWrapper.onclick = () => window.location.href = targetId ? `home.html?tab=blog&user=${targetId}` : `home.html?tab=blog`;
+                    blogWrapper.style.cursor = 'pointer';
+                    blogWrapper.style.opacity = '1';
+                }
+            } else {
+                // ❌ Блогу немає
+                blogSpan.innerText = "Немає блогу";
+                blogSpan.style.color = '#555';
+                if (blogWrapper) {
+                    blogWrapper.removeAttribute('onclick');
+                    blogWrapper.style.cursor = 'default';
+                    blogWrapper.style.opacity = '0.5';
+                }
+            }
+
+        } catch (err) {
+            blogSpan.innerText = "Помилка";
+            console.error("Blog fetch error:", err);
+        }
+    }
+
+    loadIt();
+})();
+</script>
+
+    <script src="js/profile.js?v=20260612"></script>
+
+<!-- ========== PREMIUM MODAL (profile.html) ========== -->
+<div id="profile-premium-modal" style="display:none; position:fixed; inset:0; z-index:9999999; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px); flex-direction:column;">
   <div style="background:linear-gradient(145deg,#1a0014,#0d000a); border:1px solid rgba(240,4,127,0.35); border-radius:24px; padding:40px 32px 32px; max-width:400px; width:90%; position:relative; box-shadow:0 0 60px rgba(240,4,127,0.25), 0 20px 60px rgba(0,0,0,0.6); font-family:'Geologica',sans-serif;">
-
+    
     <!-- Close -->
-    <button onclick="closePremiumModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;">&times;</button>
+    <button onclick="hidePremiumModal()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.06);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;color:#aaa;font-size:18px;display:flex;align-items:center;justify-content:center;">&times;</button>
 
     <!-- Crown icon -->
     <div style="text-align:center;margin-bottom:20px;">
@@ -1025,232 +1290,326 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     </div>
 
-    <!-- Balance -->
-    <div style="text-align:center;color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:16px;">
-      Ваш баланс: <span id="premium-modal-coins-balance" style="color:#fff;font-weight:700;">...</span> монет
-    </div>
-
     <!-- Plans -->
     <div style="display:flex;gap:12px;margin-bottom:20px;">
-      <div id="hpm-plan-month" onclick="selectHomePremiumPlan('month')" style="position:relative;overflow:hidden;flex:1;border:2px solid rgba(240,4,127,0.4);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:0.2s;">
+      <div id="ppm-plan-month" onclick="selectPremiumPlan('month')" style="flex:1;border:2px solid rgba(240,4,127,0.4);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:0.2s;">
         <div style="color:#fff;font-weight:800;font-size:15px;">1 місяць</div>
         <div style="color:#f0047f;font-weight:700;font-size:18px;margin:4px 0;">1 000</div>
         <div style="color:rgba(255,255,255,0.4);font-size:11px;">монет</div>
-        <div id="hpm-active-month" class="hpm-plan-active" style="display:none;">
-          <div class="hpm-check">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          </div>
-          <div class="hpm-active-until" id="hpm-until-month"></div>
-        </div>
       </div>
-      <div id="hpm-plan-year" onclick="selectHomePremiumPlan('year')" style="position:relative;overflow:hidden;flex:1;border:2px solid rgba(240,4,127,0.4);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:0.2s;">
+      <div id="ppm-plan-year" onclick="selectPremiumPlan('year')" style="flex:1;border:2px solid rgba(240,4,127,0.4);border-radius:16px;padding:14px 10px;cursor:pointer;text-align:center;transition:0.2s;">
         <div style="color:#fff;font-weight:800;font-size:15px;">1 рік</div>
         <div style="color:#f0047f;font-weight:700;font-size:18px;margin:4px 0;">20 000</div>
         <div style="color:rgba(255,255,255,0.4);font-size:11px;">монет</div>
-        <div id="hpm-active-year" class="hpm-plan-active" style="display:none;">
-          <div class="hpm-check">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          </div>
-          <div class="hpm-active-until" id="hpm-until-year"></div>
-        </div>
       </div>
+    </div>
+
+    <!-- Balance -->
+    <div style="text-align:center;color:rgba(255,255,255,0.4);font-size:12px;margin-bottom:16px;">
+      Ваш баланс: <span id="ppm-balance" style="color:#fff;font-weight:700;">...</span> монет
     </div>
 
     <!-- Buy button -->
-    <button id="hpm-buy-btn" onclick="buyPremiumFromHome()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f0047f,#c0036a);border:none;border-radius:14px;color:white;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(240,4,127,0.4);transition:0.2s;">
+    <button id="ppm-buy-btn" onclick="buyPremiumFromProfile()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f0047f,#c0036a);border:none;border-radius:14px;color:white;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(240,4,127,0.4);transition:0.2s;">
       Отримати Premium
     </button>
-    <div id="hpm-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px;color:#f0047f;"></div>
+    <div id="ppm-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px;color:#f0047f;"></div>
   </div>
 </div>
-
-<!-- МОДАЛЬНОЕ ОКНО: Магазин монет -->
-<div id="coin-shop-modal" class="coin-shop-overlay" style="display:none;">
-  <div class="coin-shop-box">
-    <button class="coin-shop-close" onclick="window.closeCoinShop()">&times;</button>
-    <div class="coin-shop-header">
-      <div class="coin-shop-badge">
-        <div id="coin-shop-icon" class="coin-shop-icon"></div>
-      </div>
-      <h2>Магазин монет</h2>
-      <p>Поповни баланс — поки що повністю безкоштовно</p>
-      <div class="coin-shop-balance">
-        Ваш баланс: <span id="coin-shop-balance-val">0</span>
-      </div>
-    </div>
-    <div class="coin-shop-grid" id="coin-shop-grid">
-      <!-- пакети генеруються в JS -->
-    </div>
-  </div>
-</div>
-    </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="js/home.js?v=45"></script>
-<script src="js/tutorial.js?v=20260612"></script>
 
 <style>
-.home-premium-lock-btn {
+/* Premium lock button */
+.premium-lock-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: rgba(240,4,127,0.12);
   border: 1px solid rgba(240,4,127,0.3);
-  border-radius: 5px;
-  padding: 3px 6px;
+  border-radius: 6px;
+  padding: 4px 7px;
   cursor: pointer;
   color: #f0047f;
   vertical-align: middle;
-  margin-left: 5px;
-  transition: background 0.2s;
+  margin-left: 6px;
+  transition: background 0.2s, box-shadow 0.2s;
 }
-.home-premium-lock-btn:hover {
+.premium-lock-btn:hover {
   background: rgba(240,4,127,0.25);
+  box-shadow: 0 0 8px rgba(240,4,127,0.4);
 }
-#hpm-plan-month.hpm-selected, #hpm-plan-year.hpm-selected {
-  border-color: #f0047f !important;
-  background: rgba(240,4,127,0.1) !important;
+/* Locked overlay on gradient section when no premium */
+.gradient-locked-overlay {
+  position: absolute; inset: 0;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 5;
+}
+#ppm-plan-month.selected, #ppm-plan-year.selected {
+  border-color: #f0047f;
+  background: rgba(240,4,127,0.1);
   box-shadow: 0 0 16px rgba(240,4,127,0.3);
 }
-/* Зелений оверлей "Premium придбано" поверх обраного плану */
-.hpm-plan-active {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(160deg, rgba(34,197,94,0.82), rgba(16,140,68,0.88));
-  backdrop-filter: blur(1px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 14px;
-  z-index: 3;
-  animation: hpmActiveIn 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+
+/* ─── NEW SETTINGS MODAL (from settings-modal.html) ─── */
+.settings-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10, 0, 8, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
-@keyframes hpmActiveIn {
-  from { opacity: 0; transform: scale(0.85); }
-  to   { opacity: 1; transform: scale(1); }
+.settings-overlay.active { display: flex; }
+
+.settings-modal {
+    --accent: #f0047f;
+    --accent-glow: rgba(240,4,127,0.4);
+    --accent-dim: rgba(240,4,127,0.15);
+    --bg-dark: rgba(29,0,22,0.72);
+    --bg-mid: rgba(61,19,41,0.6);
+    --border: rgba(255,255,255,0.07);
+    width: min(960px, 96vw);
+    height: min(640px, 94vh);
+    background: rgba(176,53,106,0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 24px;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(240,4,127,0.1), 0 12px 50px rgba(0,0,0,0.65), 0 0 80px rgba(240,4,127,0.07);
+    animation: smModalIn 0.4s cubic-bezier(0.175,0.885,0.32,1.2) forwards;
 }
-.hpm-check {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: rgba(255,255,255,0.18);
-  border: 2px solid rgba(255,255,255,0.6);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 16px rgba(255,255,255,0.35);
+@keyframes smModalIn {
+    from { opacity: 0; transform: scale(0.93) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
 }
-.hpm-active-until {
-  color: #fff;
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 1.3;
-  text-align: center;
-  padding: 0 6px;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+.sm-sidebar {
+    width: 230px; flex-shrink: 0;
+    background: rgba(29,0,22,0.6);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
 }
+.sm-sidebar::after {
+    content: ''; position: absolute; right: 0; top: 0;
+    width: 1px; height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(240,4,127,0.5) 40%, rgba(240,4,127,0.5) 60%, transparent);
+    pointer-events: none;
+}
+.sm-sidebar-top { padding: 28px 20px 10px; border-bottom: 1px solid var(--border); }
+.sm-user-mini {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 14px;
+    background: rgba(240,4,127,0.08); border: 1px solid rgba(240,4,127,0.14);
+    margin-bottom: 6px;
+}
+.sm-user-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #f0047f, #FF25BB);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; color: #fff; flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(240,4,127,0.5); overflow: hidden;
+}
+.sm-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sm-user-info { overflow: hidden; }
+.sm-user-name { font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-user-tag { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.38); letter-spacing: 0.5px; }
+.sm-nav { flex: 1; padding: 14px 0; display: flex; flex-direction: column; overflow-y: auto; }
+.sm-nav::-webkit-scrollbar { width: 0; }
+.sm-nav-group-label {
+    font-size: 9px; font-weight: 800; letter-spacing: 2.5px;
+    text-transform: uppercase; color: rgba(255,255,255,0.28);
+    padding: 10px 20px 6px; margin-top: 6px;
+}
+.sm-nav-item {
+    position: relative; display: flex; align-items: center; gap: 10px;
+    width: 100%; background: transparent; border: none;
+    color: rgba(255,255,255,0.48); text-align: left;
+    padding: 13px 20px 13px 22px;
+    font-size: 12px; font-weight: 800; letter-spacing: 1.2px;
+    text-transform: uppercase; cursor: pointer;
+    transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+    font-family: 'Geologica', sans-serif; overflow: hidden;
+}
+.sm-nav-item::before {
+    content: ''; position: absolute; left: 0; top: 0;
+    width: 3px; height: 100%;
+    background: var(--accent); box-shadow: 0 0 14px rgba(240,4,127,0.8);
+    transform: scaleY(0); opacity: 0; transition: all 0.25s ease;
+}
+.sm-nav-item .sm-nav-icon { width: 16px; height: 16px; opacity: 0.6; transition: opacity 0.2s; flex-shrink: 0; }
+.sm-nav-item:hover { color: #fff; padding-left: 28px; background: linear-gradient(90deg, rgba(29,0,22,0.75) 0%, transparent 80%); }
+.sm-nav-item:hover::before { transform: scaleY(0.65); opacity: 1; }
+.sm-nav-item:hover .sm-nav-icon { opacity: 1; }
+.sm-nav-item.active { color: #fff; padding-left: 32px; background: linear-gradient(90deg, rgba(29,0,22,0.8) 0%, transparent 85%); font-weight: 800; }
+.sm-nav-item.active::before { transform: scaleY(1); opacity: 1; }
+.sm-nav-item.active .sm-nav-icon { opacity: 1; filter: drop-shadow(0 0 4px rgba(240,4,127,0.7)); }
+.sm-nav-item.sm-danger-item { color: rgba(255,100,100,0.6); }
+.sm-nav-item.sm-danger-item::before { background: #ff5555; box-shadow: 0 0 12px rgba(255,85,85,0.8); }
+.sm-nav-item.sm-danger-item:hover { color: #ff8080; background: linear-gradient(90deg, rgba(60,0,0,0.6) 0%, transparent 80%); }
+.sm-nav-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 18px; }
+.sm-body { flex: 1; background: rgba(29,0,22,0.35); display: flex; flex-direction: column; overflow: hidden; }
+.sm-body-header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(29,0,22,0.78); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 28px; display: flex; align-items: center; justify-content: space-between;
+    height: 58px; flex-shrink: 0;
+}
+.sm-body-header-left { display: flex; align-items: center; gap: 10px; }
+.sm-header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px rgba(240,4,127,0.9); }
+.sm-header-title { font-size: 11px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.82); }
+.sm-close-btn {
+    width: 32px; height: 32px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.4); transition: all 0.22s ease;
+}
+.sm-close-btn:hover { background: rgba(240,4,127,0.12); border-color: rgba(240,4,127,0.3); color: var(--accent); transform: rotate(90deg); }
+.sm-close-btn svg { width: 16px; height: 16px; }
+.sm-content { flex: 1; overflow-y: auto; padding: 28px 32px 36px; }
+.sm-content::-webkit-scrollbar { width: 6px; }
+.sm-content::-webkit-scrollbar-track { background: transparent; margin: 10px 0; }
+.sm-content::-webkit-scrollbar-thumb { background: #b0356a; border-radius: 6px; }
+.sm-content::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+.sm-tab { display: none; }
+.sm-tab.active { display: block; animation: smTabIn 0.3s ease; }
+@keyframes smTabIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+.sm-section-title { font-size: 9px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.28); margin-bottom: 16px; margin-top: 30px; }
+.sm-section-title:first-child { margin-top: 0; }
+.sm-card { background: rgba(29,0,22,0.45); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
+.sm-field { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+.sm-field:last-child { border-bottom: none; }
+.sm-field:hover { background: rgba(240,4,127,0.04); }
+.sm-field-label-wrap { flex: 1; min-width: 0; }
+.sm-field-label { font-size: 10px; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 3px; }
+.sm-field-value { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-field-hint { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.3); margin-top: 2px; line-height: 1.4; }
+.sm-inline-btn { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'Geologica', sans-serif; transition: all 0.2s ease; }
+.sm-inline-btn:hover { background: rgba(240,4,127,0.15); border-color: rgba(240,4,127,0.35); color: #fff; box-shadow: 0 0 12px rgba(240,4,127,0.2); }
+.sm-inline-btn.accent { background: linear-gradient(135deg, rgba(240,4,127,0.25), rgba(255,37,187,0.15)); border-color: rgba(240,4,127,0.35); color: #fff; }
+.sm-inline-btn.accent:hover { background: linear-gradient(135deg, rgba(240,4,127,0.4), rgba(255,37,187,0.25)); box-shadow: 0 0 18px rgba(240,4,127,0.35); }
+.sm-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.sm-toggle input { opacity: 0; width: 0; height: 0; }
+.sm-toggle-track { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 24px; cursor: pointer; transition: background 0.3s ease; border: 1px solid rgba(255,255,255,0.12); }
+.sm-toggle-track::before { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.5); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), background 0.3s; }
+.sm-toggle input:checked + .sm-toggle-track { background: rgba(240,4,127,0.35); border-color: rgba(240,4,127,0.5); box-shadow: 0 0 12px rgba(240,4,127,0.3); }
+.sm-toggle input:checked + .sm-toggle-track::before { transform: translateX(20px); background: var(--accent); box-shadow: 0 0 8px rgba(240,4,127,0.8); }
+.sm-select { background: rgba(29,0,22,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: rgba(255,255,255,0.8); padding: 8px 14px; font-size: 12px; font-weight: 700; font-family: 'Geologica', sans-serif; cursor: pointer; outline: none; transition: border-color 0.2s, box-shadow 0.2s; flex-shrink: 0; }
+.sm-select:focus { border-color: rgba(240,4,127,0.4); box-shadow: 0 0 10px rgba(240,4,127,0.15); }
+.sm-select option { background: #1d0016; }
+.sm-avatar-row { display: flex; align-items: center; gap: 20px; padding: 20px; }
+.sm-avatar-preview { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #f0047f, #FF25BB); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; color: #fff; box-shadow: 0 0 20px rgba(240,4,127,0.5), 0 0 0 3px rgba(240,4,127,0.2); flex-shrink: 0; overflow: hidden; }
+.sm-avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+.sm-avatar-actions { flex: 1; }
+.sm-avatar-actions p { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); margin-top: 8px; line-height: 1.4; }
+.sm-avatar-btns { display: flex; gap: 8px; margin-bottom: 6px; }
+.sm-avatar-frame-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.sm-frame-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px 4px; border-radius: 12px; border: 2px solid transparent; transition: all 0.2s; }
+.sm-frame-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(240,4,127,0.3); }
+.sm-frame-item.selected { border-color: #f0047f; background: rgba(240,4,127,0.1); }
+.sm-frame-preview { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); }
+.sm-frame-preview.no-frame { border: 2px dashed rgba(255,255,255,0.2); }
+.sm-frame-preview img { width: 100%; height: 100%; object-fit: cover; }
+.sm-frame-preview video { width: 100%; height: 100%; object-fit: contain; }
+.sm-frame-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-align: center; }
+.sm-frame-item.selected .sm-frame-label { color: #f0047f; }
+.sm-danger-card { background: rgba(60,0,0,0.3); border: 1px solid rgba(255,80,80,0.15); border-radius: 16px; padding: 18px 20px; margin-top: 8px; }
+.sm-danger-title { font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,100,100,0.5); margin-bottom: 14px; }
+.sm-danger-row { display: flex; gap: 10px; }
+.sm-btn-danger { padding: 10px 20px; border-radius: 12px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; cursor: pointer; font-family: 'Geologica', sans-serif; transition: all 0.2s; }
+.sm-btn-danger.outline { background: transparent; border: 1px solid rgba(255,100,100,0.3); color: rgba(255,150,150,0.7); }
+.sm-btn-danger.outline:hover { border-color: rgba(255,100,100,0.6); color: #ff8080; background: rgba(255,0,0,0.07); }
+.sm-btn-danger.solid { background: rgba(200,0,0,0.3); border: 1px solid rgba(255,80,80,0.2); color: rgba(255,150,150,0.9); }
+.sm-btn-danger.solid:hover { background: rgba(200,0,0,0.45); box-shadow: 0 0 15px rgba(255,0,0,0.2); }
+.sm-platform-row { padding: 16px 20px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+.sm-platform-row:last-child { border-bottom: none; }
+.sm-platform-row:hover { background: rgba(240,4,127,0.04); }
+.sm-platform-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sm-platform-icon.steam { background: #1b2838; }
+.sm-platform-icon.roblox { background: #0080ff; }
+.sm-platform-icon.epic { background: #2a2a2a; }
+.sm-platform-icon img { width: 20px; height: 20px; object-fit: contain; }
+.sm-platform-info { flex: 1; }
+.sm-platform-name { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.85); }
+.sm-platform-status { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.28); margin-top: 1px; }
+.sm-platform-status.connected { color: rgba(80,255,140,0.7); }
+.sm-connect-btn { padding: 8px 18px; border-radius: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; cursor: pointer; font-family: 'Geologica', sans-serif; border: 1px solid rgba(240,4,127,0.25); color: rgba(255,255,255,0.65); background: rgba(240,4,127,0.08); transition: all 0.2s; flex-shrink: 0; }
+.sm-connect-btn:hover { background: rgba(240,4,127,0.2); border-color: rgba(240,4,127,0.5); color: #fff; }
+.sm-connect-btn.connected-btn { background: rgba(80,255,140,0.08); border-color: rgba(80,255,140,0.2); color: rgba(80,255,140,0.8); }
+.sm-connect-btn.connected-btn:hover { background: rgba(255,60,60,0.1); border-color: rgba(255,80,80,0.3); color: rgba(255,140,140,0.9); }
+.sm-badge { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 9px; font-weight: 900; box-shadow: 0 0 8px rgba(240,4,127,0.6); flex-shrink: 0; }
+.sm-theme-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.sm-theme-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; position: relative; }
+.sm-theme-swatch.active::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 0 6px rgba(0,0,0,0.8); }
+.sm-theme-swatch:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.4); }
+.sm-swatch-pink  { background: linear-gradient(135deg, #f0047f, #FF25BB); }
+.sm-swatch-purple { background: linear-gradient(135deg, #7b2fff, #b06fff); }
+.sm-swatch-blue  { background: linear-gradient(135deg, #0080ff, #00c8ff); }
+.sm-swatch-green { background: linear-gradient(135deg, #00d26a, #00ff9d); }
+.sm-swatch-gold  { background: linear-gradient(135deg, #ffbc00, #ff7b00); }
+.sm-privacy-bar { display: flex; gap: 4px; margin-top: 8px; }
+.sm-privacy-opt { flex: 1; padding: 9px 4px; border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.3); text-align: center; font-family: 'Geologica', sans-serif; transition: all 0.2s; }
+.sm-privacy-opt.active { background: rgba(240,4,127,0.15); border-color: rgba(240,4,127,0.35); color: #fff; box-shadow: 0 0 10px rgba(240,4,127,0.2); }
+.sm-privacy-opt:hover:not(.active) { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); }
+.sm-notif-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.ni-likes    { background: rgba(240,4,127,0.15); }
+.ni-comments { background: rgba(88,101,242,0.15); }
+.ni-follows  { background: rgba(80,255,140,0.12); }
+.ni-messages { background: rgba(255,188,0,0.12); }
+.ni-system   { background: rgba(255,255,255,0.06); }
+.sm-sec-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; }
+.sm-sec-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.sm-sec-dot.on  { background: #50ff8c; box-shadow: 0 0 6px rgba(80,255,140,0.8); }
+.sm-sec-dot.off { background: rgba(255,255,255,0.2); }
+.sm-sec-dot.warn { background: #ffbc00; box-shadow: 0 0 6px rgba(255,188,0,0.7); }
+.sm-save-footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 14px 32px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; background: rgba(29,0,22,0.5); flex-shrink: 0; }
+.sm-save-hint { flex: 1; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.25); }
+.sm-discard-btn { padding: 10px 20px; border-radius: 12px; cursor: pointer; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 800; font-family: 'Geologica', sans-serif; transition: all 0.2s; }
+.sm-discard-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); }
+.sm-save-btn { padding: 10px 26px; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, #f0047f, #FF25BB); border: none; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; font-family: 'Geologica', sans-serif; box-shadow: 0 4px 18px rgba(240,4,127,0.4); transition: all 0.2s; }
+.sm-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 26px rgba(240,4,127,0.6); }
+.sm-save-btn:active { transform: translateY(0); }
+.sm-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(29,0,22,0.9); backdrop-filter: blur(16px); border: 1px solid rgba(240,4,127,0.3); border-radius: 14px; padding: 12px 22px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px rgba(240,4,127,0.15); z-index: 999999; font-size: 13px; font-weight: 700; color: #fff; transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.2); }
+.sm-toast.show { transform: translateX(-50%) translateY(0); }
+.sm-toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(240,4,127,0.9); flex-shrink: 0; }
+
 </style>
 
 <script>
-// Block blog color/photo inputs for non-premium users
-(function() {
-  function applyBlogPremiumLocks(isPremium) {
-    const bgInput = document.getElementById('setup-blog-bg');
-    const imgInput = document.getElementById('setup-blog-image');
-    const imgBox = imgInput ? imgInput.closest('.blog-image-upload-box') || imgInput.previousElementSibling : null;
+// ---- Premium modal on profile page ----
+let _ppmSelectedPlan = 'month';
 
-    if (!isPremium) {
-      if (bgInput) {
-        bgInput.disabled = true;
-        bgInput.style.opacity = '0.35';
-        bgInput.style.pointerEvents = 'none';
-        bgInput.title = 'Потрібен Syncora Premium';
-      }
-      if (imgBox) {
-        imgBox.style.opacity = '0.35';
-        imgBox.style.pointerEvents = 'none';
-        imgBox.title = 'Потрібен Syncora Premium';
-        imgBox.onclick = (e) => { e.stopPropagation(); openPremiumModal(); };
-      }
-      if (imgInput) imgInput.disabled = true;
-    } else {
-      if (bgInput) { bgInput.disabled = false; bgInput.style.opacity = ''; bgInput.style.pointerEvents = ''; bgInput.title = ''; }
-      if (imgBox) { imgBox.style.opacity = ''; imgBox.style.pointerEvents = ''; imgBox.title = ''; imgBox.onclick = () => document.getElementById('setup-blog-image').click(); }
-      if (imgInput) imgInput.disabled = false;
-    }
-  }
-
-  // Try to get premium status from already-loaded user data
-  function checkAndApply() {
-    // home.js usually stores currentUser or similar — try window.currentUser
-    const isPremium = !!(window.currentUser && window.currentUser.is_premium);
-    applyBlogPremiumLocks(isPremium);
-  }
-
-  // Run after home.js initializes
-  window.addEventListener('load', () => {
-    setTimeout(checkAndApply, 600);
-  });
-
-  // Expose so home.js can call after user load
-  window.applyBlogPremiumLocks = applyBlogPremiumLocks;
-})();
-
-// ---- Home premium modal plan selection ----
-let _hpmSelectedPlan = 'month';
-
-window.selectHomePremiumPlan = function(plan) {
-  _hpmSelectedPlan = plan;
-  document.getElementById('hpm-plan-month').classList.toggle('hpm-selected', plan === 'month');
-  document.getElementById('hpm-plan-year').classList.toggle('hpm-selected', plan === 'year');
-};
-
-// Override openPremiumModal to also init plan selection
-const _origOpenPremiumModal = window.openPremiumModal;
-window.openPremiumModal = function() {
-  _origOpenPremiumModal && _origOpenPremiumModal();
-  selectHomePremiumPlan('month');
-  document.getElementById('hpm-msg').textContent = '';
-  const btn = document.getElementById('hpm-buy-btn');
-  if (btn) { btn.disabled = false; btn.textContent = 'Отримати Premium'; }
-  // Якщо преміум вже активний — показуємо зелений оверлей на відповідному плані
-  if (window.isPremiumActive && window.premiumUntil) {
-    window.applyPremiumActiveOverlay(window.premiumPlan || 'month', window.premiumUntil);
-    if (btn) { btn.disabled = true; btn.textContent = 'Premium активний'; btn.style.opacity = '0.7'; }
-  } else {
-    window.applyPremiumActiveOverlay(null);
-    if (btn) { btn.style.opacity = ''; }
-  }
-};
-
-// ---- Premium active overlay (зелена галочка + дата) ----
-function hpmFormatUntil(untilStr) {
-  if (!untilStr) return '';
-  const d = new Date(untilStr.replace(' ', 'T'));
-  if (isNaN(d.getTime())) return '';
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `Активовано до<br>${dd}.${mm}.${yyyy}`;
+function showPremiumModal() {
+  const modal = document.getElementById('profile-premium-modal');
+  modal.style.display = 'flex';
+  selectPremiumPlan('month');
+  // load balance
+  fetch('get_coins.php', {credentials:'include'})
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('ppm-balance').textContent = (d.coins ?? 0).toLocaleString();
+    }).catch(() => {});
 }
 
-// Показати зелений оверлей на потрібному плані
-window.applyPremiumActiveOverlay = function(plan, untilStr) {
-  const monthOv = document.getElementById('hpm-active-month');
-  const yearOv  = document.getElementById('hpm-active-year');
-  if (monthOv) monthOv.style.display = 'none';
-  if (yearOv)  yearOv.style.display = 'none';
-  if (!plan) return;
-  const ov = plan === 'year' ? yearOv : monthOv;
-  const untilEl = document.getElementById(plan === 'year' ? 'hpm-until-year' : 'hpm-until-month');
-  if (untilEl) untilEl.innerHTML = hpmFormatUntil(untilStr);
-  if (ov) ov.style.display = 'flex';
-};
+function hidePremiumModal() {
+  document.getElementById('profile-premium-modal').style.display = 'none';
+}
 
-window.buyPremiumFromHome = async function() {
-  const plan = _hpmSelectedPlan;
-  const btn = document.getElementById('hpm-buy-btn');
-  const msg = document.getElementById('hpm-msg');
+function selectPremiumPlan(plan) {
+  _ppmSelectedPlan = plan;
+  document.getElementById('ppm-plan-month').classList.toggle('selected', plan === 'month');
+  document.getElementById('ppm-plan-year').classList.toggle('selected', plan === 'year');
+}
+
+async function buyPremiumFromProfile() {
+  const btn = document.getElementById('ppm-buy-btn');
+  const msg = document.getElementById('ppm-msg');
   btn.disabled = true;
   btn.textContent = 'Обробка...';
   msg.textContent = '';
@@ -1258,32 +1617,26 @@ window.buyPremiumFromHome = async function() {
     const res = await fetch('buy_premium.php', {
       method: 'POST',
       credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({plan})
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({plan: _ppmSelectedPlan})
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.success) {
       msg.style.color = '#4cff91';
       msg.textContent = '✓ ' + data.message;
       btn.textContent = 'Активовано!';
-      document.getElementById('premium-modal-coins-balance').textContent = Number(data.new_balance).toLocaleString();
-      if (typeof window.refreshCoinsDisplay === 'function') window.refreshCoinsDisplay(data.new_balance);
-      if (typeof window.applyBlogPremiumLocks === 'function') window.applyBlogPremiumLocks(true);
-      window.isPremiumActive = true;
-      window.premiumUntil = data.premium_until || null;
-      window.premiumPlan = plan;
-      // Зелений оверлей з галочкою та датою на купленому плані
-      window.applyPremiumActiveOverlay(plan, data.premium_until);
-      setTimeout(() => closePremiumModal(), 3500);
+      // Refresh balance display
+      document.getElementById('ppm-balance').textContent = (data.new_balance ?? 0).toLocaleString();
+      // Update premium status globally so locks disappear
+      if (window._profileData) window._profileData.is_premium = true;
+      applyPremiumLockState(true);
+      setTimeout(() => hidePremiumModal(), 2000);
     } else {
       msg.style.color = '#f0047f';
       msg.textContent = data.message || 'Помилка покупки';
       btn.disabled = false;
       btn.textContent = 'Отримати Premium';
-      // Якщо не вистачає монет — одразу відкриваємо магазин
-      if (data.need !== undefined && data.have !== undefined) {
-        if (typeof window.openCoinShop === 'function') window.openCoinShop();
-      }
     }
   } catch(e) {
     msg.style.color = '#f0047f';
@@ -1291,8 +1644,76 @@ window.buyPremiumFromHome = async function() {
     btn.disabled = false;
     btn.textContent = 'Отримати Premium';
   }
-};
-</script>
+}
 
+// Apply lock/unlock visual state based on premium
+function applyPremiumLockState(isPremium) {
+  // Gradient section: wrap color inputs with locked overlay if not premium
+  const gradContainer = document.querySelector('.gradient-selection-container');
+  if (gradContainer) {
+    const existing = gradContainer.querySelector('.gradient-locked-overlay');
+    if (!isPremium) {
+      gradContainer.style.position = 'relative';
+      if (!existing) {
+        const overlay = document.createElement('div');
+        overlay.className = 'gradient-locked-overlay';
+        overlay.title = 'Потрібен Premium';
+        overlay.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f0047f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+        overlay.onclick = () => showPremiumModal();
+        gradContainer.appendChild(overlay);
+      }
+      // disable apply gradient button
+      const applyBtn = document.querySelector('.confirm-btn');
+      if (applyBtn) { applyBtn.disabled = true; applyBtn.style.opacity = '0.4'; applyBtn.style.cursor = 'default'; applyBtn.onclick = (e) => { e.preventDefault(); showPremiumModal(); }; }
+    } else {
+      if (existing) existing.remove();
+      const applyBtn = document.querySelector('.confirm-btn');
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.style.opacity = '';
+        applyBtn.style.cursor = '';
+        applyBtn.onclick = typeof applyGradientToBlock === 'function' ? applyGradientToBlock : null;
+      }
+    }
+  }
+
+  // Deco modal button: dim if not premium
+  const decoBtn = document.getElementById('open-deco-modal-btn');
+  if (decoBtn) {
+    if (!isPremium) {
+      decoBtn.style.opacity = '0.5';
+      decoBtn.style.pointerEvents = 'none';
+    } else {
+      decoBtn.style.opacity = '';
+      decoBtn.style.pointerEvents = '';
+    }
+  }
+}
+
+// Hook into existing data load — run after get_user response
+document.addEventListener('DOMContentLoaded', () => {
+  // Poll until _profileData is available (set by profile.js)
+  let _premiumCheckDone = false;
+  const checkInterval = setInterval(() => {
+    if (window._profileData !== undefined) {
+      clearInterval(checkInterval);
+      _premiumCheckDone = true;
+      applyPremiumLockState(!!window._profileData.is_premium);
+    }
+  }, 300);
+  // Fallback: after 5s apply locked state by default
+  setTimeout(() => {
+    clearInterval(checkInterval);
+    if (!_premiumCheckDone) applyPremiumLockState(false);
+  }, 5000);
+
+  // Close modal on backdrop click
+  const premModal = document.getElementById('profile-premium-modal');
+  if (premModal) premModal.addEventListener('click', function(e) {
+    if (e.target === this) hidePremiumModal();
+  });
+});
+</script>
 </body>
+
 </html>
