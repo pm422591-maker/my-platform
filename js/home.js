@@ -9436,19 +9436,67 @@ window.refreshGroupInfo = async function() {
         const targetAvatar = document.getElementById('chat-target-avatar');
         if (targetAvatar && info.avatar) targetAvatar.src = info.avatar;
 
-        // 📣 КАНАЛ: підписники без права писати (лише власник/співвласник/модератор)
-        const canWrite = info.type !== 'channel' || ['owner', 'coowner', 'moderator'].includes(info.my_role);
+        // 👤 ЧИ Я УЧАСНИК? Якщо ні — замість рядка вводу кнопка вступу (Telegram-style)
+        const amMember = !!info.my_role;
+        const canWrite = amMember && (info.type !== 'channel' || ['owner', 'coowner', 'moderator'].includes(info.my_role));
         const input = document.getElementById('msg-input');
         const sendBtn = document.getElementById('send-btn');
         if (input) input.style.display = canWrite ? 'block' : 'none';
         if (sendBtn) sendBtn.style.display = canWrite ? 'block' : 'none';
         const emojiBtn = document.getElementById('group-emoji-btn');
         if (emojiBtn) emojiBtn.style.display = canWrite ? 'flex' : 'none';
+        const iconsBox2 = document.querySelector('#chat-window .chat-input-icons');
+        if (iconsBox2) iconsBox2.style.display = canWrite ? '' : 'none';
+        window.updateGroupJoinBar(info, amMember);
 
         // 💬 Кнопка обговорення для каналу
         const disc = document.getElementById('group-header-discuss');
         if (disc) disc.style.display = (info.type === 'channel' && info.linked_group) ? 'flex' : 'none';
     } catch (e) {}
+};
+
+// ➕ КНОПКА ВСТУПУ замість рядка вводу для не-учасників (Telegram-style)
+window.updateGroupJoinBar = function(info, amMember) {
+    const area = document.querySelector('#chat-window .chat-input-area');
+    if (!area) return;
+    let bar = document.getElementById('group-join-bar');
+    if (amMember) { if (bar) bar.remove(); return; }
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'group-join-bar';
+        bar.style.cssText = 'width:100%; display:flex; justify-content:center; padding:4px 0;';
+        area.appendChild(bar);
+    }
+    const isChannel = info.type === 'channel';
+    const isPrivate = (info.privacy || 'private') === 'private';
+    const btnBase = "width:100%; max-width:520px; padding:14px; border-radius:50px; font-weight:800; font-size:14px; font-family:'Geologica',sans-serif; letter-spacing:0.3px; transition:0.2s;";
+    if (isPrivate && info.has_request) {
+        bar.innerHTML = `<button disabled style="${btnBase} border:1px solid rgba(240,4,127,0.4); background:rgba(240,4,127,0.12); color:#ff6ab8; cursor:default;">⏳ Заявку надіслано — очікує схвалення власником</button>`;
+    } else if (isPrivate) {
+        bar.innerHTML = `<button onclick="window.joinFromChatBar(${info.id})" style="${btnBase} border:none; background:linear-gradient(135deg,#f0047f,#c70368); color:#fff; cursor:pointer; box-shadow:0 4px 18px rgba(240,4,127,0.4);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">📨 Відправити заявку на вступ</button>`;
+    } else {
+        bar.innerHTML = `<button onclick="window.joinFromChatBar(${info.id})" style="${btnBase} border:none; background:linear-gradient(135deg,#f0047f,#c70368); color:#fff; cursor:pointer; box-shadow:0 4px 18px rgba(240,4,127,0.4);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">${isChannel ? '🔔 Підписатися на канал' : '➕ Вступити в групу'}</button>`;
+    }
+};
+
+window.joinFromChatBar = async function(groupId) {
+    const bar = document.getElementById('group-join-bar');
+    const data = await groupApiPost({ action: 'request_join', group_id: groupId });
+    if (!data.success) { window.showGroupToast('⚠️ ' + (data.message || 'Помилка')); return; }
+    if (data.state === 'joined' || data.state === 'member') {
+        if (bar) {
+            const isCh = window.currentGroupChat && window.currentGroupChat.type === 'channel';
+            bar.innerHTML = `<div style="width:100%; max-width:520px; text-align:center; padding:13px; border-radius:50px; background:rgba(0,200,120,0.12); border:1px solid rgba(0,220,130,0.45); color:#5dffb0; font-weight:800; font-size:14px; font-family:'Geologica',sans-serif;">✅ Ви ${isCh ? 'підписалися на канал' : 'вступили в групу'}!</div>`;
+            setTimeout(() => { bar.remove(); }, 1800);
+        }
+        await window.loadMyGroupChats();
+        setTimeout(() => { window.refreshGroupInfo(); window.fetchGroupMessages(false); }, 1900);
+    } else {
+        if (bar) {
+            bar.innerHTML = `<button disabled style="width:100%; max-width:520px; padding:14px; border-radius:50px; border:1px solid rgba(240,4,127,0.4); background:rgba(240,4,127,0.12); color:#ff6ab8; font-weight:800; font-size:14px; font-family:'Geologica',sans-serif; cursor:default;">⏳ Заявку надіслано — очікує схвалення власником</button>`;
+        }
+        window.showGroupToast('📨 Заявку відправлено власнику');
+    }
 };
 
 window.ensureGroupHeaderButtons = function() {
@@ -10305,12 +10353,13 @@ window.openGroupSettings = async function() {
             <div class="gset-tab active" data-tab="members" onclick="window.switchGroupTab('members', this)">👤 ${isChannel ? 'Підписники' : 'Учасники'}</div>
             <div class="gset-tab" data-tab="media" onclick="window.switchGroupTab('media', this)">🖼 Медіа</div>
             <div class="gset-tab" data-tab="voice" onclick="window.switchGroupTab('voice', this)">🎤 Голосові</div>
+            ${isAdmin ? `<div class="gset-tab" data-tab="requests" onclick="window.switchGroupTab('requests', this)">📨 Заявки</div>` : ''}
         </div>
         ${isOwner ? `<div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:-6px;">💡 Клікни на плашку ролі учасника, щоб змінити роль або перейменувати її</div>` : ''}
         <div id="gset-tab-content" class="gset-card" style="min-height:120px;"></div>
 
         <div class="gset-card" style="display:flex; gap:10px;">
-            ${!isOwner ? `<button class="gset-btn-danger" style="flex:1;" onclick="window.leaveGroup()">🚪 ${isChannel ? 'Відписатися' : 'Вийти з групи'}</button>` : ''}
+            ${(!isOwner && info.my_role) ? `<button class="gset-btn-danger" style="flex:1;" onclick="window.leaveGroup()">🚪 ${isChannel ? 'Відписатися' : 'Вийти з групи'}</button>` : ''}
             ${isOwner ? `<button class="gset-btn-danger" style="flex:1;" onclick="window.deleteGroup()">🗑 Видалити ${isChannel ? 'канал' : 'групу'}</button>` : ''}
         </div>
     </div>`;
@@ -10433,7 +10482,25 @@ window.switchGroupTab = async function(tab, el) {
                     <span class="gset-role-badge ${roleClass}" ${clickAttr}>${escapeGroupHTML(roleLabel)}${isOwner ? ' ▾' : ''}</span>
                 </div>`;
         }).join('') || '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">Порожньо</div>';
-        window.renderJoinRequestsBlock(box); // 📨 заявки на вступ для адмінів
+
+    }
+
+    if (tab === 'requests') {
+        const data = await groupApiPost({ action: 'list_requests', group_id: g.id });
+        if (!data.success) { box.innerHTML = '<div style="text-align:center; color:#ff6;">Недостатньо прав</div>'; return; }
+        const reqs = data.requests || [];
+        box.innerHTML = reqs.length
+            ? reqs.map(r => `
+                <div class="gset-member-row">
+                    <img src="${escapeGroupHTML(r.avatar_url || 'img/default_avatar.png')}" onerror="this.src='img/default_avatar.png'">
+                    <div style="flex:1; overflow:hidden;">
+                        <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeGroupHTML(r.username || 'Користувач #' + r.user_id)}</div>
+                        <div style="font-size:10px; color:rgba(255,255,255,0.35);">подав(ла) заявку ${escapeGroupHTML((r.created_at || '').slice(0, 16).replace('T', ' '))}</div>
+                    </div>
+                    <button class="gset-btn-primary" style="padding:7px 14px; font-size:12px;" onclick="window.resolveJoinRequest(${r.user_id}, true)">✓ Прийняти</button>
+                    <button class="gset-btn-danger" style="padding:7px 12px; font-size:12px;" onclick="window.resolveJoinRequest(${r.user_id}, false)">✕</button>
+                </div>`).join('')
+            : '<div style="text-align:center; color:rgba(255,255,255,0.35); padding:20px;">📨 Заявок поки немає</div>';
     }
 
     if (tab === 'media') {
@@ -10744,8 +10811,10 @@ window.openDiscoverItem = async function(ref) {
             window.openGroupChat(g);
             return;
         }
-        // Прев'ю з кнопкою (публічна → вступ, приватна → заявка)
-        window.showGroupPreviewModal(g);
+        // Заходимо в чат-прев'ю: замість рядка вводу — кнопка вступу/заявки
+        const dash2 = document.getElementById('search-dashboard');
+        if (dash2) dash2.style.display = 'none';
+        window.openGroupChat(g);
     } catch (e) {}
 };
 
@@ -10843,7 +10912,8 @@ window.resolveJoinRequest = async function(userId, accept) {
     const data = await groupApiPost({ action: 'resolve_request', group_id: g.id, user_id: userId, accept });
     if (!data.success) { window.showGroupToast('⚠️ ' + (data.message || 'Помилка')); return; }
     window.showGroupToast(accept ? '✅ Заявку прийнято' : '❌ Заявку відхилено');
-    window.switchGroupTab('members', document.querySelector('.gset-tab[data-tab="members"]'));
+    const reqTabEl = document.querySelector('.gset-tab[data-tab="requests"]');
+    if (reqTabEl) window.switchGroupTab('requests', reqTabEl);
     window.refreshGroupInfo();
     window.fetchGroupMessages(false);
 };

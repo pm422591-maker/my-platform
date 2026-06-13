@@ -239,6 +239,11 @@ try {
             'members' => $count,
             'my_role' => myRole($pdo, $gid, $my_id, $grp),
             'my_notifications' => ($notif === false ? 1 : intval($notif)),
+            'has_request' => (function() use ($pdo, $gid, $my_id) {
+                $q = $pdo->prepare("SELECT 1 FROM chat_group_requests WHERE group_id = :g AND user_id = :u");
+                $q->execute([':g' => $gid, ':u' => $my_id]);
+                return (bool)$q->fetch();
+            })(),
             'linked_group' => $linked
         ]]);
         exit;
