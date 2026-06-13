@@ -587,6 +587,12 @@ async function loadAllPosts(reset = false, forceReload = false) {
             fetchUrl += `&filter_age=${fAge}&filter_comm=${fComm}&filter_level=${fLevel}&filter_lang=${fLang}`;
         }
 
+        // ✨ Перед рендером заявок підвантажуємо мої відгуки, щоб кнопки
+        //    одразу показували правильний стан ("Заявку надіслано" тощо)
+        if (currentTab === 'requests' && reset && typeof window.loadMyApplications === 'function') {
+            await window.loadMyApplications();
+        }
+
         // Робимо запит за новою, розширеною адресою
         const response = await fetch(fetchUrl, { 
             credentials: 'include',
@@ -760,13 +766,33 @@ if (post.post_type === 'requests') {
         </div>
     `;
 
-    // 2. Вставляємо в кнопку
+    // 2. Вставляємо кнопку відгуку (стан залежить від того, чи це наша анкета
+    //    і чи ми вже відгукувались)
+    const _isOwnRequest = (String(post.user_id) === String(post.current_viewer_id));
+    const _appliedMap = (window.myApplications || {});
+    const _appliedStatus = _appliedMap[String(post.id)]; // undefined | pending | accepted | rejected
+
+    const _btnBaseStyle = "flex-grow: 1; padding: 12px; border-radius: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;";
+
+    let _applyBtnHTML = '';
+    if (_isOwnRequest) {
+        // Власник своєї анкети — відгукуватись не можна
+        _applyBtnHTML = `
+            <div style="${_btnBaseStyle} background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); cursor: default;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                ВАША АНКЕТА
+            </div>`;
+    } else if (_appliedStatus) {
+        // Вже відгукнулись — показуємо стан
+        _applyBtnHTML = window.renderApplyButton(post.id, _appliedStatus);
+    } else {
+        // Можна відгукнутись — відкриваємо вікно з коментарем
+        _applyBtnHTML = window.renderApplyButton(post.id, null);
+    }
+
     postActionsHTML = `
-        <div style="display: flex; width: 100%; gap: 15px; align-items: center;">
-            <button onclick="alert('Заявка успішно відправлена!')" style="flex-grow: 1; background: rgba(240, 4, 127, 0.15); border: 1px solid #f0047f; color: #ff80bf; padding: 12px; border-radius: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 15px rgba(240, 4, 127, 0.4), inset 0 0 8px rgba(240, 4, 127, 0.1); text-shadow: 0 0 8px rgba(240, 4, 127, 0.5); cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                ВІДПРАВИТИ ЗАПИТ
-            </button>
+        <div id="apply-wrap-${post.id}" style="display: flex; width: 100%; gap: 15px; align-items: center;">
+            ${_applyBtnHTML}
             ${timerMarkup}
         </div>
     `;
@@ -8129,6 +8155,17 @@ window.setLudoraPage = function(tabName) {
         if (areaReqFilters) areaReqFilters.style.setProperty('display', 'none', 'important');
     }
 
+    // Кнопка "Пошта заявок" — лише на вкладці ЗАЯВКИ
+    const btnAppInbox = document.getElementById('btn-applications-inbox');
+    if (btnAppInbox) {
+        if (tabName === 'requests') {
+            btnAppInbox.style.setProperty('display', 'flex', 'important');
+            if (typeof window.checkApplicationsBadge === 'function') window.checkApplicationsBadge();
+        } else {
+            btnAppInbox.style.setProperty('display', 'none', 'important');
+        }
+    }
+
     const areaExtra = document.getElementById('extra-settings-area');
     const areaFilters = document.getElementById('post-filters-area');
     if (areaExtra) areaExtra.style.setProperty('display', 'none', 'important');
@@ -8142,6 +8179,284 @@ window.setLudoraPage = function(tabName) {
 
 // Чтобы старые кнопки (если у них прописано switchTab) тоже работали правильно
 window.switchTab = window.setLudoraPage;
+
+/* ═══════════════════════════════════════════════════════════════
+   ВІДГУКИ НА АНКЕТИ (ЗАЯВКИ) + ПОШТА ЗАЯВОК ВЛАСНИКА
+   ═══════════════════════════════════════════════════════════════ */
+
+// Кеш моїх відгуків: { post_id: 'pending' | 'accepted' | 'rejected' }
+window.myApplications = window.myApplications || {};
+
+// Малює кнопку відгуку в потрібному стані
+window.renderApplyButton = function(postId, status) {
+    const base = "flex-grow: 1; padding: 12px; border-radius: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;";
+
+    if (status === 'accepted') {
+        return `<div style="${base} background: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; color: #7CFFB0; cursor: default;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            ВАШУ ЗАЯВКУ ПРИЙНЯТО
+        </div>`;
+    }
+    if (status === 'rejected') {
+        return `<div style="${base} background: rgba(255,255,255,0.05); border: 1px solid rgba(255,77,77,0.5); color: #ff8080; cursor: default;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            ЗАЯВКУ ВІДХИЛЕНО
+        </div>`;
+    }
+    if (status === 'pending') {
+        // Вже надіслано — чекає розгляду
+        return `<div style="${base} background: rgba(240, 4, 127, 0.08); border: 1px solid rgba(240, 4, 127, 0.4); color: #ff80bf; cursor: default;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            ЗАЯВКУ НАДІСЛАНО
+        </div>`;
+    }
+    // Можна відгукнутись
+    return `<button onclick="window.openApplyModal('${postId}')" style="${base} background: rgba(240, 4, 127, 0.15); border: 1px solid #f0047f; color: #ff80bf; box-shadow: 0 0 15px rgba(240, 4, 127, 0.4), inset 0 0 8px rgba(240, 4, 127, 0.1); text-shadow: 0 0 8px rgba(240, 4, 127, 0.5); cursor: pointer;" onmouseover="this.style.background='rgba(240,4,127,0.3)'" onmouseout="this.style.background='rgba(240,4,127,0.15)'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        ВІДГУКНУТИСЬ НА АНКЕТУ
+    </button>`;
+};
+
+// Перемальовує кнопку конкретного поста за поточним станом
+window.refreshApplyButton = function(postId) {
+    const wrap = document.getElementById('apply-wrap-' + postId);
+    if (!wrap) return;
+    const btn = wrap.querySelector('button, [data-apply-btn]');
+    const status = window.myApplications[String(postId)] || null;
+    const newHTML = window.renderApplyButton(postId, status);
+    // Замінюємо лише першу дитину (кнопку), таймер лишаємо
+    const first = wrap.firstElementChild;
+    if (first) first.outerHTML = newHTML;
+};
+
+// Завантажує мої відгуки, щоб кнопки одразу були в правильному стані
+window.loadMyApplications = async function() {
+    try {
+        const res = await fetch('check_my_applications.php?t=' + Date.now(), { credentials: 'include' });
+        const data = await res.json();
+        if (data && data.success && data.applied) {
+            window.myApplications = data.applied;
+        }
+    } catch (e) {
+        console.warn('loadMyApplications failed', e);
+    }
+};
+
+// ── МОДАЛКА З КОМЕНТАРЕМ ПРИ ВІДГУКУ ──
+window.openApplyModal = function(postId) {
+    // Прибираємо стару, якщо була
+    const old = document.getElementById('apply-modal-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'apply-modal-overlay';
+    overlay.style.cssText = "position: fixed; inset: 0; background: rgba(10,0,8,0.8); backdrop-filter: blur(10px); z-index: 80000; display: flex; align-items: center; justify-content: center; padding: 20px;";
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+        <div style="width: 100%; max-width: 420px; background: #1a0a14; border: 1px solid rgba(240,4,127,0.35); border-radius: 20px; padding: 24px; box-shadow: 0 10px 50px rgba(240,4,127,0.25); font-family: 'Geologica', sans-serif;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom: 6px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0047f" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                <h3 style="margin:0; color:#fff; font-size:17px;">Відгукнутись на анкету</h3>
+            </div>
+            <p style="margin:0 0 14px; color:rgba(255,255,255,0.55); font-size:13px;">Додайте короткий коментар (необов'язково) — власник побачить його у своїй пошті заявок.</p>
+            <textarea id="apply-comment-input" maxlength="500" placeholder="Напр.: Привіт! Граю в цей режим щодня, мікрофон є 🎮" style="width:100%; box-sizing:border-box; min-height:90px; resize:vertical; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; color:#fff; font-size:14px; font-family:inherit; outline:none;"></textarea>
+            <div style="display:flex; gap:10px; margin-top:18px;">
+                <button onclick="document.getElementById('apply-modal-overlay').remove()" style="flex:1; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:#ccc; font-weight:600; cursor:pointer;">Скасувати</button>
+                <button id="apply-submit-btn" onclick="window.submitApplication('${postId}')" style="flex:2; padding:12px; border-radius:12px; border:none; background:linear-gradient(135deg,#f0047f,#c70368); color:#fff; font-weight:700; cursor:pointer; box-shadow:0 4px 18px rgba(240,4,127,0.4);">Відправити заявку</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => { const t = document.getElementById('apply-comment-input'); if (t) t.focus(); }, 50);
+};
+
+// ── ВІДПРАВКА ВІДГУКУ ──
+window.submitApplication = async function(postId) {
+    const input = document.getElementById('apply-comment-input');
+    const btn = document.getElementById('apply-submit-btn');
+    const comment = input ? input.value.trim() : '';
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.innerText = 'Відправляємо...'; }
+
+    try {
+        const res = await fetch('apply_to_request.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ post_id: parseInt(postId, 10), comment })
+        });
+        const data = await res.json();
+
+        if (data.success || data.already) {
+            window.myApplications[String(postId)] = 'pending';
+            window.refreshApplyButton(postId);
+            const ov = document.getElementById('apply-modal-overlay');
+            if (ov) ov.remove();
+            if (typeof window.showGroupToast === 'function') {
+                window.showGroupToast(data.already ? '✅ Ви вже відгукувались' : '📨 Заявку відправлено!');
+            }
+        } else {
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = 'Відправити заявку'; }
+            if (typeof window.showGroupToast === 'function') window.showGroupToast('⚠️ ' + (data.message || 'Помилка'));
+        }
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = 'Відправити заявку'; }
+        if (typeof window.showGroupToast === 'function') window.showGroupToast('⚠️ Помилка мережі');
+    }
+};
+
+/* ── ПОШТА ЗАЯВОК ВЛАСНИКА ── */
+
+window.openApplicationsInbox = function() {
+    const old = document.getElementById('app-inbox-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'app-inbox-overlay';
+    overlay.style.cssText = "position: fixed; inset: 0; background: rgba(10,0,8,0.8); backdrop-filter: blur(10px); z-index: 80000; display: flex; align-items: center; justify-content: center; padding: 20px;";
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+        <div style="width:100%; max-width:480px; max-height:80vh; display:flex; flex-direction:column; background:#1a0a14; border:1px solid rgba(240,4,127,0.35); border-radius:20px; box-shadow:0 10px 50px rgba(240,4,127,0.25); font-family:'Geologica',sans-serif; overflow:hidden;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:20px 22px; border-bottom:1px solid rgba(255,255,255,0.07);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f0047f" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <h3 style="margin:0; color:#fff; font-size:18px;">Пошта заявок</h3>
+                </div>
+                <button onclick="document.getElementById('app-inbox-overlay').remove()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:22px; line-height:1;">&times;</button>
+            </div>
+            <div id="app-inbox-list" style="flex:1; overflow-y:auto; padding:16px 18px;">
+                <div style="text-align:center; color:rgba(255,255,255,0.5); padding:40px 0;">Завантаження...</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    window.loadApplicationsInbox();
+
+    // Позначаємо всі як прочитані → скидаємо бейдж
+    fetch('respond_application.php', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark_read_all' })
+    }).then(() => window.updateApplicationsBadge(0)).catch(() => {});
+};
+
+window.loadApplicationsInbox = async function() {
+    const list = document.getElementById('app-inbox-list');
+    if (!list) return;
+    try {
+        const res = await fetch('get_applications.php?t=' + Date.now(), { credentials: 'include' });
+        const data = await res.json();
+
+        if (!data.success || !data.applications || data.applications.length === 0) {
+            list.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.45); padding:50px 10px;">
+                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5; margin-bottom:12px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <div style="font-size:14px;">Поки що немає заявок на ваші анкети</div>
+            </div>`;
+            return;
+        }
+
+        list.innerHTML = data.applications.map(a => window.renderApplicationCard(a)).join('');
+    } catch (e) {
+        list.innerHTML = `<div style="text-align:center; color:#ff8080; padding:40px 0;">Помилка завантаження</div>`;
+    }
+};
+
+window.renderApplicationCard = function(a) {
+    const esc = (typeof escapeGroupHTML === 'function') ? escapeGroupHTML : (s => (s || ''));
+    const avatar = (window.getSafeAvatarUrl ? window.getSafeAvatarUrl(a.applicant_avatar) : (a.applicant_avatar || 'img/default_avatar.png'));
+    const when = (a.created_at || '').slice(0, 16).replace('T', ' ');
+    const postTitle = a.post_title ? esc(a.post_title) : (a.post_body ? esc(String(a.post_body).slice(0, 40)) : 'анкету');
+
+    let statusBadge = '';
+    let actions = '';
+    if (a.status === 'accepted') {
+        statusBadge = `<span style="font-size:11px; color:#7CFFB0; background:rgba(46,204,113,0.12); padding:3px 10px; border-radius:20px;">✓ Прийнято</span>`;
+    } else if (a.status === 'rejected') {
+        statusBadge = `<span style="font-size:11px; color:#ff8080; background:rgba(255,77,77,0.12); padding:3px 10px; border-radius:20px;">✕ Відхилено</span>`;
+    } else {
+        actions = `
+            <div style="display:flex; gap:8px; margin-top:12px;">
+                <button onclick="window.respondToApplication('${a.id}','accept',this)" style="flex:1; padding:9px; border-radius:10px; border:none; background:linear-gradient(135deg,#2ecc71,#27ae60); color:#fff; font-weight:700; font-size:13px; cursor:pointer;">Прийняти</button>
+                <button onclick="window.respondToApplication('${a.id}','reject',this)" style="flex:1; padding:9px; border-radius:10px; border:1px solid rgba(255,77,77,0.5); background:transparent; color:#ff8080; font-weight:700; font-size:13px; cursor:pointer;">Відхилити</button>
+            </div>`;
+    }
+
+    const commentHTML = a.comment
+        ? `<div style="margin-top:8px; padding:10px 12px; background:rgba(255,255,255,0.04); border-radius:10px; border-left:3px solid #f0047f; color:rgba(255,255,255,0.85); font-size:13px; line-height:1.4;">${esc(a.comment)}</div>`
+        : `<div style="margin-top:8px; color:rgba(255,255,255,0.35); font-size:12px; font-style:italic;">Без коментаря</div>`;
+
+    return `
+        <div id="app-card-${a.id}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:16px; margin-bottom:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <a href="profile.html?id=${a.applicant_id}" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+                    <img src="${avatar}" onerror="this.src='img/default_avatar.png'" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid #f0047f;">
+                    <div>
+                        <div style="color:#fff; font-weight:700; font-size:14px;">${esc(a.applicant_name)}</div>
+                        <div style="color:rgba(255,255,255,0.4); font-size:11px;">на «${postTitle}» • ${esc(when)}</div>
+                    </div>
+                </a>
+                ${statusBadge}
+            </div>
+            ${commentHTML}
+            ${actions}
+        </div>
+    `;
+};
+
+window.respondToApplication = async function(appId, action, btnEl) {
+    if (btnEl) { btnEl.disabled = true; btnEl.style.opacity = '0.6'; }
+    try {
+        const res = await fetch('respond_application.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ application_id: parseInt(appId, 10), action })
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Перемальовуємо картку в новому статусі
+            window.loadApplicationsInbox();
+            if (typeof window.showGroupToast === 'function') {
+                window.showGroupToast(action === 'accept' ? '✅ Заявку прийнято' : '✕ Заявку відхилено');
+            }
+        } else {
+            if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; }
+            if (typeof window.showGroupToast === 'function') window.showGroupToast('⚠️ ' + (data.message || 'Помилка'));
+        }
+    } catch (e) {
+        if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; }
+        if (typeof window.showGroupToast === 'function') window.showGroupToast('⚠️ Помилка мережі');
+    }
+};
+
+// Оновлює бейдж кількості нових заявок біля кнопки пошти
+window.updateApplicationsBadge = function(count) {
+    const badge = document.getElementById('app-inbox-badge');
+    if (!badge) return;
+    if (count > 0) {
+        badge.innerText = count > 99 ? '99+' : count;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+};
+
+// Тихо перевіряє кількість нових заявок (для бейджа)
+window.checkApplicationsBadge = async function() {
+    try {
+        const res = await fetch('get_applications.php?t=' + Date.now(), { credentials: 'include' });
+        const data = await res.json();
+        if (data && data.success) window.updateApplicationsBadge(data.unread || 0);
+    } catch (e) { /* мовчки */ }
+};
+
+// Перевіряємо нові заявки при завантаженні та раз на 60с
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.checkApplicationsBadge === 'function') {
+        window.checkApplicationsBadge();
+        setInterval(window.checkApplicationsBadge, 60000);
+    }
+});
 
 // Ставимо мітку при першому завантаженні сторінки
 document.addEventListener('DOMContentLoaded', function() {
