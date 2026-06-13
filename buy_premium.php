@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/cors_session.php';
 header('Content-Type: application/json; charset=utf-8');
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Credentials: true");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
 session_start();
 
@@ -29,13 +34,13 @@ $days = $plans[$plan]['days'];
 require_once __DIR__ . '/db_connect.php';
 
 try {
-    // Переконуємось, що потрібні колонки існують
+    // Переконуємось, що потрібні колонки існують (помилки ALTER не валять покупку)
     $cols = $pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_COLUMN);
     if (!in_array('coins', $cols)) {
-        $pdo->exec("ALTER TABLE users ADD COLUMN coins INT NOT NULL DEFAULT 0");
+        try { $pdo->exec("ALTER TABLE users ADD COLUMN coins INT NOT NULL DEFAULT 0"); } catch (Exception $e) { error_log("[buy_premium] alter coins: " . $e->getMessage()); }
     }
     if (!in_array('premium_until', $cols)) {
-        $pdo->exec("ALTER TABLE users ADD COLUMN premium_until DATETIME NULL DEFAULT NULL");
+        try { $pdo->exec("ALTER TABLE users ADD COLUMN premium_until DATETIME NULL DEFAULT NULL"); } catch (Exception $e) { error_log("[buy_premium] alter premium_until: " . $e->getMessage()); }
     }
 
     $stmt = $pdo->prepare("SELECT coins, premium_until FROM users WHERE id = ?");
@@ -57,9 +62,19 @@ try {
         exit;
     }
 
-    // Продовжуємо преміум, якщо ще активний
+    // Продовжуємо преміум, якщо ще активний.
+    // Захист від невалідних дат у БД ('0000-00-00 00:00:00', порожні рядки тощо).
     $now = new DateTime();
-    $currentUntil = $row['premium_until'] ? new DateTime($row['premium_until']) : null;
+    $currentUntil = null;
+    $rawUntil = $row['premium_until'] ?? null;
+    if ($rawUntil && strpos($rawUntil, '0000-00-00') === false) {
+        try {
+            $dt = new DateTime($rawUntil);
+            $currentUntil = $dt;
+        } catch (Exception $e) {
+            $currentUntil = null; // невалідну дату ігноруємо
+        }
+    }
     $base = ($currentUntil && $currentUntil > $now) ? $currentUntil : $now;
     $newUntil = (clone $base)->modify("+{$days} days");
 
@@ -98,5 +113,5 @@ try {
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
     error_log("[buy_premium] error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Помилка сервера.']);
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера.', 'debug' => $e->getMessage()]);
 }

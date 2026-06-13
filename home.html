@@ -1194,7 +1194,7 @@ window.buyPremiumFromHome = async function() {
       setTimeout(() => closePremiumModal(), 2000);
     } else {
       msg.style.color = '#f0047f';
-      msg.textContent = data.message || 'Помилка покупки';
+      msg.textContent = (data.message || 'Помилка покупки') + (data.debug ? (' (' + data.debug + ')') : '');
       btn.disabled = false;
       btn.textContent = 'Отримати Premium';
       // Якщо не вистачає монет — пропонуємо магазин
