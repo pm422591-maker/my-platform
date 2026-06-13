@@ -708,7 +708,7 @@ async function loadAllPosts(reset = false, forceReload = false) {
                     const extra = _entries.length - shown.length;
                     const items = shown.map(([icon, count]) => `
                         <div class="post-gift-side-item" title="Подарунок">
-                            <img src="${icon}" onerror="this.src='https://picsum.photos/seed/giftfallback/120'">
+                            <img src="${icon}" onerror="this.src=''">
                             ${count > 1 ? `<span class="post-gift-side-count">×${count}</span>` : ''}
                         </div>`).join('');
                     const extraHTML = extra > 0 ? `<div class="post-gift-side-more">+${extra}</div>` : '';
