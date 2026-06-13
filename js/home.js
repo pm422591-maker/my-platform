@@ -692,7 +692,7 @@ async function loadAllPosts(reset = false, forceReload = false) {
                 </div>`;
             }
 
-            // --- 3.6 ПОДАРУНКИ ПОСТА (справа від поста, вертикальна стрічка) ---
+            // --- 3.6 ПОДАРУНКИ ПОСТА (ряд у правому нижньому куті) ---
             let giftsSideHTML = '';
             if (post.gifts && post.gifts.length > 0) {
                 const _gCounts = {};
@@ -703,7 +703,7 @@ async function loadAllPosts(reset = false, forceReload = false) {
                 });
                 const _entries = Object.entries(_gCounts);
                 if (_entries.length > 0) {
-                    const MAX_SHOW = 4;
+                    const MAX_SHOW = 6;
                     const shown = _entries.slice(0, MAX_SHOW);
                     const extra = _entries.length - shown.length;
                     const items = shown.map(([icon, count]) => `

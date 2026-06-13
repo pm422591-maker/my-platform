@@ -6358,51 +6358,53 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     box-shadow: 0 4px 16px rgba(240, 4, 127, 0.18);
 }
 
-/* ── Подарунки справа від поста ── */
-.user-post-card.has-side-gifts { padding-right: 86px !important; }
+/* ── Подарунки: ряд у правому нижньому куті поста ── */
 .post-gifts-side {
     position: absolute;
-    top: 50%;
-    right: 14px;
-    transform: translateY(-50%);
+    right: 18px;
+    bottom: 16px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     z-index: 5;
+    max-width: 60%;
+    overflow: hidden;
 }
 .post-gift-side-item {
     position: relative;
-    width: 50px; height: 50px;
-    border-radius: 12px;
+    width: 38px; height: 38px;
+    border-radius: 10px;
     overflow: hidden;
+    flex-shrink: 0;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(240, 4, 127, 0.4);
-    box-shadow: 0 0 12px rgba(240, 4, 127, 0.35);
+    box-shadow: 0 0 10px rgba(240, 4, 127, 0.3);
     transition: transform 0.18s, box-shadow 0.18s;
 }
-.post-gift-side-item:hover { transform: scale(1.08); box-shadow: 0 0 18px rgba(240, 4, 127, 0.7); }
+.post-gift-side-item:hover { transform: scale(1.1); box-shadow: 0 0 16px rgba(240, 4, 127, 0.7); }
 .post-gift-side-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .post-gift-side-count {
-    position: absolute; bottom: 2px; right: 2px;
+    position: absolute; bottom: 1px; right: 1px;
     background: rgba(0,0,0,0.72); color: #fff;
-    font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 8px;
+    font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 7px;
     font-family: 'Geologica', sans-serif;
 }
 .post-gift-side-more {
-    width: 50px; height: 26px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
+    height: 38px; min-width: 30px; padding: 0 8px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     background: rgba(240, 4, 127, 0.12);
     border: 1px solid rgba(240, 4, 127, 0.4);
     color: #ff80bf; font-size: 12px; font-weight: 700;
     font-family: 'Geologica', sans-serif;
 }
+/* щоб ряд кнопок під постом не залазив під подарунки */
+.user-post-card.has-side-gifts .post-actions { padding-right: 0; }
 @media (max-width: 600px) {
-    .user-post-card.has-side-gifts { padding-right: 20px !important; }
     .post-gifts-side {
-        position: static; transform: none;
-        flex-direction: row; flex-wrap: wrap; justify-content: flex-start;
-        margin-top: 12px;
+        position: static; right: auto; bottom: auto;
+        margin-top: 12px; max-width: 100%; flex-wrap: wrap; justify-content: flex-end;
     }
 }
 
