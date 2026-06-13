@@ -503,6 +503,8 @@ async function loadUserData() {
 
         if (data.success) {
             window._profileData = data; // Store for premium check
+            // Вітрина подарунків (з БД)
+            if (typeof updateProfileGifts === 'function') updateProfileGifts();
             const timestamp = Date.now();
 
             // === РОБОТА З ІГРАМИ (Roblox + Steam) ===
@@ -2566,28 +2568,161 @@ function sendBlogMessage() {
         input.value = ''; // Очистити поле
     }
 }
-function updateProfileGifts() {
-    const giftArea = document.getElementById('gifts-display-area');
-    if (!giftArea) return;
+// ── ВІТРИНА ПОДАРУНКІВ НА ПРОФІЛІ (з БД) ──
+function getProfileViewedUserId() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('id') || null; // null = свій профіль (сесія)
+}
 
-    let gifts = [];
-    try { gifts = JSON.parse(localStorage.getItem('my_shared_gifts')) || []; } catch(_) {}
+function isOwnProfileView() {
+    if (window._profileData && typeof window._profileData.is_own_profile !== 'undefined') {
+        return (window._profileData.is_own_profile === true || window._profileData.is_own_profile === "true");
+    }
+    return !getProfileViewedUserId();
+}
 
-    if (gifts.length > 0) {
-        giftArea.innerHTML = ''; // Прибираємо "Подарунків немає"
-        
-        gifts.forEach(gift => {
-            const img = document.createElement('img');
-            img.src = gift.src;
-            img.title = gift.name;
-            img.style.width = '35px';
-            img.style.height = '35px';
-            img.style.margin = '5px';
-            img.style.borderRadius = '5px';
-            giftArea.appendChild(img);
-        });
+async function updateProfileGifts() {
+    const row = document.getElementById('gift-showcase-row');
+    const addBtn = document.getElementById('gift-add-neon');
+    if (!row) return;
+
+    // Плюсик показуємо лише на власному профілі
+    if (addBtn) addBtn.style.display = isOwnProfileView() ? 'flex' : 'none';
+
+    const uid = getProfileViewedUserId();
+    const url = uid ? `gifts_api.php?action=get_showcase&user_id=${encodeURIComponent(uid)}&t=${Date.now()}`
+                    : `gifts_api.php?action=get_showcase&t=${Date.now()}`;
+    try {
+        const res = await fetch(url, { credentials: 'include' });
+        const data = await res.json();
+        const showcase = (data.success && data.showcase) ? data.showcase : [];
+
+        // Кількість кожного подарунка беремо з інвентаря (received)
+        let countsByIcon = {};
+        try {
+            const invUrl = uid ? `gifts_api.php?action=received&user_id=${encodeURIComponent(uid)}&t=${Date.now()}`
+                               : `gifts_api.php?action=received&t=${Date.now()}`;
+            const invRes = await fetch(invUrl, { credentials: 'include' });
+            const invData = await invRes.json();
+            (invData.gifts || []).forEach(g => { countsByIcon[g.icon] = g.count; });
+        } catch (_) {}
+
+        row.innerHTML = showcase.map(s => {
+            const c = countsByIcon[s.icon] || 0;
+            return `<div class="gift-showcase-item">
+                <img src="${s.icon}" onerror="this.src='https://picsum.photos/seed/giftfallback/120'">
+                ${c > 1 ? `<span class="gift-showcase-count">×${c}</span>` : ''}
+            </div>`;
+        }).join('');
+    } catch (e) {
+        row.innerHTML = '';
     }
 }
+window.updateProfileGifts = updateProfileGifts;
+
+// ── МОДАЛКА ВИБОРУ ПОДАРУНКІВ ДЛЯ ВІТРИНИ ──
+window._giftPickerSelected = [];
+
+window.openGiftPicker = async function() {
+    if (!isOwnProfileView()) return; // тільки свій профіль
+
+    const old = document.getElementById('gift-picker-modal');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'gift-picker-modal';
+    overlay.style.cssText = "position:fixed; inset:0; background:rgba(10,0,8,0.82); backdrop-filter:blur(10px); z-index:90000; display:flex; align-items:center; justify-content:center; padding:20px;";
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+        <div style="width:100%; max-width:460px; max-height:80vh; display:flex; flex-direction:column; background:#1a0a14; border:1px solid rgba(240,4,127,0.4); border-radius:20px; box-shadow:0 10px 50px rgba(240,4,127,0.3); font-family:'Geologica',sans-serif; overflow:hidden;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid rgba(255,255,255,0.07);">
+                <h3 style="margin:0; color:#fff; font-size:17px;">🎁 Мої подарунки</h3>
+                <button onclick="document.getElementById('gift-picker-modal').remove()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:24px; line-height:1;">&times;</button>
+            </div>
+            <p style="margin:0; padding:10px 22px 0; color:rgba(255,255,255,0.55); font-size:12px;">Оберіть до 5 подарунків, що показуватимуться у профілі</p>
+            <div id="gift-picker-grid" style="flex:1; overflow-y:auto; padding:16px 18px; display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;">
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.5); padding:30px;">Завантаження…</div>
+            </div>
+            <div style="padding:14px 18px; border-top:1px solid rgba(255,255,255,0.07); display:flex; gap:10px;">
+                <button onclick="document.getElementById('gift-picker-modal').remove()" style="flex:1; padding:11px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:#ccc; font-weight:600; cursor:pointer;">Скасувати</button>
+                <button id="gift-picker-save" onclick="window.saveGiftShowcase()" style="flex:2; padding:11px; border-radius:12px; border:none; background:linear-gradient(135deg,#f0047f,#c70368); color:#fff; font-weight:700; cursor:pointer; box-shadow:0 4px 18px rgba(240,4,127,0.4);">Зберегти</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    // Підвантажуємо інвентар + поточну вітрину
+    try {
+        const [invRes, showRes] = await Promise.all([
+            fetch('gifts_api.php?action=received&t=' + Date.now(), { credentials: 'include' }).then(r => r.json()),
+            fetch('gifts_api.php?action=get_showcase&t=' + Date.now(), { credentials: 'include' }).then(r => r.json())
+        ]);
+        const inv = invRes.gifts || [];
+        window._giftPickerSelected = (showRes.showcase || []).map(s => s.icon);
+
+        const grid = document.getElementById('gift-picker-grid');
+        if (!inv.length) {
+            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.45); padding:30px;">Вам ще не дарували подарунків</div>`;
+            return;
+        }
+        grid.innerHTML = inv.map(g => {
+            const sel = window._giftPickerSelected.includes(g.icon);
+            return `<div class="gp-item" data-icon="${encodeURIComponent(g.icon)}" onclick="window.toggleGiftPick(this)"
+                style="position:relative; aspect-ratio:1/1; border-radius:12px; overflow:hidden; cursor:pointer; border:2px solid ${sel ? '#f0047f' : 'transparent'}; box-shadow:${sel ? '0 0 12px rgba(240,4,127,0.6)' : 'none'};">
+                <img src="${g.icon}" onerror="this.src='https://picsum.photos/seed/giftfallback/120'" style="width:100%; height:100%; object-fit:cover;">
+                ${g.count > 1 ? `<span style="position:absolute; bottom:3px; right:3px; background:rgba(0,0,0,0.7); color:#fff; font-size:10px; font-weight:700; padding:1px 5px; border-radius:8px;">×${g.count}</span>` : ''}
+                <span class="gp-check" style="position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#f0047f; color:#fff; display:${sel ? 'flex' : 'none'}; align-items:center; justify-content:center; font-size:12px;">✓</span>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        const grid = document.getElementById('gift-picker-grid');
+        if (grid) grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:#ff8080; padding:30px;">Помилка завантаження</div>`;
+    }
+};
+
+window.toggleGiftPick = function(el) {
+    const icon = decodeURIComponent(el.getAttribute('data-icon'));
+    const idx = window._giftPickerSelected.indexOf(icon);
+    const check = el.querySelector('.gp-check');
+    if (idx >= 0) {
+        window._giftPickerSelected.splice(idx, 1);
+        el.style.border = '2px solid transparent';
+        el.style.boxShadow = 'none';
+        if (check) check.style.display = 'none';
+    } else {
+        if (window._giftPickerSelected.length >= 5) {
+            alert('Можна обрати максимум 5 подарунків для вітрини');
+            return;
+        }
+        window._giftPickerSelected.push(icon);
+        el.style.border = '2px solid #f0047f';
+        el.style.boxShadow = '0 0 12px rgba(240,4,127,0.6)';
+        if (check) check.style.display = 'flex';
+    }
+};
+
+window.saveGiftShowcase = async function() {
+    const btn = document.getElementById('gift-picker-save');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.innerText = 'Збереження…'; }
+    try {
+        const res = await fetch('gifts_api.php', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'set_showcase', icons: window._giftPickerSelected })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const m = document.getElementById('gift-picker-modal');
+            if (m) m.remove();
+            updateProfileGifts();
+        } else {
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = 'Зберегти'; }
+            alert(data.message || 'Помилка збереження');
+        }
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = 'Зберегти'; }
+        alert('Помилка мережі');
+    }
+};
 
 
 // ==========================================

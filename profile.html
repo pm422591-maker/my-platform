@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SYNCORA</title>
-    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/profile.css?v=20260613b">
     <style>
         /* Запобігає стрибкам контенту при завантаженні */
         .user-name-wrapper, .user-bio-display { min-height: 20px; }
@@ -178,13 +178,10 @@
             </div>
         </div>
 
-        <div class="gifts-wide-block">
-    <div class="gift-cell">+</div>
-    <div class="gift-cell">+</div>
-    <div class="gift-cell">+</div>
-    <div class="gift-cell">+</div>
-    <div class="gift-cell">+</div>
-</div>
+        <div class="gifts-wide-block" id="gifts-wide-block">
+            <div class="gift-showcase-row" id="gift-showcase-row"></div>
+            <button type="button" class="gift-add-neon" id="gift-add-neon" onclick="openGiftPicker()" title="Додати подарунки у вітрину">+</button>
+        </div>
 
       <div class="profile-actions-container">
    <button id="edit-profile-btn" class="settings-btn" onclick="openSettings()" style="display: none;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">
@@ -1254,7 +1251,7 @@ document.addEventListener('keydown', function(e) {
 })();
 </script>
 
-    <script src="js/profile.js?v=20260612"></script>
+    <script src="js/profile.js?v=20260613b"></script>
 
 <!-- ========== PREMIUM MODAL (profile.html) ========== -->
 <div id="profile-premium-modal" style="display:none; position:fixed; inset:0; z-index:9999999; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px); flex-direction:column;">
