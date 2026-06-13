@@ -9193,12 +9193,9 @@ window.coinSVG = function(size) {
 
 window.COIN_PACKS = [
     { amount: 100,   tag: 'Старт' },
-    { amount: 250,   tag: '' },
     { amount: 500,   tag: '' },
     { amount: 1000,  tag: '', best: true },
-    { amount: 2500,  tag: '' },
-    { amount: 5000,  tag: '' },
-    { amount: 10000, tag: 'Макс' },
+    { amount: 5000,  tag: 'Макс' },
 ];
 
 window.openCoinShop = function() {
@@ -9217,9 +9214,13 @@ window.openCoinShop = function() {
         grid.innerHTML = window.COIN_PACKS.map(p => `
             <div class="coin-pack ${p.best ? 'coin-pack-best' : ''}" onclick="window.buyCoins(${p.amount}, this.querySelector('.coin-pack-btn'))">
                 ${p.tag ? `<span class="coin-pack-tag">${p.tag}</span>` : ''}
-                <div class="coin-pack-coin">${window.coinSVG(46)}</div>
-                <div class="coin-pack-amount">${p.amount.toLocaleString()}</div>
-                <div class="coin-pack-sub">монет</div>
+                <div class="coin-pack-top">
+                    <div class="coin-pack-coin">${window.coinSVG(38)}</div>
+                    <div class="coin-pack-info">
+                        <div class="coin-pack-amount">${p.amount.toLocaleString()}</div>
+                        <div class="coin-pack-sub">монет</div>
+                    </div>
+                </div>
                 <button class="coin-pack-btn" onclick="event.stopPropagation(); window.buyCoins(${p.amount}, this)">Отримати</button>
             </div>
         `).join('');

@@ -6522,22 +6522,13 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     background: linear-gradient(145deg, #1a0014, #0d000a);
     border: 1px solid rgba(240, 4, 127, 0.35);
     border-radius: 24px;
-    padding: 36px 30px 28px;
+    padding: 40px 32px 32px;
     width: 90%;
-    max-width: 440px;
-    max-height: 88vh;
-    overflow-y: auto;
+    max-width: 400px;
     box-shadow: 0 0 60px rgba(240, 4, 127, 0.25), 0 20px 60px rgba(0, 0, 0, 0.6);
     transform: scale(0.4);
     opacity: 0;
     animation: popInBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-.coin-shop-box::-webkit-scrollbar { width: 7px; }
-.coin-shop-box::-webkit-scrollbar-track { background: rgba(240,4,127,0.06); border-radius: 10px; }
-.coin-shop-box::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #f0047f, #c0036a);
-    border-radius: 10px;
-    box-shadow: 0 0 8px rgba(240, 4, 127, 0.6);
 }
 .coin-shop-close {
     position: absolute; top: 16px; right: 16px;
@@ -6546,12 +6537,12 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     display: flex; align-items: center; justify-content: center; transition: 0.2s; z-index: 2;
 }
 .coin-shop-close:hover { color: #fff; background: rgba(240, 4, 127, 0.3); }
-.coin-shop-header { text-align: center; margin-bottom: 22px; }
+.coin-shop-header { text-align: center; margin-bottom: 20px; }
 
 /* Золотий круглий бейдж із монетою (як корона у преміумі) */
 .coin-shop-badge {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 68px; height: 68px; border-radius: 50%; margin-bottom: 16px;
+    width: 64px; height: 64px; border-radius: 50%; margin-bottom: 14px;
     background: linear-gradient(135deg, #ffc94d, #ff8c00);
     box-shadow: 0 0 30px rgba(255, 170, 0, 0.55), inset 0 -4px 10px rgba(168, 94, 0, 0.4);
 }
@@ -6560,39 +6551,38 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
     animation: floatCoin 1.6s ease-in-out infinite alternate;
 }
 .coin-shop-header h2 {
-    color: #fff; margin: 0 0 6px; font-size: 21px; font-weight: 800; letter-spacing: 0.5px;
+    color: #fff; margin: 0 0 6px; font-size: 20px; font-weight: 800; letter-spacing: 0.5px;
 }
 .coin-shop-header p {
-    color: rgba(255, 255, 255, 0.5); font-size: 13px; margin: 0 0 16px;
+    color: rgba(255, 255, 255, 0.5); font-size: 13px; margin: 0 0 14px;
 }
 .coin-shop-balance {
     display: inline-block;
     background: rgba(255, 188, 0, 0.1);
     border: 1px solid rgba(255, 188, 0, 0.3);
-    color: rgba(255,255,255,0.7); font-weight: 600; font-size: 12.5px;
-    padding: 7px 18px; border-radius: 50px;
+    color: rgba(255,255,255,0.7); font-weight: 600; font-size: 12px;
+    padding: 6px 16px; border-radius: 50px;
 }
 .coin-shop-balance span { color: #ffc94d; font-weight: 800; }
 .coin-shop-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    gap: 12px;
 }
 .coin-pack {
     position: relative;
     background: rgba(255, 255, 255, 0.03);
-    border: 2px solid rgba(240, 4, 127, 0.35);
-    border-radius: 18px;
-    padding: 18px 12px 16px;
-    text-align: center;
+    border: 2px solid rgba(240, 4, 127, 0.4);
+    border-radius: 16px;
+    padding: 14px 12px 12px;
     cursor: pointer;
     transition: 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex; flex-direction: column; align-items: center;
+    display: flex; flex-direction: column;
 }
 .coin-pack:hover {
-    transform: translateY(-4px) scale(1.03);
+    transform: translateY(-3px);
     border-color: #f0047f;
-    box-shadow: 0 8px 26px rgba(240, 4, 127, 0.4);
+    box-shadow: 0 8px 24px rgba(240, 4, 127, 0.4);
     background: rgba(240, 4, 127, 0.08);
 }
 .coin-pack-best {
@@ -6601,41 +6591,46 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
 }
 .coin-pack-best:hover {
     border-color: #ffc94d;
-    box-shadow: 0 8px 26px rgba(255, 170, 0, 0.45);
+    box-shadow: 0 8px 24px rgba(255, 170, 0, 0.45);
 }
 .coin-pack-tag {
-    position: absolute; top: 8px; right: 8px;
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
     background: linear-gradient(90deg, #ffc94d, #ff7c00);
-    color: #1d0016; font-size: 9px; font-weight: 800;
+    color: #1d0016; font-size: 8px; font-weight: 800;
     padding: 2px 8px; border-radius: 50px; letter-spacing: 0.5px; text-transform: uppercase;
+    white-space: nowrap;
 }
 .coin-pack-best::after {
     content: 'ХІТ';
-    position: absolute; top: 8px; right: 8px;
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
     background: linear-gradient(90deg, #ffc94d, #ff7c00);
-    color: #1d0016; font-size: 9px; font-weight: 800;
-    padding: 2px 8px; border-radius: 50px; letter-spacing: 0.5px;
+    color: #1d0016; font-size: 8px; font-weight: 800;
+    padding: 2px 8px; border-radius: 50px; letter-spacing: 0.5px; white-space: nowrap;
 }
-.coin-pack-best .coin-pack-tag { display: none; }
+.coin-pack-top {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    justify-content: center;
+}
 .coin-pack-coin {
-    margin-bottom: 8px;
     filter: drop-shadow(0 3px 8px rgba(255, 150, 0, 0.45));
     transition: transform 0.3s ease;
+    flex-shrink: 0;
 }
 .coin-pack:hover .coin-pack-coin {
     transform: scale(1.1) rotate(-6deg);
 }
+.coin-pack-info { text-align: left; }
 .coin-pack-amount {
-    color: #fff; font-size: 20px; font-weight: 800; line-height: 1;
+    color: #fff; font-size: 19px; font-weight: 800; line-height: 1;
 }
 .coin-pack-sub {
-    color: rgba(255,255,255,0.4); font-size: 10px; margin-top: 2px; margin-bottom: 4px;
+    color: rgba(255,255,255,0.4); font-size: 10px; margin-top: 2px;
 }
 .coin-pack-btn {
-    margin-top: 10px; width: 100%;
+    width: 100%;
     background: linear-gradient(135deg, #f0047f, #c0036a);
-    border: none; border-radius: 12px; color: #fff;
-    font-family: 'Geologica', sans-serif; font-weight: 800; font-size: 12px;
+    border: none; border-radius: 11px; color: #fff;
+    font-family: 'Geologica', sans-serif; font-weight: 800; font-size: 11px;
     padding: 9px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
     box-shadow: 0 4px 16px rgba(240, 4, 127, 0.35); transition: 0.2s;
 }
