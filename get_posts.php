@@ -47,8 +47,11 @@ try {
     $filter_lang = isset($_GET['filter_lang']) ? $_GET['filter_lang'] : 'any';
 
     // Базовий запит без сортування і лімітів
+    // seconds_left: скільки секунд лишилось анкеті до видалення (рахуємо на сервері,
+    // годинником самої БД — це усуває розбіжності часових поясів між JS і MySQL).
     $query = "
     SELECT p.*,
+           GREATEST(0, 3600 - TIMESTAMPDIFF(SECOND, p.created_at, NOW())) AS seconds_left,
            (SELECT COALESCE(SUM(vote_type), 0) FROM post_votes WHERE post_id = p.id) as vote_count,
            (SELECT vote_type FROM post_votes WHERE post_id = p.id AND user_id = :uid LIMIT 1) as my_vote,
            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comment_count

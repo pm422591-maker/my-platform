@@ -199,8 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const extraArea = document.getElementById('post-filters-area');
 
         if (tabName === 'requests') {
-            // В ЗАЯВКАХ: Показываем обе кнопки
-            if (reqBtn) reqBtn.style.setProperty('display', 'inline-flex', 'important');
+            // Кнопку параметрів тімейта показує редактор; тут не чіпаємо.
             if (extraBtn) extraBtn.style.setProperty('display', 'inline-flex', 'important');
         } else {
             // В ЛЕНТЕ/БЛОГЕ: Прячем кнопки
@@ -436,7 +435,7 @@ window.publishPost = async function(event) {
     const reqArea = document.getElementById('requests-filters-area');
     
     // ✨ ЗБИРАЄМО ДАНІ (Тепер reqArea існує, тому помилок не буде)
-    const fAge = reqArea ? (reqArea.querySelector('#chips-age .filter-chip.active')?.getAttribute('data-value') || 'any') : 'any';
+    const fAge = reqArea ? (reqArea.querySelector('#req-chips-age .filter-chip.active')?.getAttribute('data-value') || 'any') : 'any';
     const fComm = reqArea ? (reqArea.querySelector('#chips-comm .filter-chip.active')?.getAttribute('data-value') || 'any') : 'any';
     const fLevel = reqArea ? (reqArea.querySelector('#chips-level .filter-chip.active')?.getAttribute('data-value') || 'any') : 'any';
     const fLang = reqArea ? (reqArea.querySelector('#chips-lang .filter-chip.active')?.getAttribute('data-value') || 'any') : 'any';
@@ -756,13 +755,19 @@ let commentsDisplayHTML = '';
 
 if (post.post_type === 'requests') {
     // 1. Створюємо розмітку таймера (ID мають бути time- та ring-)
+    // data-seconds-left: скільки лишилось за годинником сервера на момент завантаження.
+    // data-anchor: момент (мс) за годинником клієнта, коли ми отримали ці дані —
+    // далі віднімаємо реальний пройдений час локально, без прив'язки до поясу.
+    const _secLeft = (post.seconds_left !== undefined && post.seconds_left !== null)
+        ? parseInt(post.seconds_left, 10)
+        : 3600;
     const timerMarkup = `
-        <div class="request-timer" data-created="${post.created_at}" data-post-id="${post.id}" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: rgba(240, 4, 127, 0.05); border-radius: 50%; box-shadow: 0 0 10px rgba(240, 4, 127, 0.2); flex-shrink: 0; position: relative;">
+        <div class="request-timer" data-seconds-left="${_secLeft}" data-anchor="${Date.now()}" data-created="${post.created_at}" data-post-id="${post.id}" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: rgba(240, 4, 127, 0.05); border-radius: 50%; box-shadow: 0 0 10px rgba(240, 4, 127, 0.2); flex-shrink: 0; position: relative;">
             <svg width="48" height="48" style="transform: rotate(-90deg); position: absolute; top: 0; left: 0;">
                 <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(240, 4, 127, 0.15)" stroke-width="3"></circle>
                 <circle id="ring-${post.id}" cx="24" cy="24" r="21" fill="none" stroke="#f0047f" stroke-width="3" stroke-dasharray="132" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 4px rgba(240,4,127,0.8));"></circle>
             </svg>
-            <span id="time-${post.id}" style="font-size: 13px; font-weight: bold; color: #ff80bf; text-shadow: 0 0 5px rgba(240, 4, 127, 0.5); z-index: 2;">60m</span>
+            <span id="time-${post.id}" style="font-size: 13px; font-weight: bold; color: #ff80bf; text-shadow: 0 0 5px rgba(240, 4, 127, 0.5); z-index: 2;">${Math.min(60, Math.max(1, Math.ceil(_secLeft / 60)))}m</span>
         </div>
     `;
 
@@ -882,7 +887,7 @@ if (post.post_type === 'requests') {
 
            // --- 7. ФОРМУЄМО HTML ---
 const postHTML = `
-<div id="post-${post.id}" class="user-post-card" data-post-id="${post.id}" data-post-type="${(post.post_type || 'feed')}" style="${cardStyle} border-radius: 20px; padding: 20px; margin-bottom: 20px; position: relative; border: ${borderStyle}; box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
+<div id="post-${post.id}" class="user-post-card" data-post-id="${post.id}" data-is-owner="${String(post.user_id) === String(post.current_viewer_id)}" data-post-type="${(post.post_type || 'feed')}" style="${cardStyle} border-radius: 20px; padding: 20px; margin-bottom: 20px; position: relative; border: ${borderStyle}; box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
     
     <div class="post-header-info" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
         <a href="profile.html?id=${post.user_id}" style="text-decoration: none; display: flex; align-items: center; gap: 12px; color: ${textColor};">
@@ -7128,6 +7133,82 @@ window.selectPostColor = function(element, colorName) {
         document.getElementById('create-post-panel').setAttribute('data-selected-color', colorName);
     };
 
+/* ═══════════════════════════════════════════════════════════════
+   ПАРАМЕТРИ ТІМЕЙТА (фільтри при створенні анкети)
+   Ці функції викликаються з home.html, але раніше були відсутні —
+   тому кнопка "Параметри тімейта" нічого не відкривала.
+   ═══════════════════════════════════════════════════════════════ */
+
+// Поточний режим публікації заявки: 'anketa' (за замовч.) або 'group'
+window.currentRequestMode = window.currentRequestMode || 'anketa';
+
+// Відкриває / ховає панель параметрів тімейта (чіпи фільтрів)
+window.toggleRequestPanel = function(mode) {
+    // mode тут лише підказка ('anketa' | 'group'); реальний режим тримаємо в currentRequestMode
+    if (mode === 'group' || mode === 'anketa') {
+        window.currentRequestMode = mode;
+    }
+
+    const area      = document.getElementById('requests-filters-area');
+    const anketaBlk = document.getElementById('req-anketa-fields-block');
+    const groupBlk  = document.getElementById('requests-group-list-area');
+    const btn       = document.getElementById('btn-toggle-requests-filters');
+
+    if (!area) return;
+
+    // Перемикаємо потрібний блок усередині панелі
+    if (anketaBlk) anketaBlk.style.display = (window.currentRequestMode === 'group') ? 'none' : 'block';
+    if (groupBlk)  groupBlk.style.display  = (window.currentRequestMode === 'group') ? 'block' : 'none';
+
+    // Тогл видимості самої панелі
+    const isHidden = window.getComputedStyle(area).display === 'none' || area.style.display === 'none';
+    if (isHidden) {
+        area.style.setProperty('display', 'block', 'important');
+        area.classList.add('show');
+        if (btn) btn.classList.add('active-btn');
+        // Ховаємо інші панелі редактора, щоб не накладались
+        ['post-filters-area', 'group-settings-area', 'extra-settings-area'].forEach(id => {
+            const p = document.getElementById(id);
+            if (p) p.style.setProperty('display', 'none', 'important');
+        });
+    } else {
+        area.style.setProperty('display', 'none', 'important');
+        area.classList.remove('show');
+        if (btn) btn.classList.remove('active-btn');
+    }
+};
+
+// Перемикає режим публікації (Анкета / Для групи) у тумблері редактора
+window.switchRequestPublishMode = function(mode) {
+    window.currentRequestMode = (mode === 'group') ? 'group' : 'anketa';
+
+    const btnAnketa = document.getElementById('req-mode-anketa');
+    const btnGroup  = document.getElementById('req-mode-group');
+
+    if (btnAnketa) {
+        const on = window.currentRequestMode === 'anketa';
+        btnAnketa.classList.toggle('active', on);
+        btnAnketa.style.background = on ? '#f0047f' : 'transparent';
+        btnAnketa.style.color = on ? 'white' : '#ccc';
+    }
+    if (btnGroup) {
+        const on = window.currentRequestMode === 'group';
+        btnGroup.classList.toggle('active', on);
+        btnGroup.style.background = on ? '#f0047f' : 'transparent';
+        btnGroup.style.color = on ? 'white' : '#ccc';
+    }
+
+    // Якщо панель параметрів уже відкрита — оновлюємо, який блок показувати
+    const area = document.getElementById('requests-filters-area');
+    const anketaBlk = document.getElementById('req-anketa-fields-block');
+    const groupBlk  = document.getElementById('requests-group-list-area');
+    const areaOpen = area && !(window.getComputedStyle(area).display === 'none' || area.style.display === 'none');
+    if (areaOpen) {
+        if (anketaBlk) anketaBlk.style.display = (window.currentRequestMode === 'group') ? 'none' : 'block';
+        if (groupBlk)  groupBlk.style.display  = (window.currentRequestMode === 'group') ? 'block' : 'none';
+    }
+};
+
 window.togglePostPanel = function(panelName) {
     // 1. Всі панелі
     const panels = {
@@ -8149,7 +8230,9 @@ window.setLudoraPage = function(tabName) {
     if (wrapperFilters) wrapperFilters.style.setProperty('display', 'inline-block', 'important');
 
     if (tabName === 'requests') {
-        if (btnReqFilters) btnReqFilters.style.setProperty('display', 'inline-flex', 'important');
+        // Кнопку "Параметри тімейта" показує сам редактор (togglePostEditor),
+        // тут лишаємо приховану, щоб не висіла без панелі.
+        if (btnReqFilters) btnReqFilters.style.setProperty('display', 'none', 'important');
     } else {
         if (btnReqFilters) btnReqFilters.style.setProperty('display', 'none', 'important');
         if (areaReqFilters) areaReqFilters.style.setProperty('display', 'none', 'important');
@@ -8483,46 +8566,57 @@ if (!window.requestsTimerStarted) {
 
             if (!postCard || postCard.getAttribute('data-is-deleting') === 'true') return;
 
-            const createdStr = timer.getAttribute('data-created'); 
-            if (!createdStr) return;
+            // 1. Базуємось на серверному залишку (data-seconds-left) + локальному якорі.
+            //    Це не залежить від часового поясу — на відміну від парсингу created_at.
+            const secLeftAttr = timer.getAttribute('data-seconds-left');
+            const anchorAttr  = timer.getAttribute('data-anchor');
 
-            // 1. Форматуємо дату (додаємо Z, щоб JS розумів, що це UTC час із бази)
-            const safeDateStr = createdStr.replace(' ', 'T') + "Z";
-            const createdMs = new Date(safeDateStr).getTime();
-            const nowMs = Date.now();
-            
-            // 2. Рахуємо, скільки реально МИНУЛО часу
-            let elapsedMs = nowMs - createdMs;
-
-            // 🛠️ ФІКС 120 ХВИЛИН: 
-            // Якщо elapsedMs від'ємний (пост із "майбутнього" через пояси), 
-            // вважаємо, що він щойно створений (elapsed = 0)
-            if (elapsedMs < 0) elapsedMs = 0;
-
+            let timeLeftMs;
             const timeLimitMs = 60 * 60 * 1000; // 60 хвилин
-            let timeLeft = timeLimitMs - elapsedMs;
 
-            // 🛠️ ФІКС СКИДАННЯ:
-            // Не даємо timeLeft бути більшим за ліміт
-            if (timeLeft > timeLimitMs) timeLeft = timeLimitMs;
+            if (secLeftAttr !== null && anchorAttr !== null) {
+                const baseSec   = parseInt(secLeftAttr, 10);
+                const anchorMs  = parseInt(anchorAttr, 10);
+                const elapsedMs = Date.now() - anchorMs;           // скільки минуло з моменту завантаження
+                timeLeftMs = (baseSec * 1000) - elapsedMs;
+            } else {
+                // Фолбек на старий метод (created_at як UTC), якщо немає seconds_left
+                const createdStr = timer.getAttribute('data-created');
+                if (!createdStr) return;
+                const safeDateStr = createdStr.replace(' ', 'T') + "Z";
+                const createdMs = new Date(safeDateStr).getTime();
+                let elapsedMs = Date.now() - createdMs;
+                if (elapsedMs < 0) elapsedMs = 0;
+                timeLeftMs = timeLimitMs - elapsedMs;
+            }
+
+            if (timeLeftMs > timeLimitMs) timeLeftMs = timeLimitMs;
 
             const textEl = document.getElementById(`time-${postId}`);
             const ringEl = document.getElementById(`ring-${postId}`);
 
-            if (timeLeft <= 0) {
-                // ЧАС ВИЙШОВ — Видаляємо
+            if (timeLeftMs <= 0) {
+                // ЧАС ВИЙШОВ. Прибираємо картку візуально у всіх,
+                // але DELETE у БД ініціює лише автор поста (інакше чужий пост не видалиться,
+                // а сервер усе одно почистить старі заявки сам).
                 postCard.setAttribute('data-is-deleting', 'true');
-                if (window.deletePost) window.deletePost(postId);
+                const isOwner = postCard.getAttribute('data-is-owner') === 'true';
+                if (isOwner && window.deletePost) {
+                    window.deletePost(postId);
+                } else {
+                    // Просто ховаємо в інтерфейсі
+                    postCard.style.transition = 'opacity 0.4s';
+                    postCard.style.opacity = '0';
+                    setTimeout(() => { if (postCard && postCard.parentNode) postCard.remove(); }, 450);
+                }
             } else {
                 // ОНОВЛЮЄМО ІНТЕРФЕЙС
-                const minutesLeft = Math.ceil(timeLeft / 60000);
-                
-                // Відображаємо максимум 60, навіть якщо математика каже інакше
-                if (textEl) textEl.innerText = Math.min(60, minutesLeft) + 'm';
-                
+                const minutesLeft = Math.ceil(timeLeftMs / 60000);
+                if (textEl) textEl.innerText = Math.min(60, Math.max(1, minutesLeft)) + 'm';
+
                 if (ringEl) {
                     const maxOffset = 132;
-                    const offset = maxOffset - (maxOffset * (timeLeft / timeLimitMs));
+                    const offset = maxOffset - (maxOffset * (timeLeftMs / timeLimitMs));
                     ringEl.style.strokeDashoffset = Math.max(0, Math.min(maxOffset, offset));
                 }
             }
@@ -9119,6 +9213,23 @@ window.togglePostEditor = function() {
         if (typeof updateGroupSelect === 'function') updateGroupSelect();
         const titleInput = document.getElementById('new-post-title');
         if (titleInput) setTimeout(() => titleInput.focus(), 300);
+
+        // ✨ На вкладці ЗАЯВКИ показуємо тумблер режиму та кнопку "Параметри тімейта"
+        const onRequests = (window.currentLudoraPage === 'requests');
+        const reqModeWrap = document.getElementById('req-mode-toggle-wrapper');
+        const btnReqFilters = document.getElementById('btn-toggle-requests-filters');
+        if (reqModeWrap) reqModeWrap.style.setProperty('display', onRequests ? 'flex' : 'none', 'important');
+        if (btnReqFilters) btnReqFilters.style.setProperty('display', onRequests ? 'inline-flex' : 'none', 'important');
+        if (onRequests && typeof window.switchRequestPublishMode === 'function') {
+            // Встановлюємо стартовий режим (анкета) і підсвічуємо кнопку
+            window.switchRequestPublishMode(window.currentRequestMode || 'anketa');
+        }
+    } else {
+        // Ховаємо панель параметрів при закритті редактора
+        const area = document.getElementById('requests-filters-area');
+        if (area) area.style.setProperty('display', 'none', 'important');
+        const btnReqFilters = document.getElementById('btn-toggle-requests-filters');
+        if (btnReqFilters) btnReqFilters.classList.remove('active-btn');
     }
 }
 window.initDraggableAndResizableCamera = function() {
