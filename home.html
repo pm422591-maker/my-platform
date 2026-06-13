@@ -1076,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="js/home.js?v=43"></script>
+<script src="js/home.js?v=44"></script>
 <script src="js/tutorial.js?v=20260612"></script>
 
 <style>
@@ -1194,16 +1194,12 @@ window.buyPremiumFromHome = async function() {
       setTimeout(() => closePremiumModal(), 2000);
     } else {
       msg.style.color = '#f0047f';
-      msg.textContent = (data.message || 'Помилка покупки') + (data.debug ? (' (' + data.debug + ')') : '');
+      msg.textContent = data.message || 'Помилка покупки';
       btn.disabled = false;
       btn.textContent = 'Отримати Premium';
-      // Якщо не вистачає монет — пропонуємо магазин
+      // Якщо не вистачає монет — одразу відкриваємо магазин
       if (data.need !== undefined && data.have !== undefined) {
-        setTimeout(() => {
-          if (confirm(`Не вистачає монет для Premium.\nПотрібно: ${Number(data.need).toLocaleString()} 🪙\nВаш баланс: ${Number(data.have).toLocaleString()} 🪙\n\nВідкрити магазин монет?`)) {
-            if (typeof window.openCoinShop === 'function') window.openCoinShop();
-          }
-        }, 200);
+        if (typeof window.openCoinShop === 'function') window.openCoinShop();
       }
     }
   } catch(e) {

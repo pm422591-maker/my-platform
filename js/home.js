@@ -1715,11 +1715,8 @@ window.sendGift = async function(iconUrl, giftId) {
     const balance = window.currentUserCoins || 0;
 
     if (cost > 0 && balance < cost) {
-        const need = cost - balance;
         window.closeGiftModal();
-        if (confirm(`❌ Недостатньо монет для подарунка!\nПотрібно: ${cost.toLocaleString()} 🪙\nВаш баланс: ${balance.toLocaleString()} 🪙\nНе вистачає: ${need.toLocaleString()} 🪙\n\nВідкрити магазин монет?`)) {
-            if (typeof window.openCoinShop === 'function') window.openCoinShop();
-        }
+        if (typeof window.openCoinShop === 'function') window.openCoinShop();
         return;
     }
 
@@ -9336,10 +9333,7 @@ window.buyPremiumWithCoins = async function(plan) {
     if (!cost) return;
 
     if (window.currentUserCoins < cost) {
-        const need = cost - window.currentUserCoins;
-        if (confirm(`❌ Недостатньо монет!\nПотрібно: ${cost.toLocaleString()} 🪙\nВаш баланс: ${window.currentUserCoins.toLocaleString()} 🪙\nНе вистачає: ${need.toLocaleString()} 🪙\n\nВідкрити магазин монет?`)) {
-            window.openCoinShop();
-        }
+        window.openCoinShop();
         return;
     }
 

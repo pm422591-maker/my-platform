@@ -81,12 +81,13 @@ try {
     $pdo->beginTransaction();
 
     $stmtBuy = $pdo->prepare(
-        "UPDATE users SET coins = coins - :cost, premium_until = :until WHERE id = :id AND coins >= :cost"
+        "UPDATE users SET coins = coins - :cost, premium_until = :until WHERE id = :id AND coins >= :cost_check"
     );
     $stmtBuy->execute([
-        'cost'  => $cost,
-        'until' => $newUntil->format('Y-m-d H:i:s'),
-        'id'    => $userId
+        'cost'       => $cost,
+        'cost_check' => $cost,
+        'until'      => $newUntil->format('Y-m-d H:i:s'),
+        'id'         => $userId
     ]);
 
     if ($stmtBuy->rowCount() === 0) {
@@ -113,5 +114,5 @@ try {
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
     error_log("[buy_premium] error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Помилка сервера.', 'debug' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера.']);
 }
