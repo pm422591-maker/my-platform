@@ -57,15 +57,9 @@ services:
     image: 'jc21/nginx-proxy-manager:latest'
     restart: always
     ports:
-<<<<<<< HEAD
-      - '80:80'
-      - '81:81'
-      - '443:443'
-=======
       - "80:80"
       - "81:81"
       - "443:443"
->>>>>>> 3f925ecb5059aa899bec467c143f09f14a0d6718
     volumes:
       - ./proxy_data:/data
       - ./letsencrypt:/etc/letsencrypt
