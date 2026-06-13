@@ -4441,8 +4441,9 @@ body.filters-open .main-content-block {
     box-shadow: 0 0 14px rgba(240, 4, 127, 0.8);
     transform: scale(1.05);
 }
+.item-main-title {
     color: #fff;
-    font-size: 12px; /* Менший шрифт */
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
