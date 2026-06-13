@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     </button>
 
     <!-- Значок валюты (Коинсы) -->
-    <div class="coins-display-container" title="Ваш баланс коинсов">
+    <div class="coins-display-container" title="Натисни, щоб поповнити баланс" onclick="window.openCoinShop()" style="cursor:pointer;">
         <span class="coin-icon">🪙</span>
         <span id="top-bar-coins">0</span>
     </div>
@@ -1051,12 +1051,30 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="hpm-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px;color:#f0047f;"></div>
   </div>
 </div>
+
+<!-- МОДАЛЬНОЕ ОКНО: Магазин монет -->
+<div id="coin-shop-modal" class="coin-shop-overlay" style="display:none;">
+  <div class="coin-shop-box">
+    <button class="coin-shop-close" onclick="window.closeCoinShop()">&times;</button>
+    <div class="coin-shop-header">
+      <div class="coin-shop-icon">🪙</div>
+      <h2>Магазин монет</h2>
+      <p>Поповни баланс — поки що повністю безкоштовно!</p>
+      <div class="coin-shop-balance">
+        Ваш баланс: <span id="coin-shop-balance-val">0</span> 🪙
+      </div>
+    </div>
+    <div class="coin-shop-grid" id="coin-shop-grid">
+      <!-- пакети генеруються в JS -->
+    </div>
+  </div>
+</div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="js/home.js?v=40"></script>
+<script src="js/home.js?v=41"></script>
 <script src="js/tutorial.js?v=20260612"></script>
 
 <style>
@@ -1177,6 +1195,14 @@ window.buyPremiumFromHome = async function() {
       msg.textContent = data.message || 'Помилка покупки';
       btn.disabled = false;
       btn.textContent = 'Отримати Premium';
+      // Якщо не вистачає монет — пропонуємо магазин
+      if (data.need !== undefined && data.have !== undefined) {
+        setTimeout(() => {
+          if (confirm(`Не вистачає монет для Premium.\nПотрібно: ${Number(data.need).toLocaleString()} 🪙\nВаш баланс: ${Number(data.have).toLocaleString()} 🪙\n\nВідкрити магазин монет?`)) {
+            if (typeof window.openCoinShop === 'function') window.openCoinShop();
+          }
+        }, 200);
+      }
     }
   } catch(e) {
     msg.style.color = '#f0047f';

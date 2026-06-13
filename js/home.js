@@ -1632,15 +1632,15 @@ window.currentGiftPostId = null;
 
 // Список подарунків з картинками та цінами
 window.GIFTS_LIST = [
-    { id: 'gift_1', img: 'img/gifts/gift_1.png', label: 'Серце', price: 0 },
-    { id: 'gift_2', img: 'img/gifts/gift_2.png', label: 'Зірка', price: 0 },
-    { id: 'gift_3', img: 'img/gifts/gift_3.png', label: 'Корона', price: 0 },
-    { id: 'gift_4', img: 'img/gifts/gift_4.png', label: 'Квітка', price: 0 },
-    { id: 'gift_5', img: 'img/gifts/gift_5.png', label: 'Діамант', price: 0 },
-    { id: 'gift_6', img: 'img/gifts/gift_6.png', label: 'Торт', price: 0 },
-    { id: 'gift_7', img: 'img/gifts/gift_7.png', label: 'Ракета', price: 0 },
-    { id: 'gift_8', img: 'img/gifts/gift_8.png', label: 'Вогонь', price: 0 },
-    { id: 'gift_9', img: 'img/gifts/gift_9.png', label: 'Магія', price: 0 },
+    { id: 'gift_1', img: 'img/gifts/gift_1.png', label: 'Серце', price: 50 },
+    { id: 'gift_2', img: 'img/gifts/gift_2.png', label: 'Зірка', price: 75 },
+    { id: 'gift_3', img: 'img/gifts/gift_3.png', label: 'Корона', price: 150 },
+    { id: 'gift_4', img: 'img/gifts/gift_4.png', label: 'Квітка', price: 50 },
+    { id: 'gift_5', img: 'img/gifts/gift_5.png', label: 'Діамант', price: 300 },
+    { id: 'gift_6', img: 'img/gifts/gift_6.png', label: 'Торт', price: 100 },
+    { id: 'gift_7', img: 'img/gifts/gift_7.png', label: 'Ракета', price: 200 },
+    { id: 'gift_8', img: 'img/gifts/gift_8.png', label: 'Вогонь', price: 100 },
+    { id: 'gift_9', img: 'img/gifts/gift_9.png', label: 'Магія', price: 250 },
 ];
 
 window.openGiftModal = function(postId) {
@@ -1663,7 +1663,7 @@ window.openGiftModal = function(postId) {
             <div class="gift-item-label">${g.label}</div>
             <div class="gift-item-price">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5h-2v-2h2v2zm0-4h-2V7h2v5.5z"/></svg>
-                ${g.price} SC
+                ${g.price > 0 ? g.price.toLocaleString() : 'Безкоштовно'}
             </div>
         </div>
     `).join('');
@@ -1709,6 +1709,20 @@ window.sendGift = async function(iconUrl, giftId) {
         return;
     }
 
+    // 💰 Перевірка балансу монет
+    const giftObj = (window.GIFTS_LIST || []).find(g => g.id === giftId);
+    const cost = giftObj ? (giftObj.price || 0) : 0;
+    const balance = window.currentUserCoins || 0;
+
+    if (cost > 0 && balance < cost) {
+        const need = cost - balance;
+        window.closeGiftModal();
+        if (confirm(`❌ Недостатньо монет для подарунка!\nПотрібно: ${cost.toLocaleString()} 🪙\nВаш баланс: ${balance.toLocaleString()} 🪙\nНе вистачає: ${need.toLocaleString()} 🪙\n\nВідкрити магазин монет?`)) {
+            if (typeof window.openCoinShop === 'function') window.openCoinShop();
+        }
+        return;
+    }
+
     // Анімація вибраного подарунку
     const allItems = document.querySelectorAll('.gift-item-select');
     allItems.forEach(el => el.style.pointerEvents = 'none');
@@ -1721,12 +1735,17 @@ window.sendGift = async function(iconUrl, giftId) {
             body: JSON.stringify({ 
                 post_id: postId, 
                 gift_icon: iconUrl,
-                gift_id: giftId || ''
+                gift_id: giftId || '',
+                cost: cost
             })
         });
 
         const result = await response.json();
         if (result.success) {
+            // Списуємо монети локально (бекенд за бажанням теж може списати)
+            if (cost > 0) {
+                window.refreshCoinsDisplay(Math.max(0, balance - cost));
+            }
             window.closeGiftModal();
             if (typeof window.showTopAlert === 'function') {
                 window.showTopAlert("Подарунок відправлено! 🎁");
@@ -1734,9 +1753,11 @@ window.sendGift = async function(iconUrl, giftId) {
             // Обов'язково оновлюємо пости, щоб побачити нову іконку
             loadAllPosts(true);
         } else {
+            allItems.forEach(el => el.style.pointerEvents = 'auto');
             alert("Помилка сервера: " + result.message);
         }
     } catch (e) {
+        allItems.forEach(el => el.style.pointerEvents = 'auto');
         console.error("❌ Помилка Fetch:", e);
     }
 };
@@ -9137,6 +9158,140 @@ window.closePremiumModal = function() {
     document.getElementById('premium-modal').style.display = 'none';
 };
 
+// ==========================================================
+// 🪙 МАГАЗИН МОНЕТ (поки що безкоштовно)
+// ==========================================================
+window.COIN_PACKS = [
+    { amount: 100,   emoji: '🪙' },
+    { amount: 250,   emoji: '💰' },
+    { amount: 500,   emoji: '💵' },
+    { amount: 1000,  emoji: '💎', best: true },
+    { amount: 2500,  emoji: '👑' },
+    { amount: 5000,  emoji: '🏆' },
+    { amount: 10000, emoji: '🚀' },
+];
+
+window.openCoinShop = function() {
+    const modal = document.getElementById('coin-shop-modal');
+    if (!modal) return;
+
+    const balEl = document.getElementById('coin-shop-balance-val');
+    if (balEl) balEl.textContent = Number(window.currentUserCoins || 0).toLocaleString();
+
+    const grid = document.getElementById('coin-shop-grid');
+    if (grid) {
+        grid.innerHTML = window.COIN_PACKS.map(p => `
+            <div class="coin-pack ${p.best ? 'coin-pack-best' : ''}">
+                <div class="coin-pack-emoji">${p.emoji}</div>
+                <div class="coin-pack-amount"><span class="pack-coin">🪙</span> ${p.amount.toLocaleString()}</div>
+                <button class="coin-pack-btn" onclick="window.buyCoins(${p.amount}, this)">Отримати</button>
+            </div>
+        `).join('');
+    }
+
+    // перезапуск анімації появи
+    const box = modal.querySelector('.coin-shop-box');
+    if (box) { box.style.animation = 'none'; void box.offsetWidth; box.style.animation = ''; }
+
+    modal.style.display = 'flex';
+};
+
+window.closeCoinShop = function() {
+    const modal = document.getElementById('coin-shop-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Анімація: монети летять із кнопки покупки до балансу в топ-барі
+function animateCoinsToBalance(fromEl, count) {
+    const target = document.querySelector('.coins-display-container');
+    if (!target || !fromEl) return;
+
+    const startRect = fromEl.getBoundingClientRect();
+    const endRect = target.getBoundingClientRect();
+    const startX = startRect.left + startRect.width / 2;
+    const startY = startRect.top + startRect.height / 2;
+    const endX = endRect.left + endRect.width / 2;
+    const endY = endRect.top + endRect.height / 2;
+
+    const total = Math.min(count, 14);
+    for (let i = 0; i < total; i++) {
+        const coin = document.createElement('div');
+        coin.className = 'flying-coin';
+        coin.textContent = '🪙';
+        coin.style.left = startX + 'px';
+        coin.style.top = startY + 'px';
+        coin.style.transform = 'translate(-50%, -50%) scale(0.6)';
+        coin.style.opacity = '0';
+        document.body.appendChild(coin);
+
+        const delay = i * 60;
+        const jitterX = (Math.random() - 0.5) * 80;
+        const jitterY = (Math.random() - 0.5) * 60;
+
+        // старт
+        requestAnimationFrame(() => {
+            coin.style.transition = 'opacity 0.15s ease';
+            setTimeout(() => {
+                coin.style.opacity = '1';
+                coin.animate([
+                    { transform: `translate(-50%, -50%) translate(${jitterX}px, ${jitterY}px) scale(1)`, opacity: 1 },
+                    { transform: `translate(-50%, -50%) translate(${(endX - startX) * 0.5}px, ${(endY - startY) * 0.5 - 40}px) scale(1.1)`, opacity: 1, offset: 0.6 },
+                    { transform: `translate(-50%, -50%) translate(${endX - startX}px, ${endY - startY}px) scale(0.3)`, opacity: 0 }
+                ], { duration: 800, easing: 'cubic-bezier(0.5, 0, 0.75, 0.5)' });
+
+                setTimeout(() => {
+                    coin.remove();
+                    // пульсація балансу при "приземленні"
+                    const coinSpan = document.getElementById('top-bar-coins');
+                    if (coinSpan) {
+                        coinSpan.classList.remove('coins-pulse');
+                        void coinSpan.offsetWidth;
+                        coinSpan.classList.add('coins-pulse');
+                    }
+                }, 780);
+            }, delay);
+        });
+    }
+}
+
+window.buyCoins = async function(amount, btnEl) {
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = '...'; }
+
+    try {
+        const res = await fetch('buy_coins.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ amount })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // запускаємо анімацію польоту монет
+            animateCoinsToBalance(btnEl, amount >= 1000 ? 14 : 8);
+
+            // оновлюємо баланс трохи із затримкою, щоб збіглося з прильотом
+            setTimeout(() => {
+                window.refreshCoinsDisplay(data.new_balance);
+                const balEl = document.getElementById('coin-shop-balance-val');
+                if (balEl) balEl.textContent = Number(data.new_balance).toLocaleString();
+                const pmBal = document.getElementById('premium-modal-coins-balance');
+                if (pmBal) pmBal.textContent = Number(data.new_balance).toLocaleString();
+            }, 700);
+
+            if (btnEl) { btnEl.textContent = '✓ Готово'; }
+            setTimeout(() => { if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Отримати'; } }, 1200);
+        } else {
+            if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Отримати'; }
+            alert('❌ ' + (data.message || 'Помилка'));
+        }
+    } catch (e) {
+        console.error('Помилка покупки монет:', e);
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Отримати'; }
+        alert('❌ Помилка зʼєднання.');
+    }
+};
+
 // 3. Покупка Premium за монеты
 window.buyPremiumWithCoins = async function(plan) {
     const prices = { month: 1000, year: 20000 };
@@ -9145,7 +9300,9 @@ window.buyPremiumWithCoins = async function(plan) {
 
     if (window.currentUserCoins < cost) {
         const need = cost - window.currentUserCoins;
-        alert(`❌ Недостаточно монет!\nНужно: ${cost.toLocaleString()} 🪙\nВаш баланс: ${window.currentUserCoins.toLocaleString()} 🪙\nНе хватает: ${need.toLocaleString()} 🪙`);
+        if (confirm(`❌ Недостатньо монет!\nПотрібно: ${cost.toLocaleString()} 🪙\nВаш баланс: ${window.currentUserCoins.toLocaleString()} 🪙\nНе вистачає: ${need.toLocaleString()} 🪙\n\nВідкрити магазин монет?`)) {
+            window.openCoinShop();
+        }
         return;
     }
 
@@ -10780,9 +10937,14 @@ window.loadTopDiscover = async function() {
                 const bg = g.avatar
                     ? `background-image: url('${escapeGroupHTML(g.avatar)}');`
                     : `background: linear-gradient(120deg, rgba(240,4,127,0.35), rgba(80,8,50,0.6));`;
+                // 🖼️ Іконка аватарки зліва від назви
+                const avaIcon = g.avatar
+                    ? `<div class="mini-item-avatar" style="background-image: url('${escapeGroupHTML(g.avatar)}');"></div>`
+                    : `<div class="mini-item-avatar mini-item-avatar--placeholder">${isChannel ? '📣' : '👥'}</div>`;
                 return `
                 <div class="mini-item ${isChannel ? 'item-glow-cyan' : 'item-glow-pink'} with-blurred-image" style="cursor:pointer;"
                      onclick='window.openDiscoverItem(${JSON.stringify({id: parseInt(g.id)}).replace(/'/g, "&#39;")})'>
+                    ${avaIcon}
                     <div class="item-content-left">
                         <span class="item-main-title">${escapeGroupHTML(g.name)}${lock}</span>
                         <span class="item-subtitle">${g.members || 0} ${word}</span>

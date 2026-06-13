@@ -45,16 +45,17 @@ try {
     $songImg    = isset($data['songImg'])    ? mb_substr(trim($data['songImg']), 0, 500) : null;
     $songUrl    = isset($data['songUrl'])    ? mb_substr(trim($data['songUrl']), 0, 500) : null;
 
-    // Whitelist для фільтрів
-    $allowedAges  = ['any', '13+', '16+', '18+'];
-    $allowedComms = ['any', 'casual', 'serious'];
-    $allowedLevels = ['any', 'beginner', 'intermediate', 'advanced'];
-    $allowedColors = ['pink', 'blue', 'green', 'purple', 'orange', 'red', 'yellow'];
+    // Whitelist для фільтрів (значення мають збігатися з data-value у home.html)
+    $allowedAges  = ['any', '12-16', '16-18', '18+'];
+    $allowedComms = ['any', 'micro', 'microoff', 'discord', 'telegram'];
+    $allowedLevels = ['any', 'shooter', 'moba', 'profi'];
+    $allowedLangs  = ['any', 'yes', 'no'];
+    $allowedColors = ['pink', 'blue', 'green', 'purple', 'orange', 'red', 'yellow', 'white', 'black'];
 
     $filter_age  = in_array($data['filter_age'] ?? '', $allowedAges, true)   ? $data['filter_age']  : 'any';
     $filter_comm = in_array($data['filter_comm'] ?? '', $allowedComms, true)  ? $data['filter_comm'] : 'any';
     $filter_level = in_array($data['filter_level'] ?? '', $allowedLevels, true) ? $data['filter_level'] : 'any';
-    $filter_lang = mb_substr(trim($data['filter_lang'] ?? 'any'), 0, 10);
+    $filter_lang = in_array($data['filter_lang'] ?? '', $allowedLangs, true) ? $data['filter_lang'] : 'any';
     $color       = in_array($data['color'] ?? '', $allowedColors, true) ? $data['color'] : 'pink';
 
     // ── КРИТИЧНО: НЕ зберігаємо Base64 зображення в БД!

@@ -730,13 +730,33 @@ body .main-content-block.no-scroll-mode::-webkit-scrollbar {
     display: none;
 }
 
-/* Тонкий скроллбар для списка чатов (опционально) */
-.sidebar-sections-container::-webkit-scrollbar {
-    width: 4px;
+/* 💗 Рожевий скроллбар для блоку з каналами, групами та чатами */
+.sidebar-sections-container::-webkit-scrollbar,
+.side-panel-bottom::-webkit-scrollbar {
+    width: 7px;
 }
-.sidebar-sections-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+.sidebar-sections-container::-webkit-scrollbar-track,
+.side-panel-bottom::-webkit-scrollbar-track {
+    background: rgba(240, 4, 127, 0.06);
     border-radius: 10px;
+}
+.sidebar-sections-container::-webkit-scrollbar-thumb,
+.side-panel-bottom::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #f0047f, #c0036a);
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(240, 4, 127, 0.6);
+    border: 1px solid rgba(255, 105, 180, 0.4);
+}
+.sidebar-sections-container::-webkit-scrollbar-thumb:hover,
+.side-panel-bottom::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #ff37a0, #f0047f);
+    box-shadow: 0 0 12px rgba(240, 4, 127, 0.9);
+}
+/* Firefox */
+.sidebar-sections-container,
+.side-panel-bottom {
+    scrollbar-width: thin;
+    scrollbar-color: #f0047f rgba(240, 4, 127, 0.08);
 }
 
 /* Базовий стан: постійний легкий неон */
@@ -4393,7 +4413,34 @@ body.filters-open .main-content-block {
     gap: 0px;
 }
 
-.item-main-title {
+/* 🖼️ Іконка аватарки зліва від назви каналу/групи */
+.mini-item-avatar {
+    position: relative;
+    z-index: 2;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 50%;
+    margin-right: 12px;
+    background-size: cover;
+    background-position: center;
+    border: 1.5px solid rgba(240, 4, 127, 0.6);
+    box-shadow: 0 0 8px rgba(240, 4, 127, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: 0.3s ease;
+}
+.mini-item-avatar--placeholder {
+    background: linear-gradient(135deg, rgba(240,4,127,0.35), rgba(138,43,226,0.3));
+}
+.mini-item.with-blurred-image:hover .mini-item-avatar {
+    border-color: #f0047f;
+    box-shadow: 0 0 14px rgba(240, 4, 127, 0.8);
+    transform: scale(1.05);
+}
     color: #fff;
     font-size: 12px; /* Менший шрифт */
     font-weight: 700;
@@ -6455,6 +6502,131 @@ body[data-active-tab="requests"] #req-mode-toggle-wrapper {
 .coin-reward-btn:hover {
     background: #ff058c; box-shadow: 0 5px 30px rgba(240, 4, 127, 0.7);
 }
+
+/* ====================== 🪙 МАГАЗИН МОНЕТ ====================== */
+.coin-shop-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 0, 8, 0.85);
+    backdrop-filter: blur(15px);
+    z-index: 1000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Geologica', sans-serif;
+}
+.coin-shop-box {
+    position: relative;
+    background: linear-gradient(145deg, #1d0016, #0d000a);
+    border: 1.5px solid rgba(240, 4, 127, 0.4);
+    border-radius: 24px;
+    padding: 32px 28px 28px;
+    width: 90%;
+    max-width: 460px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 0 60px rgba(240, 4, 127, 0.3), 0 20px 60px rgba(0, 0, 0, 0.6);
+    transform: scale(0.4);
+    opacity: 0;
+    animation: popInBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.coin-shop-box::-webkit-scrollbar { width: 7px; }
+.coin-shop-box::-webkit-scrollbar-track { background: rgba(240,4,127,0.06); border-radius: 10px; }
+.coin-shop-box::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #f0047f, #c0036a);
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(240, 4, 127, 0.6);
+}
+.coin-shop-close {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(255, 255, 255, 0.06); border: none; border-radius: 50%;
+    width: 32px; height: 32px; cursor: pointer; color: #aaa; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.coin-shop-close:hover { color: #fff; background: rgba(240, 4, 127, 0.3); }
+.coin-shop-header { text-align: center; margin-bottom: 22px; }
+.coin-shop-icon {
+    font-size: 56px; margin-bottom: 8px;
+    animation: floatCoin 1.5s ease-in-out infinite alternate;
+}
+.coin-shop-header h2 {
+    color: #fff; margin: 0 0 6px; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;
+}
+.coin-shop-header p {
+    color: rgba(255, 255, 255, 0.5); font-size: 13px; margin: 0 0 14px;
+}
+.coin-shop-balance {
+    display: inline-block;
+    background: rgba(240, 4, 127, 0.1);
+    border: 1px solid rgba(240, 4, 127, 0.3);
+    color: #fff; font-weight: 700; font-size: 13px;
+    padding: 6px 16px; border-radius: 50px;
+}
+.coin-shop-balance span { color: #ffbc00; }
+.coin-shop-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+.coin-pack {
+    position: relative;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid rgba(240, 4, 127, 0.25);
+    border-radius: 18px;
+    padding: 18px 12px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+}
+.coin-pack:hover {
+    transform: translateY(-4px) scale(1.03);
+    border-color: #f0047f;
+    box-shadow: 0 8px 26px rgba(240, 4, 127, 0.4);
+    background: rgba(240, 4, 127, 0.08);
+}
+.coin-pack-best {
+    border-color: rgba(255, 188, 0, 0.6);
+}
+.coin-pack-best::after {
+    content: 'ХІТ';
+    position: absolute; top: 8px; right: 8px;
+    background: linear-gradient(90deg, #ffbc00, #ff7c00);
+    color: #1d0016; font-size: 9px; font-weight: 800;
+    padding: 2px 8px; border-radius: 50px; letter-spacing: 0.5px;
+}
+.coin-pack-emoji { font-size: 34px; line-height: 1; margin-bottom: 8px; }
+.coin-pack-amount {
+    color: #fff; font-size: 19px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.coin-pack-amount .pack-coin { color: #ffbc00; }
+.coin-pack-btn {
+    margin-top: 12px; width: 100%;
+    background: linear-gradient(135deg, #f0047f, #c0036a);
+    border: none; border-radius: 12px; color: #fff;
+    font-family: 'Geologica', sans-serif; font-weight: 800; font-size: 12px;
+    padding: 9px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+    box-shadow: 0 4px 16px rgba(240, 4, 127, 0.35); transition: 0.2s;
+}
+.coin-pack-btn:hover { background: linear-gradient(135deg, #ff37a0, #f0047f); }
+.coin-pack-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Летюча монета */
+.flying-coin {
+    position: fixed;
+    font-size: 28px;
+    z-index: 1000001;
+    pointer-events: none;
+    will-change: transform, opacity;
+    filter: drop-shadow(0 0 8px #ffbc00);
+}
+@keyframes coinPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.5); color: #ffbc00; text-shadow: 0 0 12px #ffbc00; }
+    100% { transform: scale(1); }
+}
+.coins-pulse { animation: coinPulse 0.5s ease; display: inline-block; }
 
 /* Окно Премиума */
 .premium-modal-content {
