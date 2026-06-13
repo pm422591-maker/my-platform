@@ -7,6 +7,9 @@ session_start();
 try {
     require_once __DIR__ . '/db_connect.php'; // utf8mb4 + безпечні налаштування
 
+    // Гарантуємо наявність колонки group_id (для заявок у групу)
+    try { $pdo->exec("ALTER TABLE posts ADD COLUMN group_id INT NOT NULL DEFAULT 0"); } catch (Exception $e) { /* вже існує */ }
+
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
     // Очищення старих заявок — виконується рідко (1% запитів), щоб не гальмувати кожне читання
@@ -157,6 +160,32 @@ try {
             } elseif (!empty($freshUser['avatar'])) {
                 $post['avatar_url'] = $freshUser['avatar'];
             }
+        }
+
+        // Для заявок у групу — додаємо приватність + чи поточний юзер уже учасник / подав заявку
+        $gid = isset($post['group_id']) ? (int)$post['group_id'] : 0;
+        if ($gid > 0) {
+            try {
+                $gst = $pdo->prepare("SELECT name, type, privacy FROM chat_groups WHERE id = ? LIMIT 1");
+                $gst->execute([$gid]);
+                $grp = $gst->fetch(PDO::FETCH_ASSOC);
+                if ($grp) {
+                    $post['group_real_name'] = $grp['name'];
+                    $post['group_type']      = $grp['type'];
+                    $post['group_privacy']   = $grp['privacy'] ?: 'private';
+
+                    $mst = $pdo->prepare("SELECT 1 FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1");
+                    $mst->execute([$gid, $user_id]);
+                    $post['group_is_member'] = (bool)$mst->fetchColumn();
+
+                    $rst = $pdo->prepare("SELECT 1 FROM chat_group_requests WHERE group_id = ? AND user_id = ? LIMIT 1");
+                    $rst->execute([$gid, $user_id]);
+                    $post['group_has_request'] = (bool)$rst->fetchColumn();
+                } else {
+                    // Група видалена — щоб не показувати "мертву" кнопку
+                    $post['group_id'] = 0;
+                }
+            } catch (Exception $e) { /* ігноруємо, кнопка просто не покажеться */ }
         }
     }
     unset($post);

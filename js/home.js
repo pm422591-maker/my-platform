@@ -454,6 +454,13 @@ window.publishPost = async function(event) {
     const isRequestsOpen = requestsTab && (requestsTab.classList.contains('active') || requestsTab.style.display === 'block');
     const exactPostType = isRequestsOpen ? 'requests' : 'feed';
 
+    // Якщо це заявка В ГРУПУ — потрібна обрана група
+    const _isGroupRequest = (exactPostType === 'requests' && window.currentRequestMode === 'group');
+    if (_isGroupRequest && !window.selectedRequestGroup) {
+        alert("Оберіть групу зі списку (блок «Список груп»).");
+        return;
+    }
+
     const postData = {
         author: userNick.trim(),
         avatar: cleanAvatarToSave,
@@ -461,11 +468,16 @@ window.publishPost = async function(event) {
         title: "", 
         body: bodyInput.value.trim(),
         
-        // Если это заявка-анкета, группа = "all". Во всех остальных случаях (Лента или Заявка-Группа) берем стандартный селектор
+        // Анкета → "all". Заявка в групу → ім'я обраної групи. Інакше — селектор.
         group: (exactPostType === 'requests' && window.currentRequestMode === 'anketa') 
                 ? "all" 
-                : (groupSelect ? groupSelect.value : "all"),
-                
+                : (_isGroupRequest && window.selectedRequestGroup)
+                    ? window.selectedRequestGroup.name
+                    : (groupSelect ? groupSelect.value : "all"),
+
+        // id обраної групи (тільки для заявки в групу) — потрібен для кнопки вступу
+        group_id: (_isGroupRequest && window.selectedRequestGroup) ? parseInt(window.selectedRequestGroup.id, 10) : 0,
+
         type: exactPostType,
         color: selectedColor,
         mention: mentionInput ? mentionInput.value.trim() : "",
@@ -768,15 +780,55 @@ if (post.post_type === 'requests') {
         </div>
     `;
 
-    // 2. Кнопка — власник бачить "ПОШТА ЗАЯВОК"; інші — кнопку відгуку
+    // 2. Кнопка — залежить від типу заявки
     const _isOwnRequest = (String(post.user_id) === String(post.current_viewer_id));
     const _appliedMap   = (window.myApplications || {});
     const _appliedStatus = _appliedMap[String(post.id)];
     const _btnBaseStyle = "flex-grow: 1; padding: 12px; border-radius: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;";
 
+    const _groupId = post.group_id ? parseInt(post.group_id, 10) : 0;
+
     let _applyBtnHTML = '';
-    if (_isOwnRequest) {
-        // Власник — кнопка "Пошта заявок" прямо на посту, з бейджем
+    if (_groupId > 0) {
+        // ── ЗАЯВКА В ГРУПУ: кнопка вступу / подачі заявки ──
+        const isPublic  = (post.group_privacy || 'private') === 'public';
+        const isMember  = !!post.group_is_member;
+        const hasReq    = !!post.group_has_request;
+        const isChannel = post.group_type === 'channel';
+
+        if (_isOwnRequest) {
+            _applyBtnHTML = `
+                <div style="${_btnBaseStyle} background: rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); cursor: default;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    ВАШ ЗАПИС ГРУПИ
+                </div>`;
+        } else if (isMember) {
+            _applyBtnHTML = `
+                <div style="${_btnBaseStyle} background: rgba(46,204,113,0.15); border:1px solid #2ecc71; color:#7CFFB0; cursor: default;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    ВИ ВЖЕ УЧАСНИК
+                </div>`;
+        } else if (hasReq) {
+            _applyBtnHTML = `
+                <div id="group-join-btn-${post.id}" style="${_btnBaseStyle} background: rgba(240,4,127,0.08); border:1px solid rgba(240,4,127,0.4); color:#ff80bf; cursor: default;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    ЗАЯВКУ НАДІСЛАНО
+                </div>`;
+        } else {
+            // Можна вступити (публічна) або подати заявку (приватна)
+            const label = isPublic ? (isChannel ? 'ПІДПИСАТИСЯ' : 'ВСТУПИТИ В ГРУПУ') : 'ПОДАТИ ЗАЯВКУ В ГРУПУ';
+            const icon  = isPublic
+                ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+            _applyBtnHTML = `
+                <button id="group-join-btn-${post.id}" onclick="window.joinGroupFromPost('${post.id}', ${_groupId})"
+                    style="${_btnBaseStyle} background: rgba(240,4,127,0.15); border:1px solid #f0047f; color:#ff80bf; cursor:pointer; box-shadow:0 0 15px rgba(240,4,127,0.4);"
+                    onmouseover="this.style.background='rgba(240,4,127,0.3)'" onmouseout="this.style.background='rgba(240,4,127,0.15)'">
+                    ${icon}${label}
+                </button>`;
+        }
+    } else if (_isOwnRequest) {
+        // Власник анкети — кнопка "Пошта заявок" прямо на посту, з бейджем
         _applyBtnHTML = `
             <button id="post-inbox-btn-${post.id}" onclick="window.openPostInbox('${post.id}')"
                 style="${_btnBaseStyle} background: rgba(240,4,127,0.12); border: 1px solid rgba(240,4,127,0.5); color: #ff80bf; cursor: pointer; position: relative;"
@@ -7355,6 +7407,9 @@ window.toggleRequestPanel = function(mode) {
         area.style.setProperty('display','none','important');
         if (btn) btn.classList.remove('active-btn');
     }
+    if (window.currentRequestMode === 'group' && typeof window.loadRequestGroupList === 'function') {
+        window.loadRequestGroupList();
+    }
 };
 
 window.switchRequestPublishMode = function(mode) {
@@ -7371,6 +7426,60 @@ window.switchRequestPublishMode = function(mode) {
         if (ab) ab.style.display = window.currentRequestMode==='group'?'none':'block';
         if (gb) gb.style.display = window.currentRequestMode==='group'?'block':'none';
     }
+    // У режимі "Для групи" — підвантажуємо список груп користувача
+    if (window.currentRequestMode === 'group' && typeof window.loadRequestGroupList === 'function') {
+        window.loadRequestGroupList();
+    }
+};
+
+// Обрана група для публікації заявки в групу
+window.selectedRequestGroup = window.selectedRequestGroup || null;
+
+// Завантажує групи користувача у блок вибору (чіпи)
+window.loadRequestGroupList = async function() {
+    const container = document.getElementById('future-group-list-container');
+    if (!container) return;
+    container.innerHTML = '<span style="color: rgba(255,255,255,0.4); font-size: 12px;">Завантаження…</span>';
+    try {
+        const res = await fetch('groups_api.php?action=my_list', { credentials: 'include' });
+        const data = await res.json();
+        const groups = (data.success && data.groups) ? data.groups.filter(g => g.type !== 'channel') : [];
+
+        if (!groups.length) {
+            container.innerHTML = '<span style="color: rgba(255,255,255,0.4); font-size: 12px;">У вас немає груп. Спочатку створіть групу.</span>';
+            window.selectedRequestGroup = null;
+            return;
+        }
+
+        container.innerHTML = groups.map(g => {
+            const esc = (typeof escapeGroupHTML === 'function') ? escapeGroupHTML : (s => (s||''));
+            const isSel = window.selectedRequestGroup && String(window.selectedRequestGroup.id) === String(g.id);
+            const priv = (g.privacy || 'private') === 'public' ? '🌐' : '🔒';
+            return `<div class="filter-chip req-group-chip ${isSel ? 'active' : ''}" data-group-id="${g.id}" data-group-name="${esc(g.name)}" data-group-privacy="${g.privacy || 'private'}"
+                        onclick="window.selectRequestGroup(this)" style="font-weight:600; cursor:pointer;">${priv} ${esc(g.name)}</div>`;
+        }).join('');
+
+        // Якщо нічого ще не обрано — обираємо першу
+        if (!window.selectedRequestGroup) {
+            const first = container.querySelector('.req-group-chip');
+            if (first) window.selectRequestGroup(first);
+        }
+    } catch (e) {
+        container.innerHTML = '<span style="color:#ff8080; font-size:12px;">Помилка завантаження груп</span>';
+    }
+};
+
+// Вибір групи зі списку
+window.selectRequestGroup = function(el) {
+    if (!el) return;
+    const container = document.getElementById('future-group-list-container');
+    if (container) container.querySelectorAll('.req-group-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    window.selectedRequestGroup = {
+        id: el.getAttribute('data-group-id'),
+        name: el.getAttribute('data-group-name'),
+        privacy: el.getAttribute('data-group-privacy')
+    };
 };
 
 window.togglePostPanel = function(panelName) {
@@ -10098,6 +10207,38 @@ function groupApiPost(body) {
         body: JSON.stringify(body)
     }).then(r => r.json());
 }
+
+// Вступ / подача заявки в групу прямо з поста-заявки
+window.joinGroupFromPost = async function(postId, groupId) {
+    const btn = document.getElementById('group-join-btn-' + postId);
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    try {
+        const data = await groupApiPost({ action: 'request_join', group_id: parseInt(groupId, 10) });
+        if (!data || !data.success) {
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+            if (typeof window.showGroupToast === 'function') window.showGroupToast('⚠️ ' + ((data && data.message) || 'Помилка'));
+            return;
+        }
+
+        const base = "flex-grow:1; padding:12px; border-radius:12px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; display:flex; justify-content:center; align-items:center; gap:8px;";
+
+        if (data.state === 'joined' || data.state === 'member') {
+            // Публічна — вступили одразу
+            if (btn) btn.outerHTML = `<div style="${base} background:rgba(46,204,113,0.15); border:1px solid #2ecc71; color:#7CFFB0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ВИ ВЖЕ УЧАСНИК</div>`;
+            if (typeof window.showGroupToast === 'function') window.showGroupToast('✅ Ви приєдналися до групи');
+            if (typeof window.loadMyGroupChats === 'function') window.loadMyGroupChats();
+        } else if (data.state === 'requested') {
+            // Приватна — заявку надіслано
+            if (btn) btn.outerHTML = `<div style="${base} background:rgba(240,4,127,0.08); border:1px solid rgba(240,4,127,0.4); color:#ff80bf;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> ЗАЯВКУ НАДІСЛАНО</div>`;
+            if (typeof window.showGroupToast === 'function') window.showGroupToast('📨 Заявку на вступ надіслано');
+        }
+    } catch (e) {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+        if (typeof window.showGroupToast === 'function') window.showGroupToast('⚠️ Помилка мережі');
+    }
+};
 
 // === 1. СТВОРЕННЯ ===
 window.openCreateFlow = function(type) {

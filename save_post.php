@@ -58,6 +58,13 @@ try {
     $filter_lang = in_array($data['filter_lang'] ?? '', $allowedLangs, true) ? $data['filter_lang'] : 'any';
     $color       = in_array($data['color'] ?? '', $allowedColors, true) ? $data['color'] : 'pink';
 
+    // id групи (тільки для заявки в групу). 0 = звичайний пост/анкета
+    $group_id = isset($data['group_id']) ? (int)$data['group_id'] : 0;
+    if ($group_id < 0) $group_id = 0;
+
+    // Гарантуємо наявність колонки group_id у таблиці posts (одноразово, дешево)
+    try { $pdo->exec("ALTER TABLE posts ADD COLUMN group_id INT NOT NULL DEFAULT 0"); } catch (Exception $e) { /* вже існує */ }
+
     // ── КРИТИЧНО: НЕ зберігаємо Base64 зображення в БД!
     // Base64 картинки в БД — це неправильно: роздуває базу, уповільнює запити.
     // Замість цього post_image має бути URL до файлу в uploads/.
@@ -82,8 +89,8 @@ try {
     $sql = "INSERT INTO posts 
             (user_id, author_name, avatar_url, post_image, title, body, group_name, post_type, 
              song_title, song_artist, song_img, song_url, mention_user, 
-             filter_age, filter_comm, filter_level, filter_lang, post_color) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+             filter_age, filter_comm, filter_level, filter_lang, post_color, group_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
@@ -105,6 +112,7 @@ try {
         $filter_level,
         $filter_lang,
         $color,
+        $group_id,
     ]);
 
     echo json_encode(['success' => true, 'post_id' => (int)$pdo->lastInsertId()]);
