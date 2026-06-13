@@ -755,11 +755,9 @@ let postActionsHTML = '';
 let commentsDisplayHTML = ''; 
 
 if (post.post_type === 'requests') {
-    // 1. Створюємо розмітку таймера (ID мають бути time- та ring-)
-    // data-seconds-left: серверний залишок; data-anchor: момент завантаження за годинником клієнта.
+    // 1. Таймер — використовуємо серверний seconds_left щоб уникнути проблем з часовими поясами
     const _secLeft = (post.seconds_left !== undefined && post.seconds_left !== null)
-        ? parseInt(post.seconds_left, 10)
-        : 3600;
+        ? parseInt(post.seconds_left, 10) : 3600;
     const timerMarkup = `
         <div class="request-timer" data-seconds-left="${_secLeft}" data-anchor="${Date.now()}" data-created="${post.created_at}" data-post-id="${post.id}" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: rgba(240, 4, 127, 0.05); border-radius: 50%; box-shadow: 0 0 10px rgba(240, 4, 127, 0.2); flex-shrink: 0; position: relative;">
             <svg width="48" height="48" style="transform: rotate(-90deg); position: absolute; top: 0; left: 0;">
@@ -770,27 +768,27 @@ if (post.post_type === 'requests') {
         </div>
     `;
 
-    // 2. Вставляємо кнопку відгуку (стан залежить від того, чи це наша анкета
-    //    і чи ми вже відгукувались)
+    // 2. Кнопка: для власника — "Пошта заявок" прямо на посту; для інших — відгук
     const _isOwnRequest = (String(post.user_id) === String(post.current_viewer_id));
     const _appliedMap = (window.myApplications || {});
-    const _appliedStatus = _appliedMap[String(post.id)]; // undefined | pending | accepted | rejected
+    const _appliedStatus = _appliedMap[String(post.id)];
 
     const _btnBaseStyle = "flex-grow: 1; padding: 12px; border-radius: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;";
 
     let _applyBtnHTML = '';
     if (_isOwnRequest) {
-        // Власник своєї анкети — відгукуватись не можна
+        // Власник бачить кнопку "Пошта заявок" прямо на своєму пості
         _applyBtnHTML = `
-            <div style="${_btnBaseStyle} background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); cursor: default;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                ВАША АНКЕТА
-            </div>`;
+            <button id="post-inbox-btn-${post.id}" onclick="window.openPostInbox('${post.id}')"
+                style="${_btnBaseStyle} background: rgba(240,4,127,0.12); border: 1px solid rgba(240,4,127,0.5); color: #ff80bf; cursor: pointer; position: relative;"
+                onmouseover="this.style.background='rgba(240,4,127,0.25)'" onmouseout="this.style.background='rgba(240,4,127,0.12)'">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                ПОШТА ЗАЯВОК
+                <span id="post-inbox-badge-${post.id}" style="display:none; position:absolute; top:-7px; right:-7px; min-width:20px; height:20px; padding:0 5px; box-sizing:border-box; align-items:center; justify-content:center; background:#f0047f; color:#fff; font-size:11px; font-weight:800; border-radius:10px; box-shadow:0 2px 8px rgba(240,4,127,0.6);"></span>
+            </button>`;
     } else if (_appliedStatus) {
-        // Вже відгукнулись — показуємо стан
         _applyBtnHTML = window.renderApplyButton(post.id, _appliedStatus);
     } else {
-        // Можна відгукнутись — відкриваємо вікно з коментарем
         _applyBtnHTML = window.renderApplyButton(post.id, null);
     }
 
@@ -960,6 +958,11 @@ const postHTML = `
         window.loadedPostsCount = (window.loadedPostsCount || 0) + posts.length;
         window.currentPage++;
         window.isFirstPostsLoadDone = true;
+
+        // Оновлюємо бейджи "нових заявок" на кнопках Пошта заявок (тільки для вкладки Заявки)
+        if (currentTab === 'requests' && typeof window.refreshPostInboxBadges === 'function') {
+            setTimeout(window.refreshPostInboxBadges, 300);
+        }
 
         // 🚀 ПЕРЕДЗАВАНТАЖЕННЯ: одразу після першої маленької порції тихо тягнемо наступну,
         // щоб скрол ніколи не "впирався" у порожнечу
@@ -7133,75 +7136,49 @@ window.selectPostColor = function(element, colorName) {
     };
 
 /* ═══════════════════════════════════════════════════════════════
-   ПАРАМЕТРИ ТІМЕЙТА (фільтри при створенні анкети)
-   Ці функції викликаються з home.html, але були відсутні —
-   тому кнопка "Параметри тімейта" і тумблер "Анкета/Для групи"
-   не працювали.
+   ПАРАМЕТРИ ТІМЕЙТА — функції, яких не вистачало
    ═══════════════════════════════════════════════════════════════ */
-
-// Поточний режим публікації заявки: 'anketa' (за замовч.) або 'group'
 window.currentRequestMode = window.currentRequestMode || 'anketa';
 
-// Відкриває / ховає панель параметрів тімейта (чіпи фільтрів)
 window.toggleRequestPanel = function(mode) {
-    if (mode === 'group' || mode === 'anketa') {
-        window.currentRequestMode = mode;
-    }
+    if (mode === 'group' || mode === 'anketa') window.currentRequestMode = mode;
 
     const area      = document.getElementById('requests-filters-area');
     const anketaBlk = document.getElementById('req-anketa-fields-block');
     const groupBlk  = document.getElementById('requests-group-list-area');
     const btn       = document.getElementById('btn-toggle-requests-filters');
-
     if (!area) return;
 
-    // Перемикаємо потрібний блок усередині панелі
     if (anketaBlk) anketaBlk.style.display = (window.currentRequestMode === 'group') ? 'none' : 'block';
     if (groupBlk)  groupBlk.style.display  = (window.currentRequestMode === 'group') ? 'block' : 'none';
 
-    // Тогл видимості самої панелі
     const isHidden = window.getComputedStyle(area).display === 'none' || area.style.display === 'none';
     if (isHidden) {
         area.style.setProperty('display', 'block', 'important');
-        area.classList.add('show');
         if (btn) btn.classList.add('active-btn');
-        ['post-filters-area', 'group-settings-area', 'extra-settings-area'].forEach(id => {
+        ['post-filters-area','group-settings-area','extra-settings-area'].forEach(id => {
             const p = document.getElementById(id);
-            if (p) p.style.setProperty('display', 'none', 'important');
+            if (p) p.style.setProperty('display','none','important');
         });
     } else {
         area.style.setProperty('display', 'none', 'important');
-        area.classList.remove('show');
         if (btn) btn.classList.remove('active-btn');
     }
 };
 
-// Перемикає режим публікації (Анкета / Для групи) у тумблері редактора
 window.switchRequestPublishMode = function(mode) {
     window.currentRequestMode = (mode === 'group') ? 'group' : 'anketa';
 
-    const btnAnketa = document.getElementById('req-mode-anketa');
-    const btnGroup  = document.getElementById('req-mode-group');
+    const btnA = document.getElementById('req-mode-anketa');
+    const btnG = document.getElementById('req-mode-group');
+    if (btnA) { const on = window.currentRequestMode === 'anketa'; btnA.style.background = on ? '#f0047f' : 'transparent'; btnA.style.color = on ? 'white' : '#ccc'; }
+    if (btnG) { const on = window.currentRequestMode === 'group';  btnG.style.background = on ? '#f0047f' : 'transparent'; btnG.style.color = on ? 'white' : '#ccc'; }
 
-    if (btnAnketa) {
-        const on = window.currentRequestMode === 'anketa';
-        btnAnketa.classList.toggle('active', on);
-        btnAnketa.style.background = on ? '#f0047f' : 'transparent';
-        btnAnketa.style.color = on ? 'white' : '#ccc';
-    }
-    if (btnGroup) {
-        const on = window.currentRequestMode === 'group';
-        btnGroup.classList.toggle('active', on);
-        btnGroup.style.background = on ? '#f0047f' : 'transparent';
-        btnGroup.style.color = on ? 'white' : '#ccc';
-    }
-
-    // Якщо панель параметрів уже відкрита — оновлюємо, який блок показувати
     const area = document.getElementById('requests-filters-area');
     const anketaBlk = document.getElementById('req-anketa-fields-block');
     const groupBlk  = document.getElementById('requests-group-list-area');
-    const areaOpen = area && !(window.getComputedStyle(area).display === 'none' || area.style.display === 'none');
-    if (areaOpen) {
+    const open = area && !(window.getComputedStyle(area).display === 'none' || area.style.display === 'none');
+    if (open) {
         if (anketaBlk) anketaBlk.style.display = (window.currentRequestMode === 'group') ? 'none' : 'block';
         if (groupBlk)  groupBlk.style.display  = (window.currentRequestMode === 'group') ? 'block' : 'none';
     }
@@ -8234,17 +8211,6 @@ window.setLudoraPage = function(tabName) {
         if (areaReqFilters) areaReqFilters.style.setProperty('display', 'none', 'important');
     }
 
-    // Кнопка "Пошта заявок" — лише на вкладці ЗАЯВКИ
-    const btnAppInbox = document.getElementById('btn-applications-inbox');
-    if (btnAppInbox) {
-        if (tabName === 'requests') {
-            btnAppInbox.style.setProperty('display', 'flex', 'important');
-            if (typeof window.checkApplicationsBadge === 'function') window.checkApplicationsBadge();
-        } else {
-            btnAppInbox.style.setProperty('display', 'none', 'important');
-        }
-    }
-
     const areaExtra = document.getElementById('extra-settings-area');
     const areaFilters = document.getElementById('post-filters-area');
     if (areaExtra) areaExtra.style.setProperty('display', 'none', 'important');
@@ -8441,6 +8407,82 @@ window.loadApplicationsInbox = async function() {
     }
 };
 
+// ── Пошта конкретного поста — відкривається з кнопки прямо на анкеті ──
+window.openPostInbox = function(postId) {
+    const old = document.getElementById('app-inbox-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'app-inbox-overlay';
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,0,8,0.8);backdrop-filter:blur(10px);z-index:80000;display:flex;align-items:center;justify-content:center;padding:20px;";
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `
+        <div style="width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;background:#1a0a14;border:1px solid rgba(240,4,127,0.35);border-radius:20px;box-shadow:0 10px 50px rgba(240,4,127,0.25);font-family:'Geologica',sans-serif;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid rgba(255,255,255,0.07);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f0047f" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <h3 style="margin:0;color:#fff;font-size:18px;">Заявки на анкету</h3>
+                </div>
+                <button onclick="document.getElementById('app-inbox-overlay').remove()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:22px;line-height:1;">&times;</button>
+            </div>
+            <div id="app-inbox-list" style="flex:1;overflow-y:auto;padding:16px 18px;">
+                <div style="text-align:center;color:rgba(255,255,255,0.5);padding:40px 0;">Завантаження...</div>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    window.loadPostInboxApps(postId);
+
+    // Скидаємо бейдж цього поста
+    fetch('respond_application.php', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'mark_read_all' })
+    }).then(() => {
+        const badge = document.getElementById('post-inbox-badge-' + postId);
+        if (badge) badge.style.display = 'none';
+    }).catch(() => {});
+};
+
+window.loadPostInboxApps = async function(postId) {
+    const list = document.getElementById('app-inbox-list');
+    if (!list) return;
+    try {
+        const res  = await fetch('get_applications.php?t=' + Date.now(), { credentials:'include' });
+        const data = await res.json();
+        const apps = (data.applications || []).filter(a => String(a.post_id) === String(postId));
+
+        if (!apps.length) {
+            list.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,0.45);padding:50px 10px;">
+                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;margin-bottom:12px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <div style="font-size:14px;">Ще ніхто не відгукнувся на цю анкету</div></div>`;
+            return;
+        }
+        list.innerHTML = apps.map(a => window.renderApplicationCard(a)).join('');
+    } catch(e) {
+        list.innerHTML = `<div style="text-align:center;color:#ff8080;padding:40px 0;">Помилка завантаження</div>`;
+    }
+};
+
+// Оновлює червоні бейджи на всіх кнопках "Пошта заявок" що є на постах
+window.refreshPostInboxBadges = async function() {
+    try {
+        const res  = await fetch('get_applications.php?t=' + Date.now(), { credentials:'include' });
+        const data = await res.json();
+        if (!data.success) return;
+        const unread = {};
+        (data.applications || []).forEach(a => {
+            if (!Number(a.is_read)) unread[a.post_id] = (unread[a.post_id] || 0) + 1;
+        });
+        document.querySelectorAll('[id^="post-inbox-badge-"]').forEach(badge => {
+            const pid   = badge.id.replace('post-inbox-badge-', '');
+            const count = unread[pid] || 0;
+            badge.innerText = count > 99 ? '99+' : count;
+            badge.style.display = count > 0 ? 'flex' : 'none';
+        });
+    } catch(e) {}
+};
+
 window.renderApplicationCard = function(a) {
     const esc = (typeof escapeGroupHTML === 'function') ? escapeGroupHTML : (s => (s || ''));
     const avatar = (window.getSafeAvatarUrl ? window.getSafeAvatarUrl(a.applicant_avatar) : (a.applicant_avatar || 'img/default_avatar.png'));
@@ -8509,32 +8551,20 @@ window.respondToApplication = async function(appId, action, btnEl) {
 };
 
 // Оновлює бейдж кількості нових заявок біля кнопки пошти
-window.updateApplicationsBadge = function(count) {
-    const badge = document.getElementById('app-inbox-badge');
-    if (!badge) return;
-    if (count > 0) {
-        badge.innerText = count > 99 ? '99+' : count;
-        badge.style.display = 'flex';
-    } else {
-        badge.style.display = 'none';
-    }
+// updateApplicationsBadge — тепер оновлює бейджи на постах, не в сайдбарі
+window.updateApplicationsBadge = function() {
+    if (typeof window.refreshPostInboxBadges === 'function') window.refreshPostInboxBadges();
 };
 
-// Тихо перевіряє кількість нових заявок (для бейджа)
 window.checkApplicationsBadge = async function() {
-    try {
-        const res = await fetch('get_applications.php?t=' + Date.now(), { credentials: 'include' });
-        const data = await res.json();
-        if (data && data.success) window.updateApplicationsBadge(data.unread || 0);
-    } catch (e) { /* мовчки */ }
+    if (typeof window.refreshPostInboxBadges === 'function') window.refreshPostInboxBadges();
 };
 
-// Перевіряємо нові заявки при завантаженні та раз на 60с
+// Перевіряємо нові заявки раз на 60с
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof window.checkApplicationsBadge === 'function') {
-        window.checkApplicationsBadge();
-        setInterval(window.checkApplicationsBadge, 60000);
-    }
+    setInterval(function() {
+        if (typeof window.refreshPostInboxBadges === 'function') window.refreshPostInboxBadges();
+    }, 60000);
 });
 
 // Ставимо мітку при першому завантаженні сторінки
@@ -8559,59 +8589,43 @@ if (!window.requestsTimerStarted) {
         timers.forEach(timer => {
             const postId = timer.getAttribute('data-post-id');
             const postCard = document.getElementById(postId) || document.getElementById(`post-${postId}`);
-
             if (!postCard || postCard.getAttribute('data-is-deleting') === 'true') return;
 
-            // 1. Базуємось на серверному залишку (data-seconds-left) + локальному якорі.
-            //    Це не залежить від часового поясу — на відміну від парсингу created_at.
             const secLeftAttr = timer.getAttribute('data-seconds-left');
             const anchorAttr  = timer.getAttribute('data-anchor');
-
+            const timeLimitMs = 60 * 60 * 1000;
             let timeLeftMs;
-            const timeLimitMs = 60 * 60 * 1000; // 60 хвилин
 
             if (secLeftAttr !== null && anchorAttr !== null) {
-                const baseSec   = parseInt(secLeftAttr, 10);
-                const anchorMs  = parseInt(anchorAttr, 10);
-                const elapsedMs = Date.now() - anchorMs;
-                timeLeftMs = (baseSec * 1000) - elapsedMs;
+                timeLeftMs = (parseInt(secLeftAttr, 10) * 1000) - (Date.now() - parseInt(anchorAttr, 10));
             } else {
-                // Фолбек на старий метод (created_at як UTC), якщо немає seconds_left
+                // fallback: parse created_at as UTC
                 const createdStr = timer.getAttribute('data-created');
                 if (!createdStr) return;
-                const safeDateStr = createdStr.replace(' ', 'T') + "Z";
-                const createdMs = new Date(safeDateStr).getTime();
-                let elapsedMs = Date.now() - createdMs;
+                let elapsedMs = Date.now() - new Date(createdStr.replace(' ','T')+'Z').getTime();
                 if (elapsedMs < 0) elapsedMs = 0;
                 timeLeftMs = timeLimitMs - elapsedMs;
             }
-
             if (timeLeftMs > timeLimitMs) timeLeftMs = timeLimitMs;
 
             const textEl = document.getElementById(`time-${postId}`);
             const ringEl = document.getElementById(`ring-${postId}`);
 
             if (timeLeftMs <= 0) {
-                // ЧАС ВИЙШОВ. Прибираємо картку візуально у всіх,
-                // але DELETE у БД ініціює лише автор (сервер усе одно чистить старі заявки сам).
                 postCard.setAttribute('data-is-deleting', 'true');
-                const isOwner = postCard.getAttribute('data-is-owner') === 'true';
-                if (isOwner && window.deletePost) {
+                if (postCard.getAttribute('data-is-owner') === 'true' && window.deletePost) {
                     window.deletePost(postId);
                 } else {
                     postCard.style.transition = 'opacity 0.4s';
                     postCard.style.opacity = '0';
-                    setTimeout(() => { if (postCard && postCard.parentNode) postCard.remove(); }, 450);
+                    setTimeout(() => { if (postCard.parentNode) postCard.remove(); }, 450);
                 }
             } else {
-                // ОНОВЛЮЄМО ІНТЕРФЕЙС
                 const minutesLeft = Math.ceil(timeLeftMs / 60000);
                 if (textEl) textEl.innerText = Math.min(60, Math.max(1, minutesLeft)) + 'm';
-
                 if (ringEl) {
-                    const maxOffset = 132;
-                    const offset = maxOffset - (maxOffset * (timeLeftMs / timeLimitMs));
-                    ringEl.style.strokeDashoffset = Math.max(0, Math.min(maxOffset, offset));
+                    const off = 132 - (132 * (timeLeftMs / timeLimitMs));
+                    ringEl.style.strokeDashoffset = Math.max(0, Math.min(132, off));
                 }
             }
         });
@@ -9208,17 +9222,16 @@ window.togglePostEditor = function() {
         const titleInput = document.getElementById('new-post-title');
         if (titleInput) setTimeout(() => titleInput.focus(), 300);
 
-        // ✨ На вкладці ЗАЯВКИ показуємо тумблер режиму та кнопку "Параметри тімейта"
+        // На вкладці ЗАЯВКИ показуємо тумблер та кнопку параметрів тімейта
         const onRequests = (window.currentLudoraPage === 'requests');
-        const reqModeWrap = document.getElementById('req-mode-toggle-wrapper');
+        const reqModeWrap   = document.getElementById('req-mode-toggle-wrapper');
         const btnReqFilters = document.getElementById('btn-toggle-requests-filters');
-        if (reqModeWrap) reqModeWrap.style.setProperty('display', onRequests ? 'flex' : 'none', 'important');
+        if (reqModeWrap)   reqModeWrap.style.setProperty('display', onRequests ? 'flex' : 'none', 'important');
         if (btnReqFilters) btnReqFilters.style.setProperty('display', onRequests ? 'inline-flex' : 'none', 'important');
         if (onRequests && typeof window.switchRequestPublishMode === 'function') {
             window.switchRequestPublishMode(window.currentRequestMode || 'anketa');
         }
     } else {
-        // Ховаємо панель параметрів при закритті редактора
         const area = document.getElementById('requests-filters-area');
         if (area) area.style.setProperty('display', 'none', 'important');
         const btnReqFilters = document.getElementById('btn-toggle-requests-filters');
