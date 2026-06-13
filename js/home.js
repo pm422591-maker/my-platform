@@ -9135,6 +9135,13 @@ function updatePremiumButtonState(isActive, premiumUntil) {
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(loadUserCoinsFromDB, 1000);
+    // Замінюємо emoji-монети на красиву SVG
+    try {
+        const tbIcon = document.getElementById('top-bar-coin-icon');
+        if (tbIcon && window.coinSVG) tbIcon.innerHTML = window.coinSVG(18);
+        const rewardIcon = document.querySelector('.coin-icon-large');
+        if (rewardIcon && window.coinSVG) rewardIcon.innerHTML = window.coinSVG(70);
+    } catch (e) {}
 });
 
 window.refreshCoinsDisplay = function(newBalance) {
@@ -9161,14 +9168,37 @@ window.closePremiumModal = function() {
 // ==========================================================
 // 🪙 МАГАЗИН МОНЕТ (поки що безкоштовно)
 // ==========================================================
+// 🪙 Красива SVG-монета (золотий градієнт із блиском) — використовується по всьому магазину
+window.coinSVG = function(size) {
+    size = size || 40;
+    return `<svg class="sc-coin" width="${size}" height="${size}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+        <defs>
+            <radialGradient id="scCoinFace" cx="38%" cy="32%" r="75%">
+                <stop offset="0%" stop-color="#ffe89a"/>
+                <stop offset="45%" stop-color="#ffc94d"/>
+                <stop offset="100%" stop-color="#f59300"/>
+            </radialGradient>
+            <linearGradient id="scCoinRim" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffd76b"/>
+                <stop offset="100%" stop-color="#d97a00"/>
+            </linearGradient>
+        </defs>
+        <circle cx="32" cy="32" r="30" fill="url(#scCoinRim)"/>
+        <circle cx="32" cy="32" r="24" fill="url(#scCoinFace)" stroke="#fff2c2" stroke-width="1.5" stroke-opacity="0.5"/>
+        <path d="M32 16c-4.5 0-8 1.8-8 5 0 6.8 14 3.4 14 8.6 0 2-2.5 3-6 3s-6-1-6-3" fill="none" stroke="#a85e00" stroke-width="3.4" stroke-linecap="round" opacity="0.55" transform="translate(0,0)"/>
+        <text x="32" y="42" text-anchor="middle" font-family="Geologica, sans-serif" font-size="26" font-weight="800" fill="#a85e00" opacity="0.85">S</text>
+        <ellipse cx="24" cy="22" rx="7" ry="4" fill="#fff" opacity="0.45" transform="rotate(-25 24 22)"/>
+    </svg>`;
+};
+
 window.COIN_PACKS = [
-    { amount: 100,   emoji: '🪙' },
-    { amount: 250,   emoji: '💰' },
-    { amount: 500,   emoji: '💵' },
-    { amount: 1000,  emoji: '💎', best: true },
-    { amount: 2500,  emoji: '👑' },
-    { amount: 5000,  emoji: '🏆' },
-    { amount: 10000, emoji: '🚀' },
+    { amount: 100,   tag: 'Старт' },
+    { amount: 250,   tag: '' },
+    { amount: 500,   tag: '' },
+    { amount: 1000,  tag: '', best: true },
+    { amount: 2500,  tag: '' },
+    { amount: 5000,  tag: '' },
+    { amount: 10000, tag: 'Макс' },
 ];
 
 window.openCoinShop = function() {
@@ -9178,13 +9208,19 @@ window.openCoinShop = function() {
     const balEl = document.getElementById('coin-shop-balance-val');
     if (balEl) balEl.textContent = Number(window.currentUserCoins || 0).toLocaleString();
 
+    // велика монета в шапці (як корона у преміумі)
+    const headIcon = document.getElementById('coin-shop-icon');
+    if (headIcon) headIcon.innerHTML = window.coinSVG(36);
+
     const grid = document.getElementById('coin-shop-grid');
     if (grid) {
         grid.innerHTML = window.COIN_PACKS.map(p => `
-            <div class="coin-pack ${p.best ? 'coin-pack-best' : ''}">
-                <div class="coin-pack-emoji">${p.emoji}</div>
-                <div class="coin-pack-amount"><span class="pack-coin">🪙</span> ${p.amount.toLocaleString()}</div>
-                <button class="coin-pack-btn" onclick="window.buyCoins(${p.amount}, this)">Отримати</button>
+            <div class="coin-pack ${p.best ? 'coin-pack-best' : ''}" onclick="window.buyCoins(${p.amount}, this.querySelector('.coin-pack-btn'))">
+                ${p.tag ? `<span class="coin-pack-tag">${p.tag}</span>` : ''}
+                <div class="coin-pack-coin">${window.coinSVG(46)}</div>
+                <div class="coin-pack-amount">${p.amount.toLocaleString()}</div>
+                <div class="coin-pack-sub">монет</div>
+                <button class="coin-pack-btn" onclick="event.stopPropagation(); window.buyCoins(${p.amount}, this)">Отримати</button>
             </div>
         `).join('');
     }
@@ -9217,7 +9253,7 @@ function animateCoinsToBalance(fromEl, count) {
     for (let i = 0; i < total; i++) {
         const coin = document.createElement('div');
         coin.className = 'flying-coin';
-        coin.textContent = '🪙';
+        coin.innerHTML = window.coinSVG ? window.coinSVG(26) : '🪙';
         coin.style.left = startX + 'px';
         coin.style.top = startY + 'px';
         coin.style.transform = 'translate(-50%, -50%) scale(0.6)';
