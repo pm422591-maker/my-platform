@@ -692,6 +692,30 @@ async function loadAllPosts(reset = false, forceReload = false) {
                 </div>`;
             }
 
+            // --- 3.6 ПОДАРУНКИ ПОСТА (справа від поста, вертикальна стрічка) ---
+            let giftsSideHTML = '';
+            if (post.gifts && post.gifts.length > 0) {
+                const _gCounts = {};
+                post.gifts.forEach(g => {
+                    const ic = g.icon || g.gift_icon;
+                    if (!ic) return;
+                    _gCounts[ic] = (_gCounts[ic] || 0) + 1;
+                });
+                const _entries = Object.entries(_gCounts);
+                if (_entries.length > 0) {
+                    const MAX_SHOW = 4;
+                    const shown = _entries.slice(0, MAX_SHOW);
+                    const extra = _entries.length - shown.length;
+                    const items = shown.map(([icon, count]) => `
+                        <div class="post-gift-side-item" title="Подарунок">
+                            <img src="${icon}" onerror="this.src='https://picsum.photos/seed/giftfallback/120'">
+                            ${count > 1 ? `<span class="post-gift-side-count">×${count}</span>` : ''}
+                        </div>`).join('');
+                    const extraHTML = extra > 0 ? `<div class="post-gift-side-more">+${extra}</div>` : '';
+                    giftsSideHTML = `<div class="post-gifts-side" title="Подарунки автору">${items}${extraHTML}</div>`;
+                }
+            }
+
             // --- 4. ЛОГІКА ФОТО ---
             let imgHTML = '';
             if (post.post_image && post.post_image.length > 50) {
@@ -941,7 +965,8 @@ if (post.post_type === 'requests') {
 
            // --- 7. ФОРМУЄМО HTML ---
 const postHTML = `
-<div id="post-${post.id}" class="user-post-card" data-post-id="${post.id}" data-is-owner="${String(post.user_id) === String(post.current_viewer_id)}" data-post-type="${(post.post_type || 'feed')}" style="${cardStyle} border-radius: 20px; padding: 20px; margin-bottom: 20px; position: relative; border: ${borderStyle}; box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
+<div id="post-${post.id}" class="user-post-card${(post.gifts && post.gifts.length) ? ' has-side-gifts' : ''}" data-post-id="${post.id}" data-is-owner="${String(post.user_id) === String(post.current_viewer_id)}" data-post-type="${(post.post_type || 'feed')}" style="${cardStyle} border-radius: 20px; padding: 20px; margin-bottom: 20px; position: relative; border: ${borderStyle}; box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">
+    ${giftsSideHTML}
     
     <div class="post-header-info" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
         <a href="profile.html?id=${post.user_id}" style="text-decoration: none; display: flex; align-items: center; gap: 12px; color: ${textColor};">
