@@ -452,7 +452,14 @@ window.publishPost = async function(event) {
 
     const requestsTab = document.getElementById('requests-content');
     const isRequestsOpen = requestsTab && (requestsTab.classList.contains('active') || requestsTab.style.display === 'block');
-    const exactPostType = isRequestsOpen ? 'requests' : 'feed';
+
+    // Визначаємо тип поста за активною вкладкою.
+    // Раніше було лише 'requests' або 'feed', тому пости з блогу летіли у стрічку.
+    const _activeTab = window.currentLudoraPage || (isRequestsOpen ? 'requests' : 'feed');
+    let exactPostType;
+    if (_activeTab === 'blog') exactPostType = 'blog';
+    else if (_activeTab === 'requests' || isRequestsOpen) exactPostType = 'requests';
+    else exactPostType = 'feed';
 
     // Заявка В ГРУПУ потребує обраної групи
     const _isGroupRequest = (exactPostType === 'requests' && window.currentRequestMode === 'group');
@@ -1637,6 +1644,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Функція перемикання
     function performSwitch(tabName) {
         console.log("Клік по вкладці:", tabName);
+        // Закриваємо й повертаємо редактор поста на рідне місце при зміні вкладки
+        const _ed = document.getElementById('create-post-panel');
+        if (_ed) {
+            _ed.classList.remove('open');
+            if (window._editorHomeParent && _ed.parentElement !== window._editorHomeParent) {
+                if (window._editorHomeNext && window._editorHomeNext.parentElement === window._editorHomeParent) {
+                    window._editorHomeParent.insertBefore(_ed, window._editorHomeNext);
+                } else {
+                    window._editorHomeParent.appendChild(_ed);
+                }
+            }
+        }
         // FIX: синхронізуємо обидві глобальні змінні — loadAllPosts читає currentLudoraPage
         window.currentTab = tabName;
         window.currentLudoraPage = tabName;
@@ -8483,6 +8502,19 @@ window.deletePost = async function(postId) {
     }
 };
 window.setLudoraPage = function(tabName) {
+    // Якщо редактор поста відкритий — закриваємо й повертаємо на рідне місце при зміні вкладки
+    const _ed = document.getElementById('create-post-panel');
+    if (_ed) {
+        _ed.classList.remove('open');
+        if (window._editorHomeParent && _ed.parentElement !== window._editorHomeParent) {
+            if (window._editorHomeNext && window._editorHomeNext.parentElement === window._editorHomeParent) {
+                window._editorHomeParent.insertBefore(_ed, window._editorHomeNext);
+            } else {
+                window._editorHomeParent.appendChild(_ed);
+            }
+        }
+    }
+
     window.currentLudoraPage = tabName;
     document.body.setAttribute('data-active-tab', tabName);
 
@@ -9577,8 +9609,35 @@ window.togglePostEditor = function() {
     }
     const wrapper = document.getElementById('create-post-panel');
     if (!wrapper) return;
+
+    // Запам'ятовуємо рідне місце редактора (щоб повертати після блогу)
+    if (!window._editorHomeParent) {
+        window._editorHomeParent = wrapper.parentElement;
+        window._editorHomeNext = wrapper.nextElementSibling;
+    }
+
+    const onBlog = window.currentLudoraPage === 'blog';
+    // Якщо ми в блозі — переносимо редактор у зону блогу (над стрічкою блогу),
+    // щоб він редагувався саме всередині блогу, а не у стрічці.
+    if (onBlog) {
+        const blogFeed = document.getElementById('blog-posts-feed');
+        if (blogFeed && wrapper.parentElement !== blogFeed.parentElement) {
+            blogFeed.parentElement.insertBefore(wrapper, blogFeed);
+        }
+    } else {
+        // Повертаємо редактор на рідне місце
+        if (window._editorHomeParent && wrapper.parentElement !== window._editorHomeParent) {
+            if (window._editorHomeNext && window._editorHomeNext.parentElement === window._editorHomeParent) {
+                window._editorHomeParent.insertBefore(wrapper, window._editorHomeNext);
+            } else {
+                window._editorHomeParent.appendChild(wrapper);
+            }
+        }
+    }
+
     wrapper.classList.toggle('open');
     if (wrapper.classList.contains('open')) {
+        wrapper.style.display = ''; // прибираємо можливий inline display:none після попередньої публікації
         if (typeof updateGroupSelect === 'function') updateGroupSelect();
         const titleInput = document.getElementById('new-post-title');
         if (titleInput) setTimeout(() => titleInput.focus(), 300);
