@@ -452,14 +452,7 @@ window.publishPost = async function(event) {
 
     const requestsTab = document.getElementById('requests-content');
     const isRequestsOpen = requestsTab && (requestsTab.classList.contains('active') || requestsTab.style.display === 'block');
-
-    // Визначаємо тип поста за активною вкладкою.
-    // Раніше було лише 'requests' або 'feed', тому пости з блогу летіли у стрічку.
-    const _activeTab = window.currentLudoraPage || (isRequestsOpen ? 'requests' : 'feed');
-    let exactPostType;
-    if (_activeTab === 'blog') exactPostType = 'blog';
-    else if (_activeTab === 'requests' || isRequestsOpen) exactPostType = 'requests';
-    else exactPostType = 'feed';
+    const exactPostType = isRequestsOpen ? 'requests' : 'feed';
 
     // Заявка В ГРУПУ потребує обраної групи
     const _isGroupRequest = (exactPostType === 'requests' && window.currentRequestMode === 'group');
@@ -1644,18 +1637,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Функція перемикання
     function performSwitch(tabName) {
         console.log("Клік по вкладці:", tabName);
-        // Закриваємо й повертаємо редактор поста на рідне місце при зміні вкладки
-        const _ed = document.getElementById('create-post-panel');
-        if (_ed) {
-            _ed.classList.remove('open');
-            if (window._editorHomeParent && _ed.parentElement !== window._editorHomeParent) {
-                if (window._editorHomeNext && window._editorHomeNext.parentElement === window._editorHomeParent) {
-                    window._editorHomeParent.insertBefore(_ed, window._editorHomeNext);
-                } else {
-                    window._editorHomeParent.appendChild(_ed);
-                }
-            }
-        }
         // FIX: синхронізуємо обидві глобальні змінні — loadAllPosts читає currentLudoraPage
         window.currentTab = tabName;
         window.currentLudoraPage = tabName;
@@ -1740,17 +1721,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.currentGiftPostId = null;
 
-// Список подарунків з картинками та цінами
+// ──────────────────────────────────────────────────────────────
+// СПИСОК НАГОРОД ("Нагородити автора")
+// ⚠️ ЗАМІНИ ЦЕ ПІЗНІШЕ: поле img у кожному об'єкті — це тимчасова
+// рандомна картинка-заглушка (picsum.photos). Щоб поставити свою
+// картинку, заміни значення img на шлях до свого файлу,
+// напр.: img: 'img/gifts/my_gift_1.png'
+// label / price можна теж змінювати під себе.
+// ──────────────────────────────────────────────────────────────
 window.GIFTS_LIST = [
-    { id: 'gift_1', img: 'img/gifts/gift_1.png', label: 'Серце', price: 50 },
-    { id: 'gift_2', img: 'img/gifts/gift_2.png', label: 'Зірка', price: 75 },
-    { id: 'gift_3', img: 'img/gifts/gift_3.png', label: 'Корона', price: 150 },
-    { id: 'gift_4', img: 'img/gifts/gift_4.png', label: 'Квітка', price: 50 },
-    { id: 'gift_5', img: 'img/gifts/gift_5.png', label: 'Діамант', price: 300 },
-    { id: 'gift_6', img: 'img/gifts/gift_6.png', label: 'Торт', price: 100 },
-    { id: 'gift_7', img: 'img/gifts/gift_7.png', label: 'Ракета', price: 200 },
-    { id: 'gift_8', img: 'img/gifts/gift_8.png', label: 'Вогонь', price: 100 },
-    { id: 'gift_9', img: 'img/gifts/gift_9.png', label: 'Магія', price: 250 },
+    { id: 'gift_1', img: 'img/Pink Panther.webp', label: 'Pink Panther', price: 50 },
+    { id: 'gift_2', img: 'img/Sanguine.webp', label: 'Sanguine', price: 75 },
+    { id: 'gift_3', img: 'img/Incubus.webp', label: 'Incubus', price: 150 },
+    { id: 'gift_4', img: 'img/Flat Pink.webp', label: 'Flat Pink', price: 50 },
+    { id: 'gift_5', img: 'img/Cherry Wine.webp', label: 'Cherry Wine', price: 300 },
+    { id: 'gift_6', img: 'img/Jinx Tonic.webp', label: 'Jinx Tonic', price: 100 },
+    { id: 'gift_7', img: 'img/Sweet Miracle.webp', label: 'Sweet Miracle', price: 200 },
+    { id: 'gift_8', img: 'img/Hackathon.webp', label: 'Hackathon', price: 100 },
+    { id: 'gift_9', img: 'img/Gothic.webp', label: 'Gothic', price: 250 },
 ];
 
 window.openGiftModal = function(postId) {
@@ -1768,7 +1756,7 @@ window.openGiftModal = function(postId) {
     const giftsHTML = window.GIFTS_LIST.map(g => `
         <div class="gift-item-select" onclick="window.sendGift('${g.img}', '${g.id}')">
             <div class="gift-item-img-wrap">
-                <img src="${g.img}" alt="${g.label}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616490.png'">
+                <img src="${g.img}" alt="${g.label}" onerror="this.src='https://picsum.photos/seed/'+(this.alt||'gift')+'/120'">
             </div>
             <div class="gift-item-label">${g.label}</div>
             <div class="gift-item-price">
@@ -5080,7 +5068,7 @@ function renderPostGifts(gifts) {
         html += `
             <div class="post-gift-card">
                 <div class="post-gift-img-wrap">
-                    <img src="${icon}" alt="${label}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616490.png'">
+                    <img src="${icon}" alt="${label}" onerror="this.src='https://picsum.photos/seed/giftfallback/120'">
                     ${count > 1 ? `<span class="post-gift-count">×${count}</span>` : ''}
                 </div>
                 <div class="post-gift-name">${label}</div>
@@ -8502,19 +8490,6 @@ window.deletePost = async function(postId) {
     }
 };
 window.setLudoraPage = function(tabName) {
-    // Якщо редактор поста відкритий — закриваємо й повертаємо на рідне місце при зміні вкладки
-    const _ed = document.getElementById('create-post-panel');
-    if (_ed) {
-        _ed.classList.remove('open');
-        if (window._editorHomeParent && _ed.parentElement !== window._editorHomeParent) {
-            if (window._editorHomeNext && window._editorHomeNext.parentElement === window._editorHomeParent) {
-                window._editorHomeParent.insertBefore(_ed, window._editorHomeNext);
-            } else {
-                window._editorHomeParent.appendChild(_ed);
-            }
-        }
-    }
-
     window.currentLudoraPage = tabName;
     document.body.setAttribute('data-active-tab', tabName);
 
@@ -9609,35 +9584,8 @@ window.togglePostEditor = function() {
     }
     const wrapper = document.getElementById('create-post-panel');
     if (!wrapper) return;
-
-    // Запам'ятовуємо рідне місце редактора (щоб повертати після блогу)
-    if (!window._editorHomeParent) {
-        window._editorHomeParent = wrapper.parentElement;
-        window._editorHomeNext = wrapper.nextElementSibling;
-    }
-
-    const onBlog = window.currentLudoraPage === 'blog';
-    // Якщо ми в блозі — переносимо редактор у зону блогу (над стрічкою блогу),
-    // щоб він редагувався саме всередині блогу, а не у стрічці.
-    if (onBlog) {
-        const blogFeed = document.getElementById('blog-posts-feed');
-        if (blogFeed && wrapper.parentElement !== blogFeed.parentElement) {
-            blogFeed.parentElement.insertBefore(wrapper, blogFeed);
-        }
-    } else {
-        // Повертаємо редактор на рідне місце
-        if (window._editorHomeParent && wrapper.parentElement !== window._editorHomeParent) {
-            if (window._editorHomeNext && window._editorHomeNext.parentElement === window._editorHomeParent) {
-                window._editorHomeParent.insertBefore(wrapper, window._editorHomeNext);
-            } else {
-                window._editorHomeParent.appendChild(wrapper);
-            }
-        }
-    }
-
     wrapper.classList.toggle('open');
     if (wrapper.classList.contains('open')) {
-        wrapper.style.display = ''; // прибираємо можливий inline display:none після попередньої публікації
         if (typeof updateGroupSelect === 'function') updateGroupSelect();
         const titleInput = document.getElementById('new-post-title');
         if (titleInput) setTimeout(() => titleInput.focus(), 300);
