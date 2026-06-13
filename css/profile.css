@@ -386,42 +386,53 @@ body::after {
     display: none;
 }
 
-/* 3. Перетворюємо кожну групу на окрему рожеву картку */
+/* 3. Перетворюємо кожну групу на окрему скляну картку (у стилі головної) */
 .stat-group {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    
-    background-color: #D1A5C1; /* Рожево-бузковий колір з макета */
-    
+
+    background-color: rgba(61, 19, 41, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
     padding: 15px 25px; 
-    border-radius: 12px; 
+    border-radius: 16px; 
     
     /* Тінь та тонка рамка для об'єму */
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); 
-    border: 1px solid rgba(255, 255, 255, 0.08); 
+    border: 1px solid rgba(255, 255, 255, 0.06); 
+    font-family: 'Geologica', sans-serif;
     
-    /* Додаємо однакову мінімальну ширину, щоб картки були рівними */
     min-width: 80px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-group:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(240, 4, 127, 0.35);
+    border-color: rgba(240, 4, 127, 0.4);
 }
 
-/* 4. Створюємо стиль для великих цифр */
+/* 4. Великі цифри — світлі */
 .stat-group .stat-value {
     font-size: 20px;
-    font-weight: bold;
-    color: #000;
+    font-weight: 700;
+    color: #fff;
     margin: 0;
     line-height: 1;
+    font-family: 'Geologica', sans-serif;
+    text-shadow: 0 0 10px rgba(240, 4, 127, 0.4);
 }
 
-/* 5. Створюємо стиль для нижніх підписів */
+/* 5. Підписи — рожеві */
 .stat-group .stat-label {
-    font-size: 14px;
-    font-weight: normal;
-    color: #6D5B76; /* Темніший бузковий колір для контрасту */
-    margin: 5px 0 0 0; 
+    font-size: 13px;
+    font-weight: 400;
+    color: #ff80bf;
+    margin: 6px 0 0 0; 
     text-transform: lowercase; 
+    font-family: 'Geologica', sans-serif;
 }
 /* Группы текста внутри */
 .stat-group {
@@ -2618,25 +2629,26 @@ body::after {
 
 .empty-wide-block {
     /* Розміри */
-    width: 95%;           /* На всю ширину батьківського блоку ("ширше") */
-    height: 150px;          /* Висота така ж, як у блоку часу */
+    width: 95%;
+    height: 150px;
     
     /* Відступи */
-    margin-top: -70px;      /* Відступ від блоку часу зверху */
+    margin-top: -70px;
     
-    /* Візуал (копіюємо стиль блоку часу) */
-    background-color: rgba(159, 45, 107, 0.6); /* Темний колір фону (підберіть під свій дизайн) */
-    border-radius: 12px;       /* Заокруглення кутів (або 30px, якщо треба овальний) */
+    /* Скляний стиль, як на головній */
+    background-color: rgba(61, 19, 41, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
     
-    /* Тіні та рамки (опціонально, як у верхнього блоку) */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.05);
     
-    /* Щоб майбутній контент був по центру */
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #555; /* Колір тексту заглушки */
+    color: #ff80bf;
+    font-family: 'Geologica', sans-serif;
 }
 
 /* === ГОЛОВНИЙ БЛОК === */
@@ -3614,47 +3626,21 @@ video, .transparent-square {
     left: 1140px;
     top: 1100px;
     box-sizing: border-box;
-    padding: 16px 20px;
+    padding: 18px 22px;
     margin-bottom: 15px;
-    border-radius: 18px;
+    border-radius: 20px;
     z-index: 9;
     display: flex;
     align-items: center;
     gap: 16px;
-    /* Скляний неоновий блок у стилі сайту */
-    background: linear-gradient(135deg, rgba(240,4,127,0.10), rgba(138,43,226,0.06));
-    border: 1px solid rgba(240, 4, 127, 0.35);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.28), inset 0 0 22px rgba(240,4,127,0.08);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    overflow: visible;
-}
-/* Світлова смужка зверху для "неонового" акценту */
-.gifts-wide-block::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 18px; right: 18px;
-    height: 2px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, transparent, #f0047f, #ff6ac1, transparent);
-    box-shadow: 0 0 12px rgba(240,4,127,0.8);
-    opacity: 0.9;
-}
-/* Підпис-заголовок зліва */
-.gifts-wide-block::after {
-    content: "🎁 ПОДАРУНКИ";
-    position: absolute;
-    top: -11px; left: 22px;
+    /* Той самий скляний стиль, що й блоки на головній */
+    background-color: rgba(61, 19, 41, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     font-family: 'Geologica', sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    color: #ff80bf;
-    background: #2a0f1d;
-    padding: 2px 10px;
-    border-radius: 50px;
-    border: 1px solid rgba(240,4,127,0.4);
-    box-shadow: 0 0 10px rgba(240,4,127,0.4);
+    overflow: visible;
 }
 
 /* Ряд закріплених у вітрині подарунків */
