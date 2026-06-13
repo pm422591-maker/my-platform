@@ -707,7 +707,7 @@ async function loadAllPosts(reset = false, forceReload = false) {
                     const shown = _entries.slice(0, MAX_SHOW);
                     const extra = _entries.length - shown.length;
                     const items = shown.map(([icon, count]) => `
-                        <div class="post-gift-side-item" title="Подарунок">
+                        <div class="post-gift-side-item" title="Подарунок" data-icon="${icon}">
                             <img src="${icon}" onerror="this.closest('.post-gift-side-item').style.display='none'">
                             ${count > 1 ? `<span class="post-gift-side-count">×${count}</span>` : ''}
                         </div>`).join('');
@@ -1870,8 +1870,10 @@ window.sendGift = async function(iconUrl, giftId) {
             if (typeof window.showTopAlert === 'function') {
                 window.showTopAlert("Подарунок відправлено! 🎁");
             }
-            // Обов'язково оновлюємо пости, щоб побачити нову іконку
-            loadAllPosts(true);
+            // Додаємо подарунок НА ПОСТ одразу, без перезавантаження сторінки
+            if (typeof window.addGiftToPostLive === 'function') {
+                window.addGiftToPostLive(postId, iconUrl);
+            }
         } else {
             allItems.forEach(el => el.style.pointerEvents = 'auto');
             alert("Помилка сервера: " + result.message);
@@ -1879,6 +1881,63 @@ window.sendGift = async function(iconUrl, giftId) {
     } catch (e) {
         allItems.forEach(el => el.style.pointerEvents = 'auto');
         console.error("❌ Помилка Fetch:", e);
+    }
+};
+
+// Додає подарунок у стрічку подарунків поста наживо (без reload)
+window.addGiftToPostLive = function(postId, iconUrl) {
+    const card = document.getElementById('post-' + postId) || document.querySelector(`.user-post-card[data-post-id="${postId}"]`);
+    if (!card || !iconUrl) return;
+
+    card.classList.add('has-side-gifts');
+
+    let side = card.querySelector('.post-gifts-side');
+    if (!side) {
+        side = document.createElement('div');
+        side.className = 'post-gifts-side';
+        side.title = 'Подарунки автору';
+        // вставляємо першим елементом картки (як у шаблоні)
+        card.insertBefore(side, card.firstChild);
+    }
+
+    // Якщо такий подарунок вже є — нарощуємо лічильник ×N
+    const existing = Array.from(side.querySelectorAll('.post-gift-side-item'))
+        .find(it => it.getAttribute('data-icon') === iconUrl);
+    if (existing) {
+        let badge = existing.querySelector('.post-gift-side-count');
+        let n = badge ? (parseInt(badge.textContent.replace(/\D/g, ''), 10) || 1) : 1;
+        n += 1;
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'post-gift-side-count';
+            existing.appendChild(badge);
+        }
+        badge.textContent = '×' + n;
+        existing.classList.remove('gift-pop'); void existing.offsetWidth; existing.classList.add('gift-pop');
+        return;
+    }
+
+    // Новий подарунок — створюємо плитку з анімацією появи
+    const item = document.createElement('div');
+    item.className = 'post-gift-side-item gift-pop';
+    item.title = 'Подарунок';
+    item.setAttribute('data-icon', iconUrl);
+    item.innerHTML = `<img src="${iconUrl}" onerror="this.closest('.post-gift-side-item').style.display='none'">`;
+    // не більше 6 видимих
+    const visible = side.querySelectorAll('.post-gift-side-item').length;
+    if (visible >= 6) {
+        let more = side.querySelector('.post-gift-side-more');
+        if (!more) {
+            more = document.createElement('div');
+            more.className = 'post-gift-side-more';
+            more.textContent = '+1';
+            side.appendChild(more);
+        } else {
+            const cur = parseInt(more.textContent.replace(/\D/g, ''), 10) || 0;
+            more.textContent = '+' + (cur + 1);
+        }
+    } else {
+        side.appendChild(item);
     }
 };
 
