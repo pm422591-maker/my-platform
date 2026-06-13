@@ -39,6 +39,15 @@ try {
         INDEX idx_group (group_id, id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+    // 📨 Заявки на вступ у приватні групи/канали
+    $pdo->exec("CREATE TABLE IF NOT EXISTS chat_group_requests (
+        group_id INT NOT NULL,
+        user_id INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (group_id, user_id),
+        INDEX idx_grp (group_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
     // ❤️ Реакції
     $pdo->exec("CREATE TABLE IF NOT EXISTS chat_group_reactions (
         message_id INT NOT NULL,
@@ -411,6 +420,121 @@ try {
         exit;
     }
 
+    // 🏆 ТОП-3 ГРУПИ ТА ТОП-3 КАНАЛИ за кількістю учасників (для сторінки пошуку)
+    if ($action === 'top_discover') {
+        $out = [];
+        foreach (['group', 'channel'] as $t) {
+            $st = $pdo->prepare("
+                SELECT g.id, g.name, g.type, g.avatar, g.slug, g.privacy, g.description,
+                       (SELECT COUNT(*) FROM chat_group_members m WHERE m.group_id = g.id) AS members
+                FROM chat_groups g
+                WHERE g.type = :t
+                ORDER BY members DESC, g.created_at DESC
+                LIMIT 3
+            ");
+            $st->execute([':t' => $t]);
+            $out[$t === 'group' ? 'groups' : 'channels'] = $st->fetchAll(PDO::FETCH_ASSOC);
+        }
+        echo json_encode(['success' => true] + $out);
+        exit;
+    }
+
+    // ℹ️ ПУБЛІЧНА ІНФА для прев'ю (моє членство + статус заявки)
+    if ($action === 'public_info') {
+        $gid = intval($data['group_id'] ?? 0);
+        $slug = trim($data['slug'] ?? '');
+        if ($gid > 0) $grp = getGroup($pdo, $gid);
+        else {
+            $st = $pdo->prepare("SELECT * FROM chat_groups WHERE slug = :s");
+            $st->execute([':s' => $slug]);
+            $grp = $st->fetch(PDO::FETCH_ASSOC);
+        }
+        if (!$grp) { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
+        $gid = intval($grp['id']);
+
+        $st = $pdo->prepare("SELECT COUNT(*) FROM chat_group_members WHERE group_id = :g");
+        $st->execute([':g' => $gid]);
+        $cnt = intval($st->fetchColumn());
+
+        $st = $pdo->prepare("SELECT 1 FROM chat_group_requests WHERE group_id = :g AND user_id = :u");
+        $st->execute([':g' => $gid, ':u' => $my_id]);
+
+        echo json_encode(['success' => true, 'group' => [
+            'id' => $gid, 'name' => $grp['name'], 'type' => $grp['type'],
+            'owner_id' => intval($grp['owner_id']),
+            'avatar' => $grp['avatar'], 'description' => $grp['description'],
+            'slug' => $grp['slug'], 'privacy' => $grp['privacy'] ?: 'private',
+            'members' => $cnt,
+            'am_member' => (bool)myRole($pdo, $gid, $my_id, $grp),
+            'has_request' => (bool)$st->fetch()
+        ]]);
+        exit;
+    }
+
+    // 📨 ЗАЯВКА НА ВСТУП (публічні — вступ одразу; приватні — заявка власнику)
+    if ($action === 'request_join') {
+        $gid = intval($data['group_id'] ?? 0);
+        $grp = getGroup($pdo, $gid);
+        if (!$grp) { echo json_encode(['success' => false, 'message' => 'Не знайдено']); exit; }
+        if (myRole($pdo, $gid, $my_id, $grp)) { echo json_encode(['success' => true, 'state' => 'member']); exit; }
+
+        if (($grp['privacy'] ?: 'private') === 'public') {
+            $pdo->prepare("INSERT IGNORE INTO chat_group_members (group_id, user_id, role) VALUES (:g, :u, 'member')")
+                ->execute([':g' => $gid, ':u' => $my_id]);
+            $me = userInfo($pdo, $my_id);
+            if ($grp['type'] === 'channel') addSystemMessage($pdo, $gid, "🔔 {$me['username']} підписався(лась) на канал");
+            else addSystemMessage($pdo, $gid, "👋 {$me['username']} приєднався(лась)");
+            echo json_encode(['success' => true, 'state' => 'joined', 'group' => [
+                'id' => $gid, 'name' => $grp['name'], 'type' => $grp['type'], 'owner_id' => intval($grp['owner_id'])
+            ]]);
+        } else {
+            $pdo->prepare("INSERT IGNORE INTO chat_group_requests (group_id, user_id) VALUES (:g, :u)")
+                ->execute([':g' => $gid, ':u' => $my_id]);
+            echo json_encode(['success' => true, 'state' => 'requested']);
+        }
+        exit;
+    }
+
+    // 📋 СПИСОК ЗАЯВОК (адміни)
+    if ($action === 'list_requests') {
+        $gid = intval($data['group_id'] ?? 0);
+        $grp = getGroup($pdo, $gid);
+        if (!$grp || !isAdminRole(myRole($pdo, $gid, $my_id, $grp))) {
+            echo json_encode(['success' => false, 'message' => 'Недостатньо прав']); exit;
+        }
+        $st = $pdo->prepare("
+            SELECT r.user_id, r.created_at, u.username, u.avatar_url
+            FROM chat_group_requests r
+            LEFT JOIN users u ON u.id = r.user_id
+            WHERE r.group_id = :g
+            ORDER BY r.created_at ASC LIMIT 50
+        ");
+        $st->execute([':g' => $gid]);
+        echo json_encode(['success' => true, 'requests' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        exit;
+    }
+
+    // ✅/❌ РОЗГЛЯД ЗАЯВКИ (адміни)
+    if ($action === 'resolve_request') {
+        $gid = intval($data['group_id'] ?? 0);
+        $uid = intval($data['user_id'] ?? 0);
+        $accept = !empty($data['accept']);
+        $grp = getGroup($pdo, $gid);
+        if (!$grp || !isAdminRole(myRole($pdo, $gid, $my_id, $grp))) {
+            echo json_encode(['success' => false, 'message' => 'Недостатньо прав']); exit;
+        }
+        $pdo->prepare("DELETE FROM chat_group_requests WHERE group_id = :g AND user_id = :u")
+            ->execute([':g' => $gid, ':u' => $uid]);
+        if ($accept) {
+            $pdo->prepare("INSERT IGNORE INTO chat_group_members (group_id, user_id, role) VALUES (:g, :u, 'member')")
+                ->execute([':g' => $gid, ':u' => $uid]);
+            $them = userInfo($pdo, $uid);
+            addSystemMessage($pdo, $gid, "✅ Заявку {$them['username']} прийнято — вітаємо!");
+        }
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
     // ===== ВСТУП ЗА ПОСИЛАННЯМ (у канал — як підписник без прав) =====
     if ($action === 'join_by_link') {
         $slug = trim($data['slug'] ?? $_GET['slug'] ?? '');
@@ -424,6 +548,23 @@ try {
         $st = $pdo->prepare("SELECT 1 FROM chat_group_members WHERE group_id = :g AND user_id = :u");
         $st->execute([':g' => $gid, ':u' => $my_id]);
         $already = (bool)$st->fetch();
+
+        // 🔒 ПРИВАТНІ: за посиланням не вступаємо — показуємо модалку заявки
+        if (!$already && ($grp['privacy'] ?: 'private') === 'private') {
+            $st = $pdo->prepare("SELECT COUNT(*) FROM chat_group_members WHERE group_id = :g");
+            $st->execute([':g' => $gid]);
+            $cnt = intval($st->fetchColumn());
+            $rq = $pdo->prepare("SELECT 1 FROM chat_group_requests WHERE group_id = :g AND user_id = :u");
+            $rq->execute([':g' => $gid, ':u' => $my_id]);
+            echo json_encode(['success' => true, 'private' => true, 'group' => [
+                'id' => $gid, 'name' => $grp['name'], 'type' => $grp['type'],
+                'owner_id' => intval($grp['owner_id']),
+                'avatar' => $grp['avatar'], 'description' => $grp['description'],
+                'members' => $cnt, 'privacy' => 'private',
+                'has_request' => (bool)$rq->fetch()
+            ]]);
+            exit;
+        }
 
         if (!$already) {
             $pdo->prepare("INSERT INTO chat_group_members (group_id, user_id, role) VALUES (:g, :u, 'member')")

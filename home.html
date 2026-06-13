@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SYNCORA</title>
-    <link rel="stylesheet" href="css/home.css?v=38">
+    <link rel="stylesheet" href="css/home.css?v=39">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script type="module">
@@ -606,21 +606,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="block-header">
                         <h4>Топ групи</h4>
                     </div>
-                    <div class="mini-list thick-cards">
-                        <div class="mini-item item-glow-pink with-blurred-image">
-                            <div class="item-content-left">
-                                <span class="item-main-title">#Dota2_UA</span>
-                                <span class="item-subtitle">15.4K учасників</span>
-                            </div>
-                            <div class="item-blurred-bg" style="background-image: url('https://picsum.photos/seed/dota2_ua/400/300');"></div>
-                        </div>
-                        <div class="mini-item item-glow-pink with-blurred-image">
-                            <div class="item-content-left">
-                                <span class="item-main-title">#CyberSport</span>
-                                <span class="item-subtitle">9.1K учасників</span>
-                            </div>
-                            <div class="item-blurred-bg" style="background-image: url('https://picsum.photos/seed/cybersport_ua/400/300');"></div>
-                        </div>
+                    <div class="mini-list thick-cards" id="top-groups-list">
+                        <div style="color: rgba(255,255,255,0.35); font-size: 12px; padding: 10px;">Завантаження...</div>
                     </div>
                 </div>
 
@@ -628,21 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="block-header">
                         <h4>Канали</h4>
                     </div>
-                    <div class="mini-list thick-cards">
-                        <div class="mini-item item-glow-cyan with-blurred-image">
-                            <div class="item-content-left">
-                                <span class="item-main-title">Streamer_X</span>
-                                <span class="item-subtitle">Online: 1.2K</span>
-                            </div>
-                            <div class="item-blurred-bg" style="background-image: url('img/streamer_ava.jpg')"></div>
-                        </div>
-                        <div class="mini-item item-glow-cyan with-blurred-image">
-                            <div class="item-content-left">
-                                <span class="item-main-title">Ludora_News</span>
-                                <span class="item-subtitle">Новини геймдеву</span>
-                            </div>
-                            <div class="item-blurred-bg" style="background-image: url('img/ludora_logo.jpg')"></div>
-                        </div>
+                    <div class="mini-list thick-cards" id="top-channels-list">
+                        <div style="color: rgba(255,255,255,0.35); font-size: 12px; padding: 10px;">Завантаження...</div>
                     </div>
                 </div>
 
@@ -1082,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="js/home.js?v=38"></script>
+<script src="js/home.js?v=39"></script>
 <script src="js/tutorial.js?v=20260612"></script>
 
 <style>
