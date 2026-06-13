@@ -9104,6 +9104,8 @@ function loadUserCoinsFromDB() {
         if (data.success) {
             window.currentUserCoins = data.coins || 0;
             window.isPremiumActive = data.premium_active || false;
+            window.premiumUntil = data.premium_until || null;
+            if (!window.premiumPlan) window.premiumPlan = 'month';
 
             const coinLabel = document.getElementById('top-bar-coins');
             if (coinLabel) coinLabel.textContent = Number(window.currentUserCoins).toLocaleString();
@@ -9168,23 +9170,35 @@ window.closePremiumModal = function() {
 // 🪙 Красива SVG-монета (золотий градієнт із блиском) — використовується по всьому магазину
 window.coinSVG = function(size) {
     size = size || 40;
+    const uid = 'c' + Math.random().toString(36).slice(2, 8);
     return `<svg class="sc-coin" width="${size}" height="${size}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="display:block;">
         <defs>
-            <radialGradient id="scCoinFace" cx="38%" cy="32%" r="75%">
-                <stop offset="0%" stop-color="#ffe89a"/>
-                <stop offset="45%" stop-color="#ffc94d"/>
-                <stop offset="100%" stop-color="#f59300"/>
+            <linearGradient id="rim_${uid}" x1="0.2" y1="0" x2="0.8" y2="1">
+                <stop offset="0%" stop-color="#ffe07a"/>
+                <stop offset="50%" stop-color="#f5a623"/>
+                <stop offset="100%" stop-color="#c9750a"/>
+            </linearGradient>
+            <radialGradient id="face_${uid}" cx="50%" cy="38%" r="70%">
+                <stop offset="0%" stop-color="#fff3c4"/>
+                <stop offset="55%" stop-color="#ffce4f"/>
+                <stop offset="100%" stop-color="#f3a01e"/>
             </radialGradient>
-            <linearGradient id="scCoinRim" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#ffd76b"/>
-                <stop offset="100%" stop-color="#d97a00"/>
+            <linearGradient id="mono_${uid}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#c9750a"/>
+                <stop offset="100%" stop-color="#9a5500"/>
             </linearGradient>
         </defs>
-        <circle cx="32" cy="32" r="30" fill="url(#scCoinRim)"/>
-        <circle cx="32" cy="32" r="24" fill="url(#scCoinFace)" stroke="#fff2c2" stroke-width="1.5" stroke-opacity="0.5"/>
-        <path d="M32 16c-4.5 0-8 1.8-8 5 0 6.8 14 3.4 14 8.6 0 2-2.5 3-6 3s-6-1-6-3" fill="none" stroke="#a85e00" stroke-width="3.4" stroke-linecap="round" opacity="0.55" transform="translate(0,0)"/>
-        <text x="32" y="42" text-anchor="middle" font-family="Geologica, sans-serif" font-size="26" font-weight="800" fill="#a85e00" opacity="0.85">S</text>
-        <ellipse cx="24" cy="22" rx="7" ry="4" fill="#fff" opacity="0.45" transform="rotate(-25 24 22)"/>
+        <!-- зовнішнє кільце -->
+        <circle cx="32" cy="32" r="30" fill="url(#rim_${uid})"/>
+        <circle cx="32" cy="32" r="30" fill="none" stroke="#ffe9ab" stroke-width="1" stroke-opacity="0.6"/>
+        <!-- внутрішній диск -->
+        <circle cx="32" cy="32" r="23" fill="url(#face_${uid})" stroke="#d98a12" stroke-width="1.5"/>
+        <!-- насічки по краю (декор) -->
+        <circle cx="32" cy="32" r="26.5" fill="none" stroke="#b86a06" stroke-width="1.4" stroke-opacity="0.45" stroke-dasharray="1.4 2.6"/>
+        <!-- монограма S -->
+        <text x="32" y="33" text-anchor="middle" dominant-baseline="central" font-family="Geologica, Arial, sans-serif" font-size="30" font-weight="800" fill="url(#mono_${uid})">S</text>
+        <!-- верхній блік -->
+        <ellipse cx="25" cy="20" rx="9" ry="5" fill="#ffffff" opacity="0.5" transform="rotate(-28 25 20)"/>
     </svg>`;
 };
 
