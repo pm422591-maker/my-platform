@@ -669,6 +669,29 @@ async function loadAllPosts(reset = false, forceReload = false) {
                 </div>`;
             }
 
+            // --- 3.5 КАРТКА ГРУПИ (для заявок у групу — як картка пісні) ---
+            let groupCardHTML = '';
+            if (post.group_id && parseInt(post.group_id, 10) > 0) {
+                const _gName = post.group_real_name || post.group_name || 'Група';
+                const _gPriv = (post.group_privacy || 'private') === 'public';
+                const _gIsChannel = post.group_type === 'channel';
+                const _gMembers = (post.group_members != null) ? post.group_members : 0;
+                const _gIcon = _gIsChannel ? '📣' : '👥';
+                const _gAvatar = post.group_avatar
+                    ? `<img src="${post.group_avatar}" style="width:44px; height:44px; border-radius:12px; object-fit:cover; z-index:2; flex-shrink:0;" onerror="this.outerHTML='<div style=\\'width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(240,4,127,0.2);font-size:20px;flex-shrink:0;\\'>${_gIcon}</div>'">`
+                    : `<div style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(240,4,127,0.2);font-size:20px;flex-shrink:0;">${_gIcon}</div>`;
+                const _privLabel = _gPriv ? '🌐 Публічна' : '🔒 Приватна';
+                groupCardHTML = `
+                <div style="margin-top: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; background: rgba(240,4,127,0.08); border: 1px solid rgba(240,4,127,0.25); padding: 10px; border-radius: 12px;">
+                    ${_gAvatar}
+                    <div style="flex-grow: 1; overflow: hidden;">
+                        <div style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff;">${_gName}</div>
+                        <div style="font-size: 11px; opacity: 0.75; color: #ff80bf;">${_privLabel} · ${_gMembers} учасн.</div>
+                    </div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff80bf" stroke-width="2" style="flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>`;
+            }
+
             // --- 4. ЛОГІКА ФОТО ---
             let imgHTML = '';
             if (post.post_image && post.post_image.length > 50) {
@@ -681,7 +704,7 @@ async function loadAllPosts(reset = false, forceReload = false) {
            // Inside the function that generates post HTML (e.g., renderPost)
 
 let filtersHTML = '';
-if (post.post_type === 'requests') {
+if (post.post_type === 'requests' && !(post.group_id && parseInt(post.group_id, 10) > 0)) {
     // --- 1. СЛОВНИКИ ТЕКСТУ ---
     const ageMap = { 'any': 'Всі', '12-16': '12-16', '16-18': '16-18', '18+': '18+' };
     const commMap = { 'any': 'Будь-де', 'micro': 'Мікро', 'microoff': 'Без мікро', 'discord': 'Discord', 'telegram': 'Telegram' };
@@ -951,6 +974,7 @@ const postHTML = `
             <p style="margin: 0; white-space: pre-wrap; font-weight: 400;">${post.body}</p>
         </div>
         ${musicHTML}
+        ${groupCardHTML}
         ${imgHTML}
     </div>
 

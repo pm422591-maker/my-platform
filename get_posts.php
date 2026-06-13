@@ -164,13 +164,17 @@ try {
         $gid = isset($post['group_id']) ? (int)$post['group_id'] : 0;
         if ($gid > 0) {
             try {
-                $gst = $pdo->prepare("SELECT name, type, privacy FROM chat_groups WHERE id = ? LIMIT 1");
+                $gst = $pdo->prepare("SELECT name, type, privacy, avatar FROM chat_groups WHERE id = ? LIMIT 1");
                 $gst->execute([$gid]);
                 $grp = $gst->fetch(PDO::FETCH_ASSOC);
                 if ($grp) {
                     $post['group_real_name'] = $grp['name'];
                     $post['group_type']      = $grp['type'];
                     $post['group_privacy']   = $grp['privacy'] ?: 'private';
+                    $post['group_avatar']    = $grp['avatar'] ?? null;
+                    $cst = $pdo->prepare("SELECT COUNT(*) FROM chat_group_members WHERE group_id = ?");
+                    $cst->execute([$gid]);
+                    $post['group_members'] = (int)$cst->fetchColumn();
                     $mst = $pdo->prepare("SELECT 1 FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1");
                     $mst->execute([$gid, $user_id]);
                     $post['group_is_member'] = (bool)$mst->fetchColumn();
