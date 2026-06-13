@@ -137,7 +137,13 @@ try {
     $gStmt = $pdo->prepare("SELECT post_id, gift_icon as icon FROM post_gifts WHERE post_id IN ($inPosts)");
     $gStmt->execute($post_ids);
     foreach ($gStmt->fetchAll(PDO::FETCH_ASSOC) as $g) {
-        $giftsMap[$g['post_id']][] = ['icon' => $g['icon']];
+        $icon = trim((string)$g['icon']);
+        // Пропускаємо старі/биті подарунки, чиї файли більше не існують
+        // (наприклад img/gifts/gift_N.png — їх замінили, і вони дають 404)
+        if ($icon === '' || strpos($icon, 'img/gifts/gift_') !== false) {
+            continue;
+        }
+        $giftsMap[$g['post_id']][] = ['icon' => $icon];
     }
 
     foreach ($posts as &$post) {
