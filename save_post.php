@@ -61,9 +61,7 @@ try {
     // id групи (тільки для заявки в групу). 0 = звичайний пост/анкета
     $group_id = isset($data['group_id']) ? (int)$data['group_id'] : 0;
     if ($group_id < 0) $group_id = 0;
-
-    // Гарантуємо наявність колонки group_id у таблиці posts (одноразово, дешево)
-    try { $pdo->exec("ALTER TABLE posts ADD COLUMN group_id INT NOT NULL DEFAULT 0"); } catch (Exception $e) { /* вже існує */ }
+    try { $pdo->exec("ALTER TABLE posts ADD COLUMN group_id INT NOT NULL DEFAULT 0"); } catch (Exception $e) { /* вже є */ }
 
     // ── КРИТИЧНО: НЕ зберігаємо Base64 зображення в БД!
     // Base64 картинки в БД — це неправильно: роздуває базу, уповільнює запити.

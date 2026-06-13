@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SYNCORA</title>
-    <link rel="stylesheet" href="css/home.css?v=42">
+    <link rel="stylesheet" href="css/home.css?v=43">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script type="module">
@@ -412,6 +412,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 </svg>
                 Параметри тімейта
             </button>
+
+            <!-- Кнопка вибору групи (з'являється лише в режимі "Для групи") -->
+            <div id="btn-pick-request-group" class="filter-toggle-btn" onclick="window.toggleRequestGroupPicker(event)" style="display: none; position: relative; cursor: pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Група: <span id="picked-group-label" style="color: #f0047f; margin-left: 4px; font-weight: 700;">обрати…</span>
+                <div id="request-group-dropdown" style="display:none; position:absolute; top:calc(100% + 6px); left:0; min-width:200px; max-height:240px; overflow-y:auto; background:#1a0a14; border:1px solid rgba(240,4,127,0.4); border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.5); z-index:50; padding:6px; font-family:'Geologica',sans-serif;">
+                    <div style="padding:10px; color:rgba(255,255,255,0.5); font-size:12px;">Завантаження…</div>
+                </div>
+            </div>
 
             <button id="btn-req-mode-group" class="filter-toggle-btn" onclick="toggleRequestPanel('group')" style="display: none;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1100,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="js/home.js?v=47"></script>
+<script src="js/home.js?v=48"></script>
 <script src="js/tutorial.js?v=20260612"></script>
 
 <style>

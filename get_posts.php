@@ -6,9 +6,7 @@ session_start();
 
 try {
     require_once __DIR__ . '/db_connect.php'; // utf8mb4 + безпечні налаштування
-
-    // Гарантуємо наявність колонки group_id (для заявок у групу)
-    try { $pdo->exec("ALTER TABLE posts ADD COLUMN group_id INT NOT NULL DEFAULT 0"); } catch (Exception $e) { /* вже існує */ }
+    try { $pdo->exec("ALTER TABLE posts ADD COLUMN group_id INT NOT NULL DEFAULT 0"); } catch (Exception $e) { /* вже є */ }
 
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
@@ -162,7 +160,7 @@ try {
             }
         }
 
-        // Для заявок у групу — додаємо приватність + чи поточний юзер уже учасник / подав заявку
+        // Заявка в групу — додаємо приватність і статус поточного юзера
         $gid = isset($post['group_id']) ? (int)$post['group_id'] : 0;
         if ($gid > 0) {
             try {
@@ -173,19 +171,16 @@ try {
                     $post['group_real_name'] = $grp['name'];
                     $post['group_type']      = $grp['type'];
                     $post['group_privacy']   = $grp['privacy'] ?: 'private';
-
                     $mst = $pdo->prepare("SELECT 1 FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1");
                     $mst->execute([$gid, $user_id]);
                     $post['group_is_member'] = (bool)$mst->fetchColumn();
-
                     $rst = $pdo->prepare("SELECT 1 FROM chat_group_requests WHERE group_id = ? AND user_id = ? LIMIT 1");
                     $rst->execute([$gid, $user_id]);
                     $post['group_has_request'] = (bool)$rst->fetchColumn();
                 } else {
-                    // Група видалена — щоб не показувати "мертву" кнопку
-                    $post['group_id'] = 0;
+                    $post['group_id'] = 0; // група видалена
                 }
-            } catch (Exception $e) { /* ігноруємо, кнопка просто не покажеться */ }
+            } catch (Exception $e) { /* ігноруємо */ }
         }
     }
     unset($post);
