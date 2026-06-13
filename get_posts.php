@@ -47,8 +47,8 @@ try {
     $filter_lang = isset($_GET['filter_lang']) ? $_GET['filter_lang'] : 'any';
 
     // Базовий запит без сортування і лімітів
-    // seconds_left: скільки секунд лишилось анкеті до видалення (рахуємо на сервері,
-    // годинником самої БД — це усуває розбіжності часових поясів між JS і MySQL).
+    // seconds_left: скільки секунд лишилось анкеті до видалення (рахуємо годинником
+    // самої БД — це усуває розбіжності часових поясів між JS і MySQL).
     $query = "
     SELECT p.*,
            GREATEST(0, 3600 - TIMESTAMPDIFF(SECOND, p.created_at, NOW())) AS seconds_left,

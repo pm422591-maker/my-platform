@@ -199,7 +199,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const extraArea = document.getElementById('post-filters-area');
 
         if (tabName === 'requests') {
-            // Кнопку параметрів тімейта показує редактор; тут не чіпаємо.
+            // В ЗАЯВКАХ: Показываем обе кнопки
+            if (reqBtn) reqBtn.style.setProperty('display', 'inline-flex', 'important');
             if (extraBtn) extraBtn.style.setProperty('display', 'inline-flex', 'important');
         } else {
             // В ЛЕНТЕ/БЛОГЕ: Прячем кнопки
@@ -755,9 +756,7 @@ let commentsDisplayHTML = '';
 
 if (post.post_type === 'requests') {
     // 1. Створюємо розмітку таймера (ID мають бути time- та ring-)
-    // data-seconds-left: скільки лишилось за годинником сервера на момент завантаження.
-    // data-anchor: момент (мс) за годинником клієнта, коли ми отримали ці дані —
-    // далі віднімаємо реальний пройдений час локально, без прив'язки до поясу.
+    // data-seconds-left: серверний залишок; data-anchor: момент завантаження за годинником клієнта.
     const _secLeft = (post.seconds_left !== undefined && post.seconds_left !== null)
         ? parseInt(post.seconds_left, 10)
         : 3600;
@@ -7135,8 +7134,9 @@ window.selectPostColor = function(element, colorName) {
 
 /* ═══════════════════════════════════════════════════════════════
    ПАРАМЕТРИ ТІМЕЙТА (фільтри при створенні анкети)
-   Ці функції викликаються з home.html, але раніше були відсутні —
-   тому кнопка "Параметри тімейта" нічого не відкривала.
+   Ці функції викликаються з home.html, але були відсутні —
+   тому кнопка "Параметри тімейта" і тумблер "Анкета/Для групи"
+   не працювали.
    ═══════════════════════════════════════════════════════════════ */
 
 // Поточний режим публікації заявки: 'anketa' (за замовч.) або 'group'
@@ -7144,7 +7144,6 @@ window.currentRequestMode = window.currentRequestMode || 'anketa';
 
 // Відкриває / ховає панель параметрів тімейта (чіпи фільтрів)
 window.toggleRequestPanel = function(mode) {
-    // mode тут лише підказка ('anketa' | 'group'); реальний режим тримаємо в currentRequestMode
     if (mode === 'group' || mode === 'anketa') {
         window.currentRequestMode = mode;
     }
@@ -7166,7 +7165,6 @@ window.toggleRequestPanel = function(mode) {
         area.style.setProperty('display', 'block', 'important');
         area.classList.add('show');
         if (btn) btn.classList.add('active-btn');
-        // Ховаємо інші панелі редактора, щоб не накладались
         ['post-filters-area', 'group-settings-area', 'extra-settings-area'].forEach(id => {
             const p = document.getElementById(id);
             if (p) p.style.setProperty('display', 'none', 'important');
@@ -8230,9 +8228,7 @@ window.setLudoraPage = function(tabName) {
     if (wrapperFilters) wrapperFilters.style.setProperty('display', 'inline-block', 'important');
 
     if (tabName === 'requests') {
-        // Кнопку "Параметри тімейта" показує сам редактор (togglePostEditor),
-        // тут лишаємо приховану, щоб не висіла без панелі.
-        if (btnReqFilters) btnReqFilters.style.setProperty('display', 'none', 'important');
+        if (btnReqFilters) btnReqFilters.style.setProperty('display', 'inline-flex', 'important');
     } else {
         if (btnReqFilters) btnReqFilters.style.setProperty('display', 'none', 'important');
         if (areaReqFilters) areaReqFilters.style.setProperty('display', 'none', 'important');
@@ -8577,7 +8573,7 @@ if (!window.requestsTimerStarted) {
             if (secLeftAttr !== null && anchorAttr !== null) {
                 const baseSec   = parseInt(secLeftAttr, 10);
                 const anchorMs  = parseInt(anchorAttr, 10);
-                const elapsedMs = Date.now() - anchorMs;           // скільки минуло з моменту завантаження
+                const elapsedMs = Date.now() - anchorMs;
                 timeLeftMs = (baseSec * 1000) - elapsedMs;
             } else {
                 // Фолбек на старий метод (created_at як UTC), якщо немає seconds_left
@@ -8597,14 +8593,12 @@ if (!window.requestsTimerStarted) {
 
             if (timeLeftMs <= 0) {
                 // ЧАС ВИЙШОВ. Прибираємо картку візуально у всіх,
-                // але DELETE у БД ініціює лише автор поста (інакше чужий пост не видалиться,
-                // а сервер усе одно почистить старі заявки сам).
+                // але DELETE у БД ініціює лише автор (сервер усе одно чистить старі заявки сам).
                 postCard.setAttribute('data-is-deleting', 'true');
                 const isOwner = postCard.getAttribute('data-is-owner') === 'true';
                 if (isOwner && window.deletePost) {
                     window.deletePost(postId);
                 } else {
-                    // Просто ховаємо в інтерфейсі
                     postCard.style.transition = 'opacity 0.4s';
                     postCard.style.opacity = '0';
                     setTimeout(() => { if (postCard && postCard.parentNode) postCard.remove(); }, 450);
@@ -9221,7 +9215,6 @@ window.togglePostEditor = function() {
         if (reqModeWrap) reqModeWrap.style.setProperty('display', onRequests ? 'flex' : 'none', 'important');
         if (btnReqFilters) btnReqFilters.style.setProperty('display', onRequests ? 'inline-flex' : 'none', 'important');
         if (onRequests && typeof window.switchRequestPublishMode === 'function') {
-            // Встановлюємо стартовий режим (анкета) і підсвічуємо кнопку
             window.switchRequestPublishMode(window.currentRequestMode || 'anketa');
         }
     } else {
