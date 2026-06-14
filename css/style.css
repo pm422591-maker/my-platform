@@ -712,3 +712,67 @@ h2 {
         align-items: center;
     }
 }
+/* ===== Адаптив для телефонів (логін / реєстрація) ===== */
+@media (max-width: 600px) {
+    .navbar {
+        padding: 0 12px;
+    }
+    .nav-links {
+        gap: 10px;
+    }
+    .nav-link {
+        font-size: 12px;
+    }
+    .main-container {
+        padding: 80px 16px 24px 16px;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 24px;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+    .logo-section {
+        max-width: 100%;
+        height: auto;
+        margin: 10px 0 0 0;
+        text-align: center;
+    }
+    .mascot-img {
+        max-width: 200px;
+        position: static;
+        margin: 0 auto;
+    }
+    .logo-img {
+        position: static;
+        margin: 0 auto 10px auto;
+        max-width: 160px;
+    }
+    .auth-section {
+        width: 100%;
+        max-width: 100%;
+    }
+    .auth-box,
+    .auth-section > div {
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+    .input-group input {
+        font-size: 16px; /* >=16px, щоб iOS не зумив при фокусі */
+    }
+    .btn {
+        min-height: 48px; /* зручна зона дотику */
+    }
+    .dropdown-menu {
+        width: 90vw;
+        max-width: 280px;
+    }
+}
+
+/* Дуже вузькі екрани */
+@media (max-width: 360px) {
+    .mascot-img { max-width: 160px; }
+    .nav-link { font-size: 11px; }
+}

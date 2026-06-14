@@ -1,0 +1,37 @@
+/* responsive.css — доповнення до масштабування полотна (responsive.js).
+ * Вмикається класом .is-compact на <html>, який ставить responsive.js
+ * на планшетах і телефонах. Десктоп цими правилами не зачіпається. */
+
+/* Гарантуємо, що "полотно" не стискається вужче за дизайнерську ширину,
+ * інакше центровані (left:50%) та абсолютні (left:1188px) елементи з'їдуть. */
+html.is-compact,
+html.is-compact body {
+  min-width: 1820px;
+  overflow-x: hidden;
+}
+
+/* Прибираємо випадковий горизонтальний скрол від тіней/блюрів за краями. */
+html.is-compact body {
+  position: relative;
+}
+
+/* На дотикових екранах трохи збільшуємо зони натискання ключових кнопок,
+ * щоб у зменшеному масштабі по них було легше влучати пальцем. */
+html.is-compact .nav-container-vertical .nav-button {
+  padding-top: 28px;
+  padding-bottom: 28px;
+}
+
+html.is-compact .side-panel-post-btn,
+html.is-compact .profile-avatar-btn,
+html.is-compact .coins-display-container,
+html.is-compact .back-home-btn {
+  touch-action: manipulation;
+}
+
+/* Плавніша інерційна прокрутка контенту на iOS/Android. */
+html.is-compact .main-content-block,
+html.is-compact .sidebar-sections-container,
+html.is-compact .messages-container {
+  -webkit-overflow-scrolling: touch;
+}
