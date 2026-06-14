@@ -535,6 +535,12 @@ async function loadUserData() {
         const data = JSON.parse(text);
 
         if (data.success) {
+            // Якщо профіль відкриває АДМІН і це його власний профіль —
+            // показуємо не профіль, а адмін-панель.
+            if (data.viewer_is_admin && data.is_own_profile) {
+                window.location.replace('admin.html');
+                return;
+            }
             window._profileData = data; // Store for premium check
             // Вітрина подарунків (з БД)
             if (typeof updateProfileGifts === 'function') updateProfileGifts();

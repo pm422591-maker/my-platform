@@ -111,7 +111,15 @@ try {
                 'roblox_inventory'   => $res['roblox_inventory'],
                 "steam_id" => $res['steam_id'],
                 "premium_until" => $res['premium_until'],
-                "is_premium" => ($res['premium_until'] && new DateTime($res['premium_until']) > new DateTime())
+                "is_premium" => ($res['premium_until'] && new DateTime($res['premium_until']) > new DateTime()),
+                "viewer_is_admin" => (function() use ($pdo, $currentUserId) {
+                    if (!$currentUserId) return false;
+                    try {
+                        $st = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
+                        $st->execute([$currentUserId]);
+                        return (int)$st->fetchColumn() === 1;
+                    } catch (Exception $e) { return false; }
+                })()
             
             ]);
         } else {

@@ -141,7 +141,8 @@ if (formLogin) {
                 if(result.banner) localStorage.setItem('user_banner', result.banner);
                 // DO NOT clear tutorial/quiz here — DB is the source of truth for returning users
                 sessionStorage.setItem('syncora_new_login', '1');
-                window.location.href = "home.html";
+                // Адмін одразу потрапляє в панель модерації замість стрічки
+                window.location.href = result.is_admin ? "admin.html" : "home.html";
             } else {
                 alert("Невірний логін або пароль");
             }

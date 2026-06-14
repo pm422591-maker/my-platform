@@ -35,7 +35,7 @@ if (strlen($password) > 200) {
 
 try {
     $stmt = $pdo->prepare(
-        "SELECT id, username, password, avatar_url, banner_url FROM users WHERE email = ? LIMIT 1"
+        "SELECT id, username, password, avatar_url, banner_url, is_admin FROM users WHERE email = ? LIMIT 1"
     );
     $stmt->execute([$email]);
     $user = $stmt->fetch();
@@ -52,12 +52,21 @@ try {
         $_SESSION['user_id']   = (int)$user['id'];
         $_SESSION['user_name'] = $user['username'];
 
+        // Якщо це адмін — одразу позначаємо сесію адмінською,
+        // щоб профіль перенаправляв на адмін-панель без окремого входу.
+        $isAdmin = ((int)($user['is_admin'] ?? 0) === 1);
+        if ($isAdmin) {
+            $_SESSION['is_admin']       = 1;
+            $_SESSION['admin_verified'] = 1;
+        }
+
         echo json_encode([
             'success'  => true,
             'message'  => 'Вхід успішний',
             'username' => $user['username'],
             'avatar'   => $user['avatar_url'],
             'banner'   => $user['banner_url'],
+            'is_admin' => $isAdmin,
         ]);
     } else {
         // Однакове повідомлення для відсутнього юзера і неправильного пароля
