@@ -23,8 +23,8 @@ $frame = $input['avatar_frame'] ?? '';
 
 // Каталог ободків: шлях => ціна в монетах
 $catalog = [
-    'img/avatarka1.mp4' => 250,
-    'img/avatarka2.mp4' => 250,
+    'img/1.webm' => 250,
+    'img/2.webm' => 250,
 ];
 
 if (!isset($catalog[$frame])) {

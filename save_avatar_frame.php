@@ -25,7 +25,7 @@ try {
     $frame = $input['avatar_frame'] ?? '';
 
     // Whitelist дозволених ободків ('' = прибрати ободок)
-    $allowed = ['', 'img/avatarka1.mp4', 'img/avatarka2.mp4'];
+    $allowed = ['', 'img/1.webm', 'img/2.webm'];
 
     if (!in_array($frame, $allowed)) {
         echo json_encode(['success' => false, 'message' => 'Недопустима рамка']);
