@@ -2986,7 +2986,7 @@ body::after {
     width: 130px !important; /* 120 + 5 + 5 */
     height: 130px !important;
     top: -10px !important;
-    left: -27px !important;
+    left: -37px !important;
     z-index: 9999 !important; /* Максимальний пріоритет */
     display: none; /* Ховаємо за замовчуванням */
     pointer-events: none; 
