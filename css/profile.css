@@ -3615,8 +3615,8 @@ video, .transparent-square {
     left: auto !important;
     width: auto !important;        /* Ширина під вміст */
     height: auto !important;
-    padding: 9px 16px !important;
-    gap: 8px !important;
+    padding: 6px 12px !important;
+    gap: 6px !important;
 
     /* Скляний рожевий стиль під тему сторінки */
     background: rgba(159, 45, 107, 0.55) !important;
@@ -3624,11 +3624,11 @@ video, .transparent-square {
     -webkit-backdrop-filter: blur(10px);
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
 
     font-family: 'Geologica', sans-serif !important;
-    font-size: 13px !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
     letter-spacing: 0.2px;
 
@@ -3864,9 +3864,9 @@ video, .transparent-square {
 /* 1. КОНТЕЙНЕР (керує положенням на сторінці) */
 .profile-actions-container {
     position: absolute !important;
-    top: 110px !important;
+    top: 430px !important;       /* Рівень рядка з ім'ям, правий бік */
     left: auto !important;
-    right: 155px !important; /* Верхній правий кут картки профілю */
+    right: 150px !important;
     z-index: 999;
     
     display: flex !important;
@@ -3875,7 +3875,7 @@ video, .transparent-square {
     justify-content: flex-end !important;
     gap: 10px !important;
     
-    width: auto !important;        /* Ширина під контент, без розтягування */
+    width: auto !important;
     max-width: 800px !important;
 }
 
