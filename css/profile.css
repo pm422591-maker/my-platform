@@ -163,7 +163,7 @@ body::after {
 
     position: absolute;
     top: 90px;
-    left: 130px;
+    left: 140px;
     z-index: 2;
 }
 
@@ -2872,7 +2872,7 @@ body::after {
     
     /* Позиція для великих екранів */
     top: 300px;
-    left: 135px;
+    left: 145px;
     
     display: flex;
     align-items: center;
@@ -2986,7 +2986,7 @@ body::after {
     width: 130px !important; /* 120 + 5 + 5 */
     height: 130px !important;
     top: -10px !important;
-    left: -7px !important;
+    left: -17px !important;
     z-index: 9999 !important; /* Максимальний пріоритет */
     display: none; /* Ховаємо за замовчуванням */
     pointer-events: none; 
