@@ -3670,7 +3670,7 @@ video, .transparent-square {
     z-index: 9;
     display: flex;
     align-items: center;
-    justify-content: space-between;   /* ← додано */
+    justify-content: space-evenly;   /* було space-between */
     gap: 16px;
     /* Скляний неоновий блок у стилі сайту */
     background: linear-gradient(135deg, rgba(240,4,127,0.10), rgba(138,43,226,0.06));
@@ -3696,6 +3696,9 @@ video, .transparent-square {
     min-height: 64px;
 }
 
+.gift-showcase-row:empty {
+    display: none;
+}
 .gift-showcase-row:not(:empty) {
     flex: 1;
 }
