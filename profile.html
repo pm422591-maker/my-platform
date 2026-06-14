@@ -84,8 +84,8 @@
         <div id="avatar-container">
     <img src="" id="top-nav-avatar" alt="">
     
-    <div class="transparent-square" style="display: block;">
-        <video src="img/avatarka1.mp4" autoplay loop muted playsinline disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback" style="width:100%; height:100%; object-fit:cover; mix-blend-mode:screen; pointer-events:none;">
+    <div class="transparent-square" style="display: none;">
+        <video src="" autoplay loop muted playsinline disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback" style="width:100%; height:100%; object-fit:cover; mix-blend-mode:screen; pointer-events:none;">
         </video>
     </div>
     <div id="status-dot" class="status-offline"></div>
@@ -329,53 +329,27 @@
 
           <div class="sm-section-title">Обводка аватарки</div>
           <div class="sm-card">
-            <div class="sm-field-hint" style="margin-bottom:12px;">Оберіть рамку, яка відображатиметься навколо вашого аватара</div>
+            <div class="sm-field-hint" style="margin-bottom:12px;">Придбайте ободок за монети та встановіть його навколо вашого аватара</div>
             <div class="sm-avatar-frame-grid" id="avatar-frame-grid">
-              <div class="sm-frame-item selected" data-frame="" onclick="selectAvatarFrame(this, '')">
-                <div class="sm-frame-preview no-frame">
-                  <span style="font-size:18px;color:rgba(255,255,255,0.4);">✕</span>
+              <div class="sm-frame-item" data-frame="img/avatarka1.mp4">
+                <div class="sm-frame-preview">
+                  <video src="img/avatarka1.mp4" autoplay loop muted playsinline disablePictureInPicture style="width:100%;height:100%;object-fit:cover;"></video>
                 </div>
-                <span class="sm-frame-label">Без обводки</span>
+                <span class="sm-frame-label">Ободок 1</span>
+                <span class="sm-frame-price" data-price-for="img/avatarka1.mp4">250 монет</span>
+                <button class="sm-frame-btn" data-frame-btn="img/avatarka1.mp4" onclick="frameAction('img/avatarka1.mp4', this)">Купити</button>
               </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat1.gif" onclick="selectAvatarFrame(this, 'img/custom/cat1.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat1.gif" alt="Рамка 1"></div>
-                <span class="sm-frame-label">Котик 1</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat2.gif" onclick="selectAvatarFrame(this, 'img/custom/cat2.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat2.gif" alt="Рамка 2"></div>
-                <span class="sm-frame-label">Котик 2</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat3.gif" onclick="selectAvatarFrame(this, 'img/custom/cat3.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat3.gif" alt="Рамка 3"></div>
-                <span class="sm-frame-label">Котик 3</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat4.gif" onclick="selectAvatarFrame(this, 'img/custom/cat4.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat4.gif" alt="Рамка 4"></div>
-                <span class="sm-frame-label">Котик 4</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat5.gif" onclick="selectAvatarFrame(this, 'img/custom/cat5.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat5.gif" alt="Рамка 5"></div>
-                <span class="sm-frame-label">Котик 5</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat6.gif" onclick="selectAvatarFrame(this, 'img/custom/cat6.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat6.gif" alt="Рамка 6"></div>
-                <span class="sm-frame-label">Котик 6</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat7.gif" onclick="selectAvatarFrame(this, 'img/custom/cat7.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat7.gif" alt="Рамка 7"></div>
-                <span class="sm-frame-label">Котик 7</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat8.gif" onclick="selectAvatarFrame(this, 'img/custom/cat8.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat8.gif" alt="Рамка 8"></div>
-                <span class="sm-frame-label">Котик 8</span>
-              </div>
-              <div class="sm-frame-item" data-frame="img/custom/cat9.gif" onclick="selectAvatarFrame(this, 'img/custom/cat9.gif')">
-                <div class="sm-frame-preview"><img src="img/custom/cat9.gif" alt="Рамка 9"></div>
-                <span class="sm-frame-label">Котик 9</span>
+              <div class="sm-frame-item" data-frame="img/avatarka2.mp4">
+                <div class="sm-frame-preview">
+                  <video src="img/avatarka2.mp4" autoplay loop muted playsinline disablePictureInPicture style="width:100%;height:100%;object-fit:cover;"></video>
+                </div>
+                <span class="sm-frame-label">Ободок 2</span>
+                <span class="sm-frame-price" data-price-for="img/avatarka2.mp4">250 монет</span>
+                <button class="sm-frame-btn" data-frame-btn="img/avatarka2.mp4" onclick="frameAction('img/avatarka2.mp4', this)">Купити</button>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:12px; margin-top:14px;">
-              <button class="sm-inline-btn accent" id="save-avatar-frame-btn" onclick="saveAvatarFrame()">Зберегти обводку</button>
+            <div style="display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;">
+              <button class="sm-inline-btn" id="remove-avatar-frame-btn" onclick="removeAvatarFrame()">Прибрати ободок</button>
               <span id="avatar-frame-status" style="font-size:12px; color:rgba(255,255,255,0.5);"></span>
             </div>
           </div>
@@ -706,6 +680,7 @@ window.openSettings = function() {
   overlay.classList.add('active');
   smSyncUserInfo();
   smSwitchTabById('profile');
+  loadAvatarFramesState();
 };
 
 function smCloseSettings() {
@@ -819,18 +794,107 @@ function smShowToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2800);
 }
 
-// ─── AVATAR FRAME ───
-function selectAvatarFrame(el, framePath) {
-  document.querySelectorAll('#avatar-frame-grid .sm-frame-item').forEach(item => item.classList.remove('selected'));
-  el.classList.add('selected');
-  window._selectedAvatarFrame = framePath;
+// ─── AVATAR FRAME (купівля за монети) ───
+const FRAME_CATALOG = {
+  'img/avatarka1.mp4': 250,
+  'img/avatarka2.mp4': 250
+};
+window._ownedFrames = [];
+window._currentAvatarFrame = '';
+
+async function loadAvatarFramesState() {
+  // Які ободки куплені
+  try {
+    const res = await fetch('get_owned_frames.php', { credentials: 'include' });
+    const data = await res.json();
+    window._ownedFrames = (data && data.owned) ? data.owned : [];
+  } catch (e) { window._ownedFrames = []; }
+
+  // Який ободок встановлений зараз
+  try {
+    const ures = await fetch('get_user.php', { credentials: 'include' });
+    const udata = await ures.json();
+    window._currentAvatarFrame = (udata && udata.avatar_frame) ? udata.avatar_frame : '';
+  } catch (e) {}
+
+  renderFrameButtons();
 }
 
-async function saveAvatarFrame() {
-  const btn = document.getElementById('save-avatar-frame-btn');
+function renderFrameButtons() {
+  document.querySelectorAll('#avatar-frame-grid .sm-frame-item').forEach(item => {
+    const frame = item.getAttribute('data-frame');
+    const btn = item.querySelector('[data-frame-btn]');
+    const price = item.querySelector('[data-price-for]');
+    const owned = window._ownedFrames.includes(frame);
+    const isActive = window._currentAvatarFrame === frame;
+
+    item.classList.toggle('selected', isActive);
+
+    if (isActive) {
+      btn.textContent = 'Встановлено';
+      btn.className = 'sm-frame-btn active-frame';
+      btn.disabled = true;
+    } else if (owned) {
+      btn.textContent = 'Встановити';
+      btn.className = 'sm-frame-btn use';
+      btn.disabled = false;
+    } else {
+      btn.textContent = 'Купити';
+      btn.className = 'sm-frame-btn';
+      btn.disabled = false;
+    }
+
+    if (price) {
+      if (owned) { price.textContent = 'Придбано'; price.classList.add('owned'); }
+      else { price.textContent = FRAME_CATALOG[frame] + ' монет'; price.classList.remove('owned'); }
+    }
+  });
+}
+
+async function frameAction(frame, btn) {
+  const owned = window._ownedFrames.includes(frame);
+  if (owned) {
+    await equipAvatarFrame(frame);
+  } else {
+    await buyAvatarFrame(frame, btn);
+  }
+}
+
+async function buyAvatarFrame(frame, btn) {
   const status = document.getElementById('avatar-frame-status');
-  const frame = window._selectedAvatarFrame !== undefined ? window._selectedAvatarFrame : '';
-  if (btn) { btn.disabled = true; btn.textContent = 'Збереження...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Купівля...'; }
+  try {
+    const res = await fetch('buy_avatar_frame.php', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar_frame: frame })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window._ownedFrames.push(frame);
+      if (status) { status.textContent = '✓ Куплено! Баланс: ' + data.new_balance; status.style.color = '#4caf50'; }
+      // одразу встановлюємо куплений ободок
+      await equipAvatarFrame(frame);
+    } else {
+      if (status) {
+        status.textContent = data.message === 'Недостатньо монет.'
+          ? '✗ Недостатньо монет (потрібно ' + (data.need ?? '') + ')'
+          : '✗ ' + (data.message || 'Помилка');
+        status.style.color = '#f44';
+      }
+      renderFrameButtons();
+    }
+  } catch (e) {
+    if (status) { status.textContent = '✗ Помилка'; status.style.color = '#f44'; }
+    renderFrameButtons();
+  } finally {
+    setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+  }
+}
+
+async function equipAvatarFrame(frame) {
+  const status = document.getElementById('avatar-frame-status');
   try {
     const res = await fetch('save_avatar_frame.php', {
       method: 'POST',
@@ -840,29 +904,62 @@ async function saveAvatarFrame() {
     });
     const data = await res.json();
     if (data.success) {
-      if (status) { status.textContent = '✓ Збережено!'; status.style.color = '#4caf50'; }
       window._currentAvatarFrame = frame;
       applyAvatarFrameToUI(frame);
+      if (status && !status.textContent) { status.textContent = '✓ Встановлено'; status.style.color = '#4caf50'; }
+    } else {
+      if (status) { status.textContent = '✗ ' + (data.message || 'Помилка'); status.style.color = '#f44'; }
+    }
+  } catch (e) {
+    if (status) { status.textContent = '✗ Помилка'; status.style.color = '#f44'; }
+  }
+  renderFrameButtons();
+  setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+}
+
+async function removeAvatarFrame() {
+  const status = document.getElementById('avatar-frame-status');
+  const btn = document.getElementById('remove-avatar-frame-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('save_avatar_frame.php', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar_frame: '' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window._currentAvatarFrame = '';
+      applyAvatarFrameToUI('');
+      if (status) { status.textContent = '✓ Ободок прибрано'; status.style.color = '#4caf50'; }
     } else {
       if (status) { status.textContent = '✗ Помилка'; status.style.color = '#f44'; }
     }
-  } catch(e) {
+  } catch (e) {
     if (status) { status.textContent = '✗ Помилка'; status.style.color = '#f44'; }
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Зберегти обводку'; }
+    if (btn) btn.disabled = false;
+    renderFrameButtons();
     setTimeout(() => { if (status) status.textContent = ''; }, 3000);
   }
 }
 
 function applyAvatarFrameToUI(framePath) {
-  const frameEls = document.querySelectorAll('.avatar-frame-overlay');
-  frameEls.forEach(el => {
+  const containers = document.querySelectorAll('#avatar-container .transparent-square');
+  containers.forEach(box => {
+    const vid = box.querySelector('video');
     if (framePath) {
-      el.src = framePath + '?t=' + Date.now();
-      el.style.display = 'block';
+      if (vid) { vid.src = framePath; vid.load(); vid.play().catch(()=>{}); }
+      box.style.display = 'block';
     } else {
-      el.style.display = 'none';
+      box.style.display = 'none';
     }
+  });
+  // сумісність зі старою розміткою overlay (якщо є)
+  document.querySelectorAll('.avatar-frame-overlay').forEach(el => {
+    if (framePath) { el.src = framePath; el.style.display = 'block'; }
+    else { el.style.display = 'none'; }
   });
 }
 
@@ -1533,15 +1630,22 @@ document.addEventListener('keydown', function(e) {
 .sm-avatar-actions { flex: 1; }
 .sm-avatar-actions p { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); margin-top: 8px; line-height: 1.4; }
 .sm-avatar-btns { display: flex; gap: 8px; margin-bottom: 6px; }
-.sm-avatar-frame-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-.sm-frame-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px 4px; border-radius: 12px; border: 2px solid transparent; transition: all 0.2s; }
+.sm-avatar-frame-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 360px; }
+.sm-frame-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 10px; border-radius: 14px; border: 2px solid transparent; transition: all 0.2s; background: rgba(255,255,255,0.03); }
 .sm-frame-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(240,4,127,0.3); }
 .sm-frame-item.selected { border-color: #f0047f; background: rgba(240,4,127,0.1); }
-.sm-frame-preview { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); }
+.sm-frame-preview { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); }
 .sm-frame-preview.no-frame { border: 2px dashed rgba(255,255,255,0.2); }
-.sm-frame-preview img { width: 100%; height: 100%; object-fit: cover; }
-.sm-frame-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-align: center; }
+.sm-frame-preview img, .sm-frame-preview video { width: 100%; height: 100%; object-fit: cover; }
+.sm-frame-label { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.7); text-align: center; }
 .sm-frame-item.selected .sm-frame-label { color: #f0047f; }
+.sm-frame-price { font-size: 11px; font-weight: 600; color: #f0047f; }
+.sm-frame-price.owned { color: rgba(255,255,255,0.4); }
+.sm-frame-btn { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 10px; border: none; cursor: pointer; background: linear-gradient(135deg,#f0047f,#c0036a); color: #fff; transition: 0.2s; width: 100%; }
+.sm-frame-btn:hover { filter: brightness(1.1); }
+.sm-frame-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+.sm-frame-btn.use { background: rgba(255,255,255,0.1); }
+.sm-frame-btn.active-frame { background: rgba(76,175,80,0.2); color: #4caf50; cursor: default; }
 .sm-danger-card { background: rgba(60,0,0,0.3); border: 1px solid rgba(255,80,80,0.15); border-radius: 16px; padding: 18px 20px; margin-top: 8px; }
 .sm-danger-title { font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,100,100,0.5); margin-bottom: 14px; }
 .sm-danger-row { display: flex; gap: 10px; }

@@ -24,8 +24,8 @@ try {
     $input = json_decode(file_get_contents('php://input'), true);
     $frame = $input['avatar_frame'] ?? '';
 
-    // Whitelist allowed frames (only files from img/custom/)
-    $allowed = ['', 'img/custom/frame_ender.webm', 'img/custom/frame_creeper.webm'];
+    // Whitelist дозволених ободків ('' = прибрати ободок)
+    $allowed = ['', 'img/avatarka1.mp4', 'img/avatarka2.mp4'];
 
     if (!in_array($frame, $allowed)) {
         echo json_encode(['success' => false, 'message' => 'Недопустима рамка']);
@@ -39,6 +39,29 @@ try {
         $pdo->exec("ALTER TABLE users ADD COLUMN avatar_frame VARCHAR(100) DEFAULT '' AFTER avatar_url");
     } catch (Exception $e) {
         // Column already exists — ignore
+    }
+
+    // Якщо встановлюється конкретний ободок — він має бути куплений
+    if ($frame !== '') {
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS user_avatar_frames (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    frame VARCHAR(100) NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uniq_user_frame (user_id, frame),
+                    KEY idx_user (user_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+        } catch (Exception $e) {}
+
+        $stmtOwn = $pdo->prepare("SELECT 1 FROM user_avatar_frames WHERE user_id = ? AND frame = ?");
+        $stmtOwn->execute([$userId, $frame]);
+        if (!$stmtOwn->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Ободок не куплено.']);
+            exit;
+        }
     }
 
     $stmt = $pdo->prepare("UPDATE users SET avatar_frame = ? WHERE id = ?");

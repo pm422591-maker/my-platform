@@ -119,10 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadNotifications();
     setInterval(window.loadNotifications, 10000);
 
-    // 6. Перевірка збереженої прикраси
-    let savedDeco = null;
-    try { savedDeco = localStorage.getItem('user_decoration'); } catch(_) {}
-    if (savedDeco) window.applyDecoration(savedDeco);
+    // 6. Прикраса аватара тепер керується сервером (куплені ободки).
+    //    Старе localStorage-відновлення вимкнено, щоб не показувати неоплачений ободок.
+    try { localStorage.removeItem('user_decoration'); } catch(_) {}
 
     // 7. Тема (з захистом — щоб помилка не зупинила решту ініціалізації профілю)
     let savedTheme = 'dark';
@@ -635,15 +634,12 @@ if (av2) av2.src = srcAvatar;
 window._currentAvatarSrc = srcAvatar;
 
             // Load avatar frame
-            if (data.avatar_frame) {
-              window._currentAvatarFrame = data.avatar_frame;
-              window._selectedAvatarFrame = data.avatar_frame;
-              if (typeof applyAvatarFrameToUI === 'function') applyAvatarFrameToUI(data.avatar_frame);
-              // Mark selected frame in grid
-              document.querySelectorAll('#avatar-frame-grid .sm-frame-item').forEach(function(item) {
-                item.classList.toggle('selected', item.dataset.frame === data.avatar_frame);
-              });
-            }
+            window._currentAvatarFrame = data.avatar_frame || '';
+            if (typeof applyAvatarFrameToUI === 'function') applyAvatarFrameToUI(data.avatar_frame || '');
+            // Mark selected frame in grid
+            document.querySelectorAll('#avatar-frame-grid .sm-frame-item').forEach(function(item) {
+              item.classList.toggle('selected', item.dataset.frame === (data.avatar_frame || ''));
+            });
 
 // Sync avatar previews in settings modal — called after avatar changes
 function smSyncUserInfo() {
