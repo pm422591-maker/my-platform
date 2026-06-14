@@ -3568,7 +3568,7 @@ video, .transparent-square {
     /* Твоє позиціонування залишається без змін */
     position: absolute;
     top: 520px;
-    left: 300px;
+    left: 400px;
     z-index: 10;
     margin: 0;
 
