@@ -20,7 +20,7 @@ body {
     overflow-y: auto !important;   
     
     /* Ставимо жорстку висоту в пікселях, яка перекриває найнижчі твої блоки (1200+ px) */
-    height: 1500px !important;  
+    height: 1000px !important;  
     /* ========================================= */
     
     position: relative; 
