@@ -334,11 +334,11 @@ body::after {
 
 .profile-sidebar-card {
     /* Розміри та позиціонування (залишилися твої) */
-    width: 688px;
-    height: 600px;
+    width: 600px;
+    height: 780px;
     position: absolute;
-    top: 700px;
-    left: 1100px;
+    top: 60px;
+    left: 1188px;
     
     /* === ЕФЕКТ МАТОВОГО СКЛА (як у .fade-rectangle) === */
     background-color: rgba(61, 19, 41, 0.6);     /* Напівпрозорий темно-бордовий фон */
@@ -370,8 +370,8 @@ body::after {
 
     /* Твоє позиціонування */
     position: absolute;
-    top: 720px;   
-    left: 1450px;  
+    top: 80px;   
+    left: 1500px;  
     transform: translateX(-50%); 
     
     margin: 0; 
@@ -3387,8 +3387,8 @@ video, .transparent-square {
     position: absolute;
     
     /* --- ЗМІНЮЄМО КООРДИНАТИ ТУТ --- */
-    left: 1140px;         /* Ставимо зліва (було right: 30px) */
-    top: 1230px;         /* Опускаємо під кнопку налаштувань */
+    left: 1230px;         /* Ставимо зліва (було right: 30px) */
+    top: 700px;         /* Опускаємо під кнопку налаштувань */
     right: auto;        /* Скидаємо прив'язку до правого краю */
     
     /* Розміри (коротка кнопка) */
@@ -3611,10 +3611,10 @@ video, .transparent-square {
 /* === ГОЛОВНИЙ КОНТЕЙНЕР === */
 .gifts-wide-block {
     position: absolute;
-    width: 600px;
+    width: 530px;
     min-height: 120px;
-    left: 1140px;
-    top: 1100px;
+    left: 1220px;
+    top: 500px;
     box-sizing: border-box;
     padding: 16px 20px;
     margin-bottom: 15px;
@@ -4104,9 +4104,9 @@ video, .transparent-square {
 .roblox-profile-section {
     /* Розміри та позиціонування (залишаємо твої) */
     position: absolute;
-    width: 972px;              
+    width: 1000px;              
     min-height: 250px;
-    top: 900px;                
+    top: 650px;                
     left: 110px;
     z-index: 999;
 
