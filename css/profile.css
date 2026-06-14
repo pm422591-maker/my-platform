@@ -3821,18 +3821,19 @@ video, .transparent-square {
 /* 1. КОНТЕЙНЕР (керує положенням на сторінці) */
 .profile-actions-container {
     position: absolute !important;
-    top: 630px !important;
-    left: 110px !important; /* На великих екранах залишаємо твій відступ */
+    top: 110px !important;
+    left: auto !important;
+    right: 155px !important; /* Верхній правий кут картки профілю */
     z-index: 999;
     
     display: flex !important;
     flex-direction: row !important; 
-    flex-wrap: wrap !important; /* ВАЖЛИВО: дозволяє кнопкам "падати" в новий ряд, якщо мало місця */
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
     gap: 10px !important;
     
-    /* Робимо ширину гумовою */
-    width: 90% !important;         /* Займає 90% доступного місця на маленьких екранах */
-    max-width: 800px !important;   /* Але ніколи не розтягується більше ніж на 800px на великих */
+    width: auto !important;        /* Ширина під контент, без розтягування */
+    max-width: 800px !important;
 }
 
 .owner-only { display: none !important; }
