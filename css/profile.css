@@ -4377,3 +4377,107 @@ video, .transparent-square {
     line-height: 1;
     user-select: none;
 }
+/* ======================================================== */
+/* 🎨 ЄДИНИЙ ДИЗАЙН БЛОКІВ У СТИЛІ ГОЛОВНОЇ (home) 🎨        */
+/* Скляні неоново-рожеві кнопки. Розмір/позиція не змінені — */
+/* перевизначено тільки кольори, рамки, тіні та hover.       */
+/* ======================================================== */
+
+/* --- Кнопка "Налаштування" / "Підписатися" / "Повідомлення" --- */
+.settings-btn {
+    background: rgba(255, 255, 255, 0.07) !important;
+    background-color: rgba(255, 255, 255, 0.07) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 50px !important;
+    font-family: 'Geologica', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2px !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    box-shadow: none !important;
+    transition: transform 0.18s, background 0.18s, border-color 0.18s, box-shadow 0.18s !important;
+}
+.settings-btn .settings-icon { color: #ffffff !important; }
+.settings-btn:hover {
+    background: rgba(240, 4, 127, 0.18) !important;
+    background-color: rgba(240, 4, 127, 0.18) !important;
+    border-color: rgba(240, 4, 127, 0.5) !important;
+    box-shadow: 0 6px 20px rgba(240, 4, 127, 0.25) !important;
+    transform: translateY(-3px) !important;
+    color: #ffffff !important;
+}
+.settings-btn:active { transform: scale(0.96) !important; }
+
+/* Головна кнопка-акцент "Підписатися" — рожевий градієнт як GO LIVE */
+.subscribe-btn {
+    background: linear-gradient(135deg, #f0047f, #c70368) !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 18px rgba(240, 4, 127, 0.4) !important;
+}
+.subscribe-btn:hover {
+    background: linear-gradient(135deg, #ff1a95, #f0047f) !important;
+    border-color: transparent !important;
+    box-shadow: 0 6px 26px rgba(240, 4, 127, 0.55) !important;
+}
+
+/* Кнопка скарги — лишаємо скляною, лише червоний акцент на hover */
+.report-btn:hover {
+    background: rgba(255, 0, 51, 0.18) !important;
+    background-color: rgba(255, 0, 51, 0.18) !important;
+    border-color: rgba(255, 0, 51, 0.45) !important;
+    box-shadow: 0 6px 20px rgba(255, 0, 51, 0.3) !important;
+}
+
+/* --- Картки лічильників (підписники / підписки) --- */
+.stat-group {
+    background-color: rgba(255, 255, 255, 0.07) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), inset 0 0 18px rgba(240, 4, 127, 0.06) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s !important;
+}
+.stat-group:hover {
+    transform: translateY(-3px);
+    border-color: rgba(240, 4, 127, 0.5) !important;
+    box-shadow: 0 6px 22px rgba(240, 4, 127, 0.25), inset 0 0 18px rgba(240, 4, 127, 0.12) !important;
+}
+.stat-group .stat-value, .user-stats-plate .stat-value {
+    color: #ffffff !important;
+}
+.stat-group .stat-label, .user-stats-plate .stat-label {
+    color: #ff80bf !important;
+    text-transform: lowercase !important;
+    font-weight: 600 !important;
+}
+
+/* --- Блок "Додати час активності" --- */
+.activity-block,
+.activity-block.is-set,
+.activity-block.active-now,
+.activity-block.inactive-now {
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 50px !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.18s, background 0.18s, border-color 0.18s, box-shadow 0.18s !important;
+}
+.activity-block:hover {
+    background: rgba(240, 4, 127, 0.18) !important;
+    border-color: rgba(240, 4, 127, 0.5) !important;
+    box-shadow: 0 6px 20px rgba(240, 4, 127, 0.25) !important;
+    transform: translateY(-3px);
+}
+.activity-block #activityText,
+.activity-block .activity-status-icon,
+.activity-block .activity-status-icon svg {
+    color: #ffffff !important;
+}
+.activity-block .activity-status-icon svg { stroke: #ffffff !important; }
