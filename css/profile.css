@@ -3738,7 +3738,7 @@ video, .transparent-square {
     width: 95%; 
     max-width: 1000px; 
     min-height: 400px; 
-    margin-left: 100px;
+    margin-left: 120px;
     
     /* === ВИПРАВЛЕНО ТУТ === */
     /* Замість -750px ставимо звичайний відступ від верху (налаштуй цю цифру під себе) */
