@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SYNCORA · Модерація</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1D1115; --panel:#26161d; --panel2:#2f1b24; --line:#3d2530;
+    --pink:#F70087; --pink2:#FF25BB; --txt:#f6e9f1; --muted:#b78aa0;
+    --green:#27c08a; --amber:#ffb020; --red:#ff4d6d; --blue:#5aa9ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;font-size:15px}
+  a{color:var(--pink2);text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none!important}
+
+  /* ── Login ── */
+  #login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:30px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;margin-bottom:4px}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--pink2));box-shadow:0 0 14px var(--pink)}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:11px 12px;font-size:14px;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--pink)}
+  .btn{background:linear-gradient(135deg,var(--pink),var(--pink2));color:#fff;border:none;border-radius:10px;padding:12px 16px;font-weight:700;width:100%;margin-top:20px;font-size:15px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.sm{width:auto;margin:0;padding:8px 14px;font-size:13px;border-radius:8px}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  .btn.warn{background:linear-gradient(135deg,#ff9500,#ffb020)}
+  .btn.danger{background:linear-gradient(135deg,#e11d48,#ff4d6d)}
+  .btn.ok{background:linear-gradient(135deg,#0f9d70,#27c08a)}
+  .msg{margin-top:14px;font-size:13px;padding:10px 12px;border-radius:8px;display:none}
+  .msg.err{display:block;background:rgba(255,77,109,.12);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+  .msg.ok{display:block;background:rgba(39,192,138,.12);color:var(--green);border:1px solid rgba(39,192,138,.3)}
+
+  /* ── Layout ── */
+  header.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20}
+  .stats{display:flex;gap:10px;flex-wrap:wrap}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;color:var(--muted)}
+  .stat b{color:var(--txt);font-size:16px;margin-right:5px}
+  .stat.alert b{color:var(--amber)}
+  .wrap{display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 60px)}
+  .col-list{border-right:1px solid var(--line);overflow:auto;max-height:calc(100vh - 60px)}
+  .col-detail{padding:22px;overflow:auto;max-height:calc(100vh - 60px)}
+  .tabs{display:flex;gap:6px;padding:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5}
+  .tab{padding:7px 12px;border-radius:999px;font-size:13px;border:1px solid var(--line);background:transparent;color:var(--muted)}
+  .tab.active{background:linear-gradient(135deg,var(--pink),var(--pink2));color:#fff;border-color:transparent}
+
+  .report-item{padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
+  .report-item:hover{background:var(--panel2)}
+  .report-item.sel{background:var(--panel2);border-left:3px solid var(--pink)}
+  .ri-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+  .pill{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .pill.post{background:rgba(90,169,255,.16);color:var(--blue)}
+  .pill.comment{background:rgba(255,176,32,.16);color:var(--amber)}
+  .pill.account{background:rgba(247,0,135,.16);color:var(--pink2)}
+  .pill.s-pending{background:rgba(255,176,32,.16);color:var(--amber)}
+  .pill.s-reviewing{background:rgba(90,169,255,.16);color:var(--blue)}
+  .pill.s-resolved{background:rgba(39,192,138,.16);color:var(--green)}
+  .pill.s-rejected{background:rgba(183,138,160,.16);color:var(--muted)}
+  .pill.st-active{background:rgba(39,192,138,.16);color:var(--green)}
+  .pill.st-restricted{background:rgba(255,176,32,.16);color:var(--amber)}
+  .pill.st-banned{background:rgba(255,77,109,.16);color:var(--red)}
+  .ri-reason{font-size:13px;color:var(--txt);margin-bottom:4px}
+  .ri-meta{font-size:12px;color:var(--muted)}
+
+  .detail-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid var(--line);background:var(--panel2)}
+  .h-name{font-weight:700;font-size:18px}
+  .section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+  .section h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .kv{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:14px}
+  .kv .k{color:var(--muted)}
+  .snapshot{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;white-space:pre-wrap;word-break:break-word;color:#e9d2e0;max-height:240px;overflow:auto}
+  .actions-grid{display:flex;flex-wrap:wrap;gap:10px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .row > *{flex:0 0 auto}
+  .grow{flex:1 1 auto}
+  .hist-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .empty{color:var(--muted);text-align:center;padding:60px 20px}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:12px 20px;border-radius:10px;z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:14px}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr}.col-list{max-height:none;border-right:none;border-bottom:1px solid var(--line)}}
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="login-wrap">
+  <div class="card">
+    <div class="brand"><span class="dot"></span> SYNCORA</div>
+    <div class="sub">Панель модерації · вхід лише для адміністраторів</div>
+    <label>Пошта</label>
+    <input id="l-email" type="email" autocomplete="username" placeholder="admin@syncora">
+    <label>Пароль</label>
+    <input id="l-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+    <label>Додатковий адмін-пароль</label>
+    <input id="l-admin" type="password" autocomplete="off" placeholder="••••••••">
+    <button class="btn" id="l-btn">Увійти</button>
+    <div class="msg" id="l-msg"></div>
+  </div>
+</div>
+
+<!-- ════════ DASHBOARD ════════ -->
+<div id="dash" class="hidden">
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span> SYNCORA · Модерація</div>
+    <div class="stats" id="stats"></div>
+    <button class="btn sm ghost" id="logout">Вийти</button>
+  </header>
+
+  <div class="wrap">
+    <div class="col-list">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-status="pending">Очікують</button>
+        <button class="tab" data-status="reviewing">На розгляді</button>
+        <button class="tab" data-status="resolved">Вирішені</button>
+        <button class="tab" data-status="rejected">Відхилені</button>
+        <button class="tab" data-status="all">Усі</button>
+        <button class="tab" data-status="users">Користувачі</button>
+      </div>
+      <div id="list"></div>
+    </div>
+
+    <div class="col-detail" id="detail">
+      <div class="empty">← Оберіть скаргу зі списку, щоб переглянути деталі</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-host"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let SESSION_OK = false, curTab = 'pending', selReport = null;
+
+function toast(t){
+  const el=document.createElement('div');el.className='toast';el.textContent=t;
+  $('#toast-host').appendChild(el);setTimeout(()=>el.remove(),3000);
+}
+function esc(s){return (s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function api(payload){
+  const r = await fetch('admin_api.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
+  return r.json();
+}
+
+/* ── LOGIN ── */
+$('#l-btn').onclick = async () => {
+  const m=$('#l-msg'); m.className='msg';
+  const body={email:$('#l-email').value.trim(),password:$('#l-pass').value,admin_password:$('#l-admin').value};
+  try{
+    const r=await fetch('admin_login.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
+    const d=await r.json();
+    if(d.success){enterDash();}
+    else{m.className='msg err';m.textContent=d.message||'Помилка входу';}
+  }catch(e){m.className='msg err';m.textContent='Помилка мережі';}
+};
+['l-email','l-pass','l-admin'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{if(e.key==='Enter')$('#l-btn').click();}));
+
+$('#logout').onclick=()=>{document.cookie='';location.reload();};
+
+function enterDash(){
+  SESSION_OK=true;
+  $('#login-wrap').classList.add('hidden');
+  $('#dash').classList.remove('hidden');
+  loadStats(); loadList();
+}
+
+/* ── STATS ── */
+async function loadStats(){
+  const d=await api({action:'stats'}); if(!d.success)return;
+  const s=d.stats;
+  $('#stats').innerHTML=`
+    <div class="stat alert"><b>${s.pending}</b>очікують</div>
+    <div class="stat"><b>${s.reviewing}</b>на розгляді</div>
+    <div class="stat"><b>${s.resolved}</b>вирішено</div>
+    <div class="stat"><b>${s.restricted}</b>обмежено</div>
+    <div class="stat"><b>${s.banned}</b>забанено</div>`;
+}
+
+/* ── TABS ── */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); curTab=t.dataset.status;
+  if(curTab==='users') loadUsers(); else loadList();
+});
+
+/* ── LIST REPORTS ── */
+async function loadList(){
+  $('#list').innerHTML='<div class="empty">Завантаження…</div>';
+  const d=await api({action:'list_reports',status:curTab});
+  if(!d.success){$('#list').innerHTML='<div class="empty">Помилка</div>';return;}
+  if(!d.reports.length){$('#list').innerHTML='<div class="empty">Немає скарг</div>';return;}
+  $('#list').innerHTML=d.reports.map(r=>`
+    <div class="report-item ${selReport==r.id?'sel':''}" onclick="openReport(${r.id})">
+      <div class="ri-top">
+        <span class="pill ${r.target_type}">${({post:'Пост',comment:'Коментар',account:'Акаунт'})[r.target_type]}</span>
+        <span class="pill s-${r.status}">${({pending:'Очікує',reviewing:'Розгляд',resolved:'Вирішено',rejected:'Відхилено'})[r.status]}</span>
+      </div>
+      <div class="ri-reason">${esc(r.reason_code)}${r.reason_text?': '+esc(r.reason_text.slice(0,80)):''}</div>
+      <div class="ri-meta">на ${r.target_username?'@'+esc(r.target_username):'—'} · від @${esc(r.reporter_name||'?')} · ${new Date(r.created_at).toLocaleString('uk-UA')}</div>
+    </div>`).join('');
+}
+
+/* ── REPORT DETAIL ── */
+async function openReport(id){
+  selReport=id;
+  document.querySelectorAll('.report-item').forEach(e=>e.classList.remove('sel'));
+  const d=await api({action:'report_detail',report_id:id});
+  if(!d.success){toast(d.message);return;}
+  const r=d.report, uid=r.target_user_id;
+  const histHtml = d.history.length
+    ? d.history.map(h=>`<div class="hist-row"><span>${({post:'Пост',comment:'Коментар',account:'Акаунт'})[h.target_type]} · ${esc(h.reason_code)}</span><span class="pill s-${h.status}">${h.status}</span></div>`).join('')
+    : '<div class="ri-meta">Інших скарг немає</div>';
+
+  $('#detail').innerHTML=`
+    <div class="detail-head">
+      <img class="avatar" src="${r.target_avatar?esc(r.target_avatar):'img/default_avatar.png'}" onerror="this.src='img/default_avatar.png'">
+      <div>
+        <div class="h-name">${r.target_username?'@'+esc(r.target_username):'Невідомий користувач'}
+          ${r.target_status?`<span class="pill st-${r.target_status}">${r.target_status}</span>`:''}</div>
+        <div class="ri-meta">ID ${uid||'—'} · ${r.target_email?esc(r.target_email):''} · попереджень: ${r.warnings_count??0}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Деталі скарги #${r.id}</h3>
+      <div class="kv">
+        <span class="k">Тип об'єкта</span><span><span class="pill ${r.target_type}">${({post:'Пост',comment:'Коментар',account:'Акаунт'})[r.target_type]}</span></span>
+        <span class="k">Підстава</span><span>${esc(r.reason_code)}</span>
+        <span class="k">Опис</span><span>${r.reason_text?esc(r.reason_text):'—'}</span>
+        <span class="k">Посилання</span><span>${r.target_url?`<a href="${esc(r.target_url)}" target="_blank">${esc(r.target_url)}</a>`:'—'}</span>
+        <span class="k">Скаржник</span><span>@${esc(r.reporter_name||'?')}</span>
+        <span class="k">Дата</span><span>${new Date(r.created_at).toLocaleString('uk-UA')}</span>
+        <span class="k">Статус</span><span><span class="pill s-${r.status}">${r.status}</span></span>
+      </div>
+      ${r.content_snapshot?`<h3 style="margin-top:16px">Зміст об'єкта (знімок)</h3><div class="snapshot">${esc(r.content_snapshot)}</div>`:''}
+    </div>
+
+    <div class="section">
+      <h3>Рішення по скарзі</h3>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn sm" onclick="setStatus(${r.id},'reviewing')">Взяти на розгляд</button>
+        <button class="btn sm ghost" onclick="setStatus(${r.id},'rejected')">Відхилити скаргу</button>
+        ${(r.target_type!=='account')?`<button class="btn sm danger" onclick="delContent('${r.target_type}',${r.target_id},${r.id})">Видалити контент</button>`:''}
+      </div>
+    </div>
+
+    ${uid?`
+    <div class="section">
+      <h3>Дії щодо користувача @${esc(r.target_username||'')}</h3>
+      <label>Повідомлення користувачу (необов'язково)</label>
+      <textarea id="a-msg" rows="3" placeholder="Порушення виявлено: ..."></textarea>
+
+      <div class="actions-grid" style="margin-top:14px">
+        <button class="btn sm warn" onclick="doWarn(${uid},${r.id})">⚠ Попередити</button>
+        <div class="row">
+          <input id="a-days" type="number" min="1" max="365" value="7" style="width:80px">
+          <button class="btn sm warn" onclick="doRestrict(${uid},${r.id})">⏳ Обмежити (дн.)</button>
+        </div>
+        <button class="btn sm danger" onclick="doBan(${uid},${r.id})">⛔ Забанити</button>
+        ${r.target_status&&r.target_status!=='active'?`<button class="btn sm ok" onclick="doUnban(${uid})">✓ Зняти санкції</button>`:''}
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Історія скарг на користувача</h3>
+      ${histHtml}
+    </div>`:''}
+  `;
+}
+
+/* ── ACTIONS ── */
+async function setStatus(id,st){
+  let note=null;
+  if(st==='rejected') note=prompt('Причина відхилення (необов\'язково):')||'';
+  const d=await api({action:'set_status',report_id:id,status:st,admin_note:note});
+  toast(d.message); loadStats(); loadList(); if(d.success) openReport(id);
+}
+async function delContent(type,tid,rid){
+  if(!confirm('Видалити цей '+(type==='post'?'пост':'коментар')+'? Дію не можна скасувати.'))return;
+  const d=await api({action:'delete_content',target_type:type,target_id:tid,report_id:rid});
+  toast(d.message); openReport(rid);
+}
+async function doWarn(uid,rid){
+  const msg=$('#a-msg').value.trim();
+  if(!msg && !confirm('Надіслати попередження без тексту?'))return;
+  const d=await api({action:'warn_user',user_id:uid,report_id:rid,message:msg||'Дотримуйтесь правил сайту.'});
+  toast(d.message); loadStats(); loadList(); openReport(rid);
+}
+async function doRestrict(uid,rid){
+  const days=parseInt($('#a-days').value)||7;
+  const msg=$('#a-msg').value.trim();
+  if(!confirm(`Обмежити користувача на ${days} дн.?`))return;
+  const d=await api({action:'restrict_user',user_id:uid,report_id:rid,days,message:msg});
+  toast(d.message); loadStats(); loadList(); openReport(rid);
+}
+async function doBan(uid,rid){
+  const reason=prompt('Причина бану (буде збережена):','Порушення правил сайту');
+  if(reason===null)return;
+  const msg=$('#a-msg').value.trim();
+  if(!confirm('Точно забанити цей акаунт?'))return;
+  const d=await api({action:'ban_user',user_id:uid,report_id:rid,reason,message:msg});
+  toast(d.message); loadStats(); loadList(); openReport(rid);
+}
+async function doUnban(uid){
+  if(!confirm('Зняти всі санкції з користувача?'))return;
+  const d=await api({action:'unban_user',user_id:uid});
+  toast(d.message); loadStats(); if(selReport)openReport(selReport);
+}
+
+/* ── USERS TAB ── */
+async function loadUsers(q=''){
+  $('#list').innerHTML=`<div style="padding:12px"><input id="u-search" placeholder="Пошук за іменем або поштою…" value="${esc(q)}"></div><div id="u-list"></div>`;
+  $('#u-search').addEventListener('keydown',e=>{if(e.key==='Enter')loadUsers(e.target.value.trim());});
+  const d=await api({action:'list_users',q});
+  if(!d.success){$('#u-list').innerHTML='<div class="empty">Помилка</div>';return;}
+  $('#u-list').innerHTML=d.users.map(u=>`
+    <div class="report-item" onclick="openUser(${u.id},'${esc(u.username)}','${u.status}',${u.warnings_count||0})">
+      <div class="ri-top"><b>@${esc(u.username)}</b><span class="pill st-${u.status}">${u.status}</span></div>
+      <div class="ri-meta">${esc(u.email||'')} · ID ${u.id} · попереджень: ${u.warnings_count||0}</div>
+    </div>`).join('')||'<div class="empty">Нічого не знайдено</div>';
+}
+function openUser(uid,uname,status,warns){
+  selReport=null;
+  $('#detail').innerHTML=`
+    <div class="detail-head">
+      <div><div class="h-name">@${esc(uname)} <span class="pill st-${status}">${status}</span></div>
+      <div class="ri-meta">ID ${uid} · попереджень: ${warns}</div></div>
+    </div>
+    <div class="section">
+      <h3>Ручна модерація</h3>
+      <label>Повідомлення користувачу</label>
+      <textarea id="a-msg" rows="3" placeholder="Порушення виявлено: ..."></textarea>
+      <div class="actions-grid" style="margin-top:14px">
+        <button class="btn sm warn" onclick="doWarn(${uid},0)">⚠ Попередити</button>
+        <div class="row"><input id="a-days" type="number" min="1" max="365" value="7" style="width:80px">
+          <button class="btn sm warn" onclick="doRestrict(${uid},0)">⏳ Обмежити (дн.)</button></div>
+        <button class="btn sm danger" onclick="doBan(${uid},0)">⛔ Забанити</button>
+        ${status!=='active'?`<button class="btn sm ok" onclick="doUnban(${uid})">✓ Зняти санкції</button>`:''}
+      </div>
+    </div>
+    <div class="section">
+      <h3>Окреме повідомлення</h3>
+      <label>Тема</label><input id="m-subj" placeholder="Повідомлення від адміністрації">
+      <label>Текст</label><textarea id="m-body" rows="3"></textarea>
+      <button class="btn sm" style="margin-top:12px" onclick="sendMsg(${uid})">Надіслати</button>
+    </div>`;
+}
+async function sendMsg(uid){
+  const subject=$('#m-subj').value.trim()||'Повідомлення від адміністрації';
+  const bodyt=$('#m-body').value.trim();
+  if(!bodyt){toast('Введіть текст');return;}
+  const d=await api({action:'send_message',user_id:uid,subject,body:bodyt});
+  toast(d.message); if(d.success){$('#m-body').value='';}
+}
+
+/* ── auto-check existing session ── */
+(async()=>{
+  const d=await api({action:'stats'});
+  if(d&&d.success){enterDash();}
+})();
+</script>
+</body>
+</html>

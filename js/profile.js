@@ -490,6 +490,40 @@ async function syncRobloxInventoryFromServer(robloxId) {
 
 
 // --- ФУНКЦІЇ ПРОФІЛЮ ---
+// Скарга на акаунт переглядуваного профілю.
+window.reportProfile = async function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetId = urlParams.get('id');
+    if (!targetId) { alert('Неможливо визначити користувача'); return; }
+
+    const REASONS = {
+        spam:'Спам або реклама', harassment:'Образи / цькування', hate:'Мова ворожнечі',
+        nudity:'Відвертий контент 18+', violence:'Насильство або погрози',
+        scam:'Шахрайство / обман', impersonation:'Видавання себе за іншого', other:'Інше'
+    };
+    const keys = Object.keys(REASONS);
+    let t = "Оберіть підставу скарги (номер):\n";
+    keys.forEach((k,i)=>{ t += `${i+1}. ${REASONS[k]}\n`; });
+    const pick = prompt(t, "1");
+    if (pick === null) return;
+    const idx = parseInt(pick,10)-1;
+    const reasonCode = (idx>=0 && idx<keys.length) ? keys[idx] : 'other';
+    const reasonText = prompt("Опишіть, що саме порушено (необов'язково):","") || '';
+
+    try {
+        const r = await fetch('report.php', {
+            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+            body: JSON.stringify({
+                target_type:'account', target_id:Number(targetId),
+                reason_code:reasonCode, reason_text:reasonText,
+                target_url: location.origin + location.pathname + '?id=' + targetId
+            })
+        });
+        const d = await r.json();
+        alert(d.message || (d.success ? 'Скаргу надіслано. Дякуємо!' : 'Не вдалося надіслати скаргу'));
+    } catch(e) { alert('Помилка мережі. Спробуйте пізніше.'); }
+};
+
 async function loadUserData() {
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('id');

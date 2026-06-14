@@ -8361,13 +8361,65 @@ document.addEventListener('click', function(event) {
     }
 });
 // 4. Функція скарги
+// Універсальна функція скарги: працює для постів, коментарів та акаунтів.
+// type: 'post' | 'comment' | 'account'
+window.submitReport = async function(type, targetId, opts) {
+    opts = opts || {};
+    const REASONS = {
+        spam:        'Спам або реклама',
+        harassment:  'Образи / цькування',
+        hate:        'Мова ворожнечі',
+        nudity:      'Відвертий контент 18+',
+        violence:    'Насильство або погрози',
+        scam:        'Шахрайство / обман',
+        impersonation:'Видавання себе за іншого',
+        other:       'Інше'
+    };
+    // Просте меню вибору підстави
+    const keys = Object.keys(REASONS);
+    let promptText = "Оберіть підставу скарги (введіть номер):\n";
+    keys.forEach((k, i) => { promptText += `${i + 1}. ${REASONS[k]}\n`; });
+    const pick = prompt(promptText, "1");
+    if (pick === null) return; // скасовано
+    const idx = parseInt(pick, 10) - 1;
+    const reasonCode = (idx >= 0 && idx < keys.length) ? keys[idx] : 'other';
+
+    let reasonText = '';
+    if (reasonCode === 'other' || true) {
+        reasonText = prompt("Опишіть, що саме порушено (необов'язково):", "") || '';
+    }
+
+    const payload = {
+        target_type: type,
+        target_id:   Number(targetId),
+        reason_code: reasonCode,
+        reason_text: reasonText,
+        target_url:  opts.url || (location.origin + location.pathname + (type === 'post' ? ('#post-' + targetId) : ''))
+    };
+
+    try {
+        const r = await fetch('report.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        alert(d.message || (d.success ? 'Скаргу надіслано. Дякуємо!' : 'Не вдалося надіслати скаргу'));
+    } catch (e) {
+        alert('Помилка мережі. Спробуйте пізніше.');
+    }
+};
+
 window.reportPost = function(postId) {
-    alert("Скаргу надіслано модераторам. Дякуємо за допомогу!");
-    // ТУТ БУДЕ ТВІЙ FETCH ЗАПИТ НА СКАРГУ (report_post.php)
-    
-    // Закриваємо меню після скарги
     const menu = document.getElementById(`post-menu-${postId}`);
     if (menu) menu.style.display = 'none';
+    window.submitReport('post', postId, { url: location.origin + location.pathname + '#post-' + postId });
+};
+
+// Скарга на коментар (виклик: window.reportComment(commentId))
+window.reportComment = function(commentId) {
+    window.submitReport('comment', commentId, {});
 };
 
 // 3. ФУНКЦІЯ ЕФЕКТУ ПІСКУ
