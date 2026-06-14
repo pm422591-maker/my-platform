@@ -3610,45 +3610,50 @@ video, .transparent-square {
 
 /* === КНОПКА НАЛАШТУВАНЬ ВЛАСНИКА (новий дизайн) === */
 .owner-edit-btn {
-    position: static !important;   /* Кладемо в контейнер, а не абсолютно */
+    position: static !important;
     top: auto !important;
     left: auto !important;
-    width: auto !important;        /* Ширина під вміст */
+    width: auto !important;
     height: auto !important;
-    padding: 6px 12px !important;
-    gap: 6px !important;
+    padding: 5px 10px !important;
+    gap: 5px !important;
 
-    /* Скляний рожевий стиль під тему сторінки */
-    background: rgba(159, 45, 107, 0.55) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    border-radius: 10px !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+    /* Темне скло під тему сайту (як картки) */
+    background: rgba(20, 20, 24, 0.55) !important;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    color: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 9px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
 
     font-family: 'Geologica', sans-serif !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 600 !important;
     letter-spacing: 0.2px;
 
     cursor: pointer;
-    transition: transform 0.12s ease, background 0.18s ease, box-shadow 0.18s ease !important;
+    transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease !important;
 }
 .owner-edit-btn .settings-icon {
+    width: 12px !important;
+    height: 12px !important;
+    opacity: 0.9;
     transition: transform 0.4s ease;
 }
 .owner-edit-btn:hover {
-    background: rgba(214, 51, 132, 0.85) !important;
-    box-shadow: 0 6px 20px rgba(214, 51, 132, 0.45) !important;
+    background: rgba(214, 51, 132, 0.28) !important;
+    border-color: rgba(214, 51, 132, 0.55) !important;
+    box-shadow: 0 6px 20px rgba(214, 51, 132, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     transform: translateY(-1px);
 }
 .owner-edit-btn:hover .settings-icon {
-    transform: rotate(90deg);   /* Шестерня крутиться при наведенні */
+    transform: rotate(90deg);
+    opacity: 1;
 }
 .owner-edit-btn:active {
     transform: translateY(0);
-    background: rgba(159, 45, 107, 0.9) !important;
+    background: rgba(20, 20, 24, 0.7) !important;
 }
 
 /* === ГОЛОВНИЙ КОНТЕЙНЕР === */
