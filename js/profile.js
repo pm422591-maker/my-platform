@@ -852,8 +852,8 @@ if (isOwner) {
             // ===========================
 // 6. ГРАДІЄНТ (Колонки №18 та №19)
 // ===========================
-const gradLeft = data.grad_color_left || '#222222'; 
-const gradRight = data.grad_color_right || '#000000';
+const gradLeft = data.grad_color_left || '#3D1329'; 
+const gradRight = data.grad_color_right || '#F0047F';
 const currentGrad = `linear-gradient(135deg, ${gradLeft}, ${gradRight})`;
 
 // 1. Оновлюємо фон нового блоку fade-rectangle
