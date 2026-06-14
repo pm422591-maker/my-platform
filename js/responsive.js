@@ -147,7 +147,36 @@
         });
         mo.observe(body, { attributes: true, attributeFilter: ['data-active-tab'] });
       }
+      observeFullscreenOverlays();
     }
+  }
+
+  // Слідкуємо за відкриттям чату/дзвінка/студії — щоб надійно ховати
+  // нижню панель і FAB (через клас .overlay-open на <body>), без крихких :has().
+  function observeFullscreenOverlays() {
+    var ids = ['chat-window', 'chat-creation-screen', 'stream-studio-overlay', 'telegram-call-screen'];
+    var nodes = [];
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) nodes.push(el);
+    });
+    if (!nodes.length || !window.MutationObserver) return;
+
+    function recompute() {
+      var open = nodes.some(function (el) {
+        var disp = (el.style && el.style.display) || '';
+        var visible = disp && disp !== 'none';
+        var active = el.classList && el.classList.contains('active');
+        return visible || active;
+      });
+      document.body.classList.toggle('overlay-open', open);
+    }
+
+    var mo = new window.MutationObserver(recompute);
+    nodes.forEach(function (el) {
+      mo.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+    });
+    recompute();
   }
 
   if (document.readyState === 'loading') {
