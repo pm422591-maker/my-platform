@@ -4391,14 +4391,26 @@ video, .transparent-square {
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 50px !important;
     font-family: 'Geologica', sans-serif !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     letter-spacing: 0.2px !important;
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
     box-shadow: none !important;
     transition: transform 0.18s, background 0.18s, border-color 0.18s, box-shadow 0.18s !important;
+
+    /* --- МЕНШИЙ І ТОНШИЙ РОЗМІР --- */
+    height: 28px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    gap: 6px !important;
+    width: auto !important;
+    flex: 0 0 auto !important;
 }
-.settings-btn .settings-icon { color: #ffffff !important; }
+.settings-btn .settings-icon {
+    color: #ffffff !important;
+    width: 13px !important;
+    height: 13px !important;
+}
 .settings-btn:hover {
     background: rgba(240, 4, 127, 0.18) !important;
     background-color: rgba(240, 4, 127, 0.18) !important;
@@ -4481,3 +4493,10 @@ video, .transparent-square {
     color: #ffffff !important;
 }
 .activity-block .activity-status-icon svg { stroke: #ffffff !important; }
+
+/* Кнопка скарги лишається компактною квадратною (не розтягується від settings-btn) */
+.report-btn {
+    width: 32px !important;
+    flex: 0 0 32px !important;
+    padding: 0 !important;
+}
