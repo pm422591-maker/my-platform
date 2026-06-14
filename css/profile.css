@@ -3861,20 +3861,10 @@ video, .transparent-square {
 
 .owner-only { display: none !important; }
 
-/* Кнопки гостя (Підписатися/Повідомлення/скарга) виносимо вліво,
-   до лівого краю контенту. Кнопка "Налаштування" лишається у своєму контейнері недоторканою. */
+/* Зсуваємо лише кнопки гостя (Підписатися/Повідомлення/скарга) трохи праворуч,
+   не торкаючись положення кнопки "Налаштування" */
 #visitor-actions {
-    position: absolute !important;
-    top: 415px !important;      /* той самий рівень, що й контейнер дій */
-    left: 130px !important;     /* лівий край контенту (банер/аватар) */
-    right: auto !important;
-    transform: none !important;
-    z-index: 1000;
-    display: none;              /* JS вмикає flex для гостя */
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    gap: 8px !important;
+    transform: translateX(40px) !important;
 }
 
 /* 2. САМІ КНОПКИ (керують зовнішнім виглядом) */
