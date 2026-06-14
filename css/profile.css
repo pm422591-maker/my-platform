@@ -3689,11 +3689,7 @@ video, .transparent-square {
 
 /* Ряд закріплених у вітрині подарунків */
 .gift-showcase-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    min-height: 64px;
+    display: contents;
 }
 
 .gift-showcase-row:empty {
