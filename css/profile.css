@@ -3861,6 +3861,12 @@ video, .transparent-square {
 
 .owner-only { display: none !important; }
 
+/* Зсуваємо лише кнопки гостя (Підписатися/Повідомлення/скарга) трохи праворуч,
+   не торкаючись положення кнопки "Налаштування" */
+#visitor-actions {
+    transform: translateX(40px) !important;
+}
+
 /* 2. САМІ КНОПКИ (керують зовнішнім виглядом) */
 .settings-btn {
     /* --- ЛЕЙАУТ ТА ПОЗИЦІОНУВАННЯ --- */
