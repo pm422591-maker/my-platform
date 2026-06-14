@@ -707,7 +707,8 @@ window.smSyncUserInfo = smSyncUserInfo;
                 const currentBio = data.bio || "";
                 if (bioInput) bioInput.value = currentBio;
                 if (bioDisplay) {
-                    bioDisplay.textContent = currentBio.trim() !== "" ? currentBio : "Про себе нічого не вказано";
+                    const bioContentEl = document.getElementById('userBioContent') || bioDisplay;
+                    bioContentEl.textContent = currentBio.trim() !== "" ? currentBio : "Про себе нічого не вказано";
                 }
                 if (bioTextEl) {
                     bioTextEl.innerText = currentBio || "Опис відсутній";
@@ -998,6 +999,8 @@ const repVal = document.getElementById('reputation-val');
 if (fCount) fCount.innerText = data.followers_count || 0;
 if (flingCount) flingCount.innerText = data.following_count || 0;
 if (repVal) repVal.innerText = data.reputation || 0;
+
+if (typeof renderUserLevel === 'function') renderUserLevel(data);
 
 // 2. Настраиваем кнопку подписки (чтобы она сразу была "Отписаться", если ты уже подписан)
 const subBtn = document.querySelector('.subscribe-btn');
@@ -2568,6 +2571,38 @@ function sendBlogMessage() {
         input.value = ''; // Очистити поле
     }
 }
+// ── РІВЕНЬ КОРИСТУВАЧА (Steam-подібний, рожевий) ──
+function renderUserLevel(data) {
+    const circleEl = document.getElementById('currentLevel');
+    const fillEl   = document.getElementById('userProgressBar');
+    const curEl    = document.getElementById('currentXP');
+    const maxEl    = document.getElementById('maxXP');
+    const block    = document.getElementById('levelBlock');
+    if (!circleEl || !fillEl) return;
+    let totalXP = 0;
+    if (data && data.xp != null && !isNaN(parseInt(data.xp, 10))) totalXP = parseInt(data.xp, 10);
+    else { const rep = parseInt((data && data.reputation) || 0, 10) || 0; totalXP = rep * 10; }
+    if (totalXP < 0) totalXP = 0;
+    let level = 1, need = 100, remaining = totalXP;
+    while (remaining >= need) { remaining -= need; level++; need = level * 100; }
+    const curInLevel = remaining, needForNext = need;
+    const pct = Math.max(0, Math.min(100, Math.round((curInLevel / needForNext) * 100)));
+    circleEl.innerText = level;
+    if (curEl) curEl.innerText = curInLevel;
+    if (maxEl) maxEl.innerText = needForNext;
+    fillEl.style.width = '0%';
+    setTimeout(() => { fillEl.style.width = pct + '%'; }, 120);
+    const circle = circleEl.closest('.micro-level-circle');
+    if (circle) {
+        const grow = Math.min(14, level), size = 40 + grow;
+        circle.style.width = size + 'px'; circle.style.height = size + 'px';
+        const glow = 12 + Math.min(18, level);
+        circle.style.boxShadow = `0 0 ${glow}px rgba(240,4,127,0.8), inset 0 0 6px rgba(255,255,255,0.25)`;
+    }
+    if (block) block.title = `Рівень ${level} • ${totalXP} XP всього`;
+}
+window.renderUserLevel = renderUserLevel;
+
 // ── ВІТРИНА ПОДАРУНКІВ НА ПРОФІЛІ (з БД) ──
 function getProfileViewedUserId() {
     const urlParams = new URLSearchParams(window.location.search);

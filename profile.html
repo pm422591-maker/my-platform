@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SYNCORA</title>
-    <link rel="stylesheet" href="css/profile.css?v=20260613d">
+    <link rel="stylesheet" href="css/profile.css?v=20260613g">
     <style>
         /* Запобігає стрибкам контенту при завантаженні */
         .user-name-wrapper, .user-bio-display { min-height: 20px; }
@@ -63,11 +63,6 @@
         <div class="right-sidebar-container" style="z-index: 10;">
     <div class="user-stats-plate">
     <div class="stat-group">
-        <span class="stat-value" id="reputation-val">0</span>
-        <span class="stat-label">репутація</span>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat-group">
         <span class="stat-value" id="followers-count">0</span> <span class="stat-label">підписники</span>
     </div>
     <div class="stat-divider"></div>
@@ -117,17 +112,11 @@
     </div>
 </div>
 
-        <div class="micro-level-container" style="top: -50px;">
-            <div class="micro-level-circle">
-                <span id="currentLevel">1</span>
-            </div>
+        <div class="micro-level-container" id="levelBlock">
+            <div class="micro-level-circle"><span id="currentLevel">1</span></div>
             <div class="micro-level-track">
-                <div class="micro-level-fill" id="userProgressBar" style="width: 45%;">
-                    <div class="micro-shine"></div>
-                </div>
-                <div class="micro-xp-text">
-                    <span id="currentXP">450</span> / <span id="maxXP">1000</span> XP
-                </div>
+                <div class="micro-level-fill" id="userProgressBar" style="width: 0%;"><div class="micro-shine"></div></div>
+                <div class="micro-xp-text"><span id="currentXP">0</span> / <span id="maxXP">100</span> XP</div>
             </div>
         </div>
 
@@ -142,21 +131,18 @@
         </div>
 
        
-    <div class="user-name-wrapper" style="display: flex; align-items: center; gap: 8px; min-height: 24px;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;       /* Оптимальний розмір для перемикача */ font-weight: 700;      /* Жирний шрифт для кращої читабельності */ text-transform: uppercase;">
-        <span id="userName">Завантаження...</span>
+    <div class="user-name-wrapper" style="display: flex; align-items: center; gap: 8px; min-height: 24px; font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 12px; font-weight: 700; text-transform: uppercase; position: relative !important; top: 594px !important; left: 130px !important;">
+        <span id="userName" style="font-size: 12px !important;">Завантаження...</span>
     </div>
 
-    <div id="userHandle" class="user-handle-text" style="font-size: 13px; color: #666; margin-top: -2px; margin-bottom: 4px; font-family: 'Geologica', sans-serif; font-optical-sizing: auto;">@username</div>
+    <div id="userHandle" class="user-handle-text" style="font-size: 10px; color: #666; margin-top: -2px; margin-bottom: 4px; font-family: 'Geologica', sans-serif; font-optical-sizing: auto; position: relative !important; top:595px !important; left: 130px !important;">@username</div>
 
-    <div style="display: flex; align-items: center; gap: 10px; pointer-events: none;">
-    
-     <div id="userRegistrationDate" style="min-height: 15px; margin-left: -20px; pointer-events: auto;font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px;">Загрузка даты...</div>
-    
-     <div id="userFlags" class="flags-container" style="position: absolute; top: 708px; left: 280px; display: flex; align-items: center; gap: 5px; pointer-events: auto; width: max-content;"></div>
-     
-</div>
-
-        <div id="userBioDisplay" class="user-bio-display" style="min-height: 20px; gap: 20px;">
+        <div id="userBioDisplay" class="user-bio-display" style="min-height: 20px; display: flex !important; flex-direction: column !important; align-items: flex-start !important; justify-content: flex-start !important;">
+            <div id="userBioHeader" style="display: flex; align-items: center; gap: 8px; width: 100%; pointer-events: auto;">
+                <div id="userFlags" class="flags-container" style="display: flex; align-items: center; gap: 5px; pointer-events: auto; width: max-content;"></div>
+                <div id="userRegistrationDate" style="min-height: 15px; pointer-events: auto; font-family: 'Geologica', sans-serif; font-optical-sizing: auto; font-size: 13px; color: rgba(255,255,255,0.6);">Загрузка даты...</div>
+            </div>
+            <div id="userBioContent" style="width: 100%;">Про себе нічого не вказано</div>
         </div>
         <div style="height: 20px; min-height: 20px;"></div>
 
@@ -955,7 +941,10 @@ async function smSaveBio() {
     const bioDisplay = document.getElementById('userBioDisplay');
     const bioTextEl  = document.getElementById('userBioText');
     const bioInput   = document.getElementById('user-bio');
-    if (bioDisplay) bioDisplay.textContent = text || 'Про себе нічого не вказано';
+    if (bioDisplay) {
+      const bioContentEl = document.getElementById('userBioContent') || bioDisplay;
+      bioContentEl.textContent = text || 'Про себе нічого не вказано';
+    }
     if (bioTextEl)  bioTextEl.innerText    = text || 'Опис відсутній';
     if (bioInput)   bioInput.value         = text;
     if (window._profileData) window._profileData.bio = text;
@@ -1251,7 +1240,7 @@ document.addEventListener('keydown', function(e) {
 })();
 </script>
 
-    <script src="js/profile.js?v=20260613c"></script>
+    <script src="js/profile.js?v=20260613g"></script>
 
 <!-- ========== PREMIUM MODAL (profile.html) ========== -->
 <div id="profile-premium-modal" style="display:none; position:fixed; inset:0; z-index:9999999; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px); flex-direction:column;">

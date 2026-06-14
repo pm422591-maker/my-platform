@@ -154,19 +154,16 @@ body::after {
 /* Черный блок (квадрат) */
 
 .light-card {
-    /* 1. РОБИМО БЛОК ГУМОВИМ */
-    width: 90%;             /* Займає 90% ширини екрана */
-    max-width: 1616px;      /* Але ніколи не стає більшим, ніж ти задумав */
-    height: 350px;          /* Висота залишається */
-    
-    background-color: #929191; 
-    border-radius: 20px; 
-    
-    /* 2. ІДЕАЛЬНЕ ЦЕНТРУВАННЯ */
+    width: 90%;
+    max-width: 940px;
+    height: 300px;
+
+    background-color: #929191;
+    border-radius: 20px;
+
     position: absolute;
-    top: 100px;             
-    left: 50%;              /* Зсуваємо лівий край рівно на середину екрана */
-    transform: translateX(-50%); /* Повертаємо блок на половину його власної ширини назад */
+    top: 90px;
+    left: 130px;
     z-index: 2;
 }
 
@@ -386,53 +383,42 @@ body::after {
     display: none;
 }
 
-/* 3. Перетворюємо кожну групу на окрему скляну картку (у стилі головної) */
+/* 3. Перетворюємо кожну групу на окрему рожеву картку */
 .stat-group {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
-    background-color: rgba(61, 19, 41, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-
+    
+    background-color: #D1A5C1; /* Рожево-бузковий колір з макета */
+    
     padding: 15px 25px; 
-    border-radius: 16px; 
+    border-radius: 12px; 
     
     /* Тінь та тонка рамка для об'єму */
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); 
-    border: 1px solid rgba(255, 255, 255, 0.06); 
-    font-family: 'Geologica', sans-serif;
+    border: 1px solid rgba(255, 255, 255, 0.08); 
     
+    /* Додаємо однакову мінімальну ширину, щоб картки були рівними */
     min-width: 80px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.stat-group:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(240, 4, 127, 0.35);
-    border-color: rgba(240, 4, 127, 0.4);
 }
 
-/* 4. Великі цифри — світлі */
+/* 4. Створюємо стиль для великих цифр */
 .stat-group .stat-value {
     font-size: 20px;
-    font-weight: 700;
-    color: #fff;
+    font-weight: bold;
+    color: #000;
     margin: 0;
     line-height: 1;
-    font-family: 'Geologica', sans-serif;
-    text-shadow: 0 0 10px rgba(240, 4, 127, 0.4);
 }
 
-/* 5. Підписи — рожеві */
+/* 5. Створюємо стиль для нижніх підписів */
 .stat-group .stat-label {
-    font-size: 13px;
-    font-weight: 400;
-    color: #ff80bf;
-    margin: 6px 0 0 0; 
+    font-size: 14px;
+    font-weight: normal;
+    color: #6D5B76; /* Темніший бузковий колір для контрасту */
+    margin: 5px 0 0 0; 
     text-transform: lowercase; 
-    font-family: 'Geologica', sans-serif;
 }
 /* Группы текста внутри */
 .stat-group {
@@ -2629,26 +2615,25 @@ body::after {
 
 .empty-wide-block {
     /* Розміри */
-    width: 95%;
-    height: 150px;
+    width: 95%;           /* На всю ширину батьківського блоку ("ширше") */
+    height: 150px;          /* Висота така ж, як у блоку часу */
     
     /* Відступи */
-    margin-top: -70px;
+    margin-top: -70px;      /* Відступ від блоку часу зверху */
     
-    /* Скляний стиль, як на головній */
-    background-color: rgba(61, 19, 41, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px;
+    /* Візуал (копіюємо стиль блоку часу) */
+    background-color: rgba(159, 45, 107, 0.6); /* Темний колір фону (підберіть під свій дизайн) */
+    border-radius: 12px;       /* Заокруглення кутів (або 30px, якщо треба овальний) */
     
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    /* Тіні та рамки (опціонально, як у верхнього блоку) */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.05);
     
+    /* Щоб майбутній контент був по центру */
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ff80bf;
-    font-family: 'Geologica', sans-serif;
+    color: #555; /* Колір тексту заглушки */
 }
 
 /* === ГОЛОВНИЙ БЛОК === */
@@ -2882,12 +2867,12 @@ body::after {
 
 #avatar-container {
     position: absolute;
-    width: 140px;
-    height: 140px;
+    width: 110px;
+    height: 110px;
     
     /* Позиція для великих екранів */
-    top: 360px;
-    left: 200px;
+    top: 300px;
+    left: 135px;
     
     display: flex;
     align-items: center;
@@ -3054,10 +3039,14 @@ video, .transparent-square {
 }
 
 /* Налаштування для тексту, щоб підкладка була під ним */
-#userName, #userBioDisplay {
+#userName {
     position: relative; /* Обов'язково для позиціонування смуги */
     z-index: 1;
     display: inline-block; /* Щоб смуга орієнтувалася на ширину тексту */
+}
+#userBioDisplay {
+    position: relative;
+    z-index: 1;
 }
 
 
@@ -3066,11 +3055,11 @@ video, .transparent-square {
 #userBioDisplay {
     /* Позиціонування */
     position: absolute;
-    left: 110px;           /* Рівняємо по лівому краю з кнопкою блогу */
-    top: 700px;           /* Ставимо НАД кнопкою блогу */
+    left: 100px;           /* Рівняємо по лівому краю з кнопкою блогу */
+    top: 480px;           /* Під ім'ям та @username */
     
     /* Розміри (робимо квадрат/блок) */
-    width: 972px;         /* Така ж ширина, як у кнопки блогу */
+    width: 1000px;         /* Така ж ширина, як у кнопки блогу */
     min-height: 100px;     /* Мінімальна висота */
     max-height: 400px;    /* Максимальна висота (щоб не налізло на кнопку) */
     
@@ -3082,14 +3071,15 @@ video, .transparent-square {
     border-radius: 20px;                         /* Закруглені кути під єдиний стиль */
     
     /* Відступи */
-    padding: 10px;        
-    padding-top: 30px;
+    padding: 14px;
     box-sizing: border-box;
     
     /* === ВИРІВНЮВАННЯ === */
     display: flex;
-    align-items: center;         /* Вертикально - лишаємо по центру */
-    justify-content: flex-start; /* Горизонтально - притискаємо ВЛІВО */
+    flex-direction: column;      /* Заголовок (прапори+дата) зверху, біо знизу */
+    align-items: flex-start;     /* Все притиснуте вліво */
+    justify-content: flex-start; /* Зверху вниз */
+    gap: 10px;                   /* Відступ між рядком прапорів і текстом біо */
     text-align: left;            /* Сам текст теж рівняємо ВЛІВО */
     
     /* === ПЕРЕНОС СЛІВ === */
@@ -3485,8 +3475,8 @@ video, .transparent-square {
 
 #userRegistrationDate {
     position: absolute; /* Позволяет двигать элемент по координатам */
-    left: 140px;
-    top: 710px;
+    left: 10px;
+    top: 10px;
     
     color: #ffffff;
     font-size: 12px;
@@ -3626,21 +3616,47 @@ video, .transparent-square {
     left: 1140px;
     top: 1100px;
     box-sizing: border-box;
-    padding: 18px 22px;
+    padding: 16px 20px;
     margin-bottom: 15px;
-    border-radius: 20px;
+    border-radius: 18px;
     z-index: 9;
     display: flex;
     align-items: center;
     gap: 16px;
-    /* Той самий скляний стиль, що й блоки на головній */
-    background-color: rgba(61, 19, 41, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    font-family: 'Geologica', sans-serif;
+    /* Скляний неоновий блок у стилі сайту */
+    background: linear-gradient(135deg, rgba(240,4,127,0.10), rgba(138,43,226,0.06));
+    border: 1px solid rgba(240, 4, 127, 0.35);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.28), inset 0 0 22px rgba(240,4,127,0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     overflow: visible;
+}
+/* Світлова смужка зверху для "неонового" акценту */
+.gifts-wide-block::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 18px; right: 18px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #f0047f, #ff6ac1, transparent);
+    box-shadow: 0 0 12px rgba(240,4,127,0.8);
+    opacity: 0.9;
+}
+/* Підпис-заголовок зліва */
+.gifts-wide-block::after {
+    content: "🎁 ПОДАРУНКИ";
+    position: absolute;
+    top: -11px; left: 22px;
+    font-family: 'Geologica', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #ff80bf;
+    background: #2a0f1d;
+    padding: 2px 10px;
+    border-radius: 50px;
+    border: 1px solid rgba(240,4,127,0.4);
+    box-shadow: 0 0 10px rgba(240,4,127,0.4);
 }
 
 /* Ряд закріплених у вітрині подарунків */
@@ -3720,10 +3736,9 @@ video, .transparent-square {
 .fade-rectangle {
     /* 1. АДАПТИВНІ РОЗМІРИ ТА ПОЗИЦІЯ */
     width: 95%; 
-    max-width: 1680px; 
-    min-height: 530px; 
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 1000px; 
+    min-height: 400px; 
+    margin-left: 100px;
     
     /* === ВИПРАВЛЕНО ТУТ === */
     /* Замість -750px ставимо звичайний відступ від верху (налаштуй цю цифру під себе) */
