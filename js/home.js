@@ -100,12 +100,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
     const chatToOpen = urlParams.get('open_chat');
-    
+
+    // 🛡️ Власник блогу з URL (?user=ID). Якщо параметра немає — це наш блог.
+    const blogUserParam = urlParams.get('user');
+    window.currentBlogOwnerId = blogUserParam ? blogUserParam : null;
+
     // === ВИПРАВЛЕННЯ: Якщо відкриваємо чат, не перемикаємо на стрічку! ===
     if (chatToOpen) {
         document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
     } else if (tab === 'blog') {
-        if (typeof switchTab === 'function') switchTab('blog');
+        if (typeof switchTab === 'function') switchTab('blog', blogUserParam || null);
     } else if (tab === 'requests') {
         if (typeof switchTab === 'function') switchTab('requests');
     } else {
@@ -1639,12 +1643,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
     const chatToOpen = urlParams.get('open_chat');
+    const blogUserParam = urlParams.get('user');
 
     // === ВИПРАВЛЕННЯ: Якщо чат, нічого не робимо, чекаємо чат ===
     if (chatToOpen) {
         // Чекаємо відкриття чату, вкладки не чіпаємо
     } else if (tab === 'blog') {
-        switchTab('blog'); // Если в ссылке blog -> открываем блог
+        switchTab('blog', blogUserParam || null); // Если в ссылке blog -> открываем блог
     } else if (tab === 'requests') {
         switchTab('requests');
     } else {
@@ -1722,12 +1727,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnFeed) btnFeed.addEventListener('click', () => performSwitch('feed'));
     if (btnRequests) btnRequests.addEventListener('click', () => performSwitch('requests'));
-    if (btnBlog) btnBlog.addEventListener('click', () => performSwitch('blog'));
+    if (btnBlog) btnBlog.addEventListener('click', () => { window.currentBlogOwnerId = null; performSwitch('blog'); });
 
     // 3. Перевірка посилання при старті (якщо прийшли з профілю)
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
     const chatToOpen = urlParams.get('open_chat');
+    const blogUserParam = urlParams.get('user');
+    if (tab === 'blog') window.currentBlogOwnerId = blogUserParam ? blogUserParam : null;
 
     // === ВИПРАВЛЕННЯ: Головна причина миготіння була тут ===
     if (chatToOpen) {
@@ -8573,9 +8580,18 @@ window.deletePost = async function(postId) {
         postElement.remove();
     }
 };
-window.setLudoraPage = function(tabName) {
+window.setLudoraPage = function(tabName, blogOwnerId) {
     window.currentLudoraPage = tabName;
     document.body.setAttribute('data-active-tab', tabName);
+
+    // 🛡️ Власник блогу: якщо відкриваємо блог, фіксуємо чий він.
+    // Явно переданий ID (перехід з чужого профілю) → чужий блог;
+    // клік по кнопці БЛОГ без ID → мій блог (скидаємо).
+    if (tabName === 'blog') {
+        window.currentBlogOwnerId = (blogOwnerId !== undefined && blogOwnerId !== null && blogOwnerId !== '')
+            ? blogOwnerId
+            : null;
+    }
 
     // 1. Прячем все вкладки и показываем нужную (ИСПРАВЛЕНО)
     document.querySelectorAll('.tab-content').forEach(el => {
