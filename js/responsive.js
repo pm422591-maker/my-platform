@@ -86,7 +86,8 @@
       ['feed', 'Стрічка', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'],
       ['requests', 'Заявки', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'],
       ['blog', 'Блог', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'],
-      ['streams', 'Стріми', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>']
+      ['streams', 'Стріми', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>'],
+      ['__chats', 'Чати', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>']
     ];
 
     tabs.forEach(function (t) {
@@ -96,6 +97,11 @@
       btn.type = 'button';
       btn.innerHTML = t[2] + '<span>' + t[1] + '</span>';
       btn.addEventListener('click', function () {
+        if (t[0] === '__chats') {
+          toggleMobileChats();
+          return;
+        }
+        closeMobileChats();
         if (typeof window.setLudoraPage === 'function') {
           window.setLudoraPage(t[0]);
         } else if (typeof window.switchTab === 'function') {
@@ -135,6 +141,38 @@
   }
   window.setActiveMobileTab = setActiveMobileTab;
 
+  // ---- Панель чатів (висувається знизу) ----
+  function ensureChatsBackdrop() {
+    var bd = document.getElementById('mobile-chats-backdrop');
+    if (!bd) {
+      bd = document.createElement('div');
+      bd.id = 'mobile-chats-backdrop';
+      bd.addEventListener('click', closeMobileChats);
+      document.body.appendChild(bd);
+    }
+    return bd;
+  }
+
+  function toggleMobileChats() {
+    var open = document.body.classList.contains('mobile-chats-open');
+    if (open) closeMobileChats(); else openMobileChats();
+  }
+
+  function openMobileChats() {
+    ensureChatsBackdrop();
+    document.body.classList.add('mobile-chats-open');
+    var btn = document.getElementById('mtab-__chats');
+    if (btn) btn.classList.add('active');
+  }
+
+  function closeMobileChats() {
+    document.body.classList.remove('mobile-chats-open');
+    var btn = document.getElementById('mtab-__chats');
+    if (btn) btn.classList.remove('active');
+  }
+  window.openMobileChats = openMobileChats;
+  window.closeMobileChats = closeMobileChats;
+
   function init() {
     // Нижню панель будуємо лише там, де є вкладки (home) і не вимкнено layout.
     if (!window.NO_MOBILE_LAYOUT && document.getElementById('btn-feed')) {
@@ -170,6 +208,8 @@
         return visible || active;
       });
       document.body.classList.toggle('overlay-open', open);
+      // Коли відкрився чат — ховаємо панель списку чатів.
+      if (open) closeMobileChats();
     }
 
     var mo = new window.MutationObserver(recompute);

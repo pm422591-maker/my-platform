@@ -96,10 +96,53 @@ html.is-mobile .side-panel-block {
   display: none !important;
 }
 
-/* Чати/канали (.side-panel-bottom) на телефоні ховаємо за замовчуванням —
-   доступ до них додамо окремо (як вкладку), щоб не громадити стрічку. */
+/* Чати/канали (.side-panel-bottom) на телефоні — висувна панель знизу.
+   За замовчуванням схована; відкривається вкладкою "Чати". */
 html.is-mobile .side-panel-bottom {
-  display: none !important;
+  display: block !important;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  top: auto !important;
+  width: 100% !important;
+  height: 70vh !important;
+  max-height: 70vh !important;
+  transform: translateY(110%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(29, 17, 21, 0.98) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 18px 18px 0 0 !important;
+  border-top: 1px solid rgba(240, 4, 127, 0.3) !important;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5) !important;
+  z-index: 1110 !important;
+  padding: 16px 14px calc(70px + env(safe-area-inset-bottom, 0px)) 14px !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+html.is-mobile body.mobile-chats-open .side-panel-bottom {
+  transform: translateY(0);
+}
+html.is-mobile .side-panel-bottom::before {
+  content: "";
+  position: sticky;
+  top: 0;
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 12px auto;
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+#mobile-chats-backdrop { display: none; }
+html.is-mobile body.mobile-chats-open #mobile-chats-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1109;
 }
 
 /* ---------- ОСНОВНИЙ КОНТЕНТ НА ВСЮ ШИРИНУ ---------- */
@@ -230,6 +273,56 @@ html.is-mobile .chat-overlay-container {
   height: 100% !important;
   border-radius: 0 !important;
   z-index: 1100 !important;
+  padding: 12px 14px !important;
+}
+
+/* Дзвінок (Telegram-style) на весь екран. */
+html.is-mobile .tg-call-overlay,
+html.is-mobile .tg-call-overlay.active {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  z-index: 1200 !important;
+}
+
+/* Усі модалки/оверлеї — на весь екран по центру, без зміщень фіксованого полотна. */
+html.is-mobile .modal-games-overlay,
+html.is-mobile .coin-reward-overlay,
+html.is-mobile .premium-modal-overlay,
+html.is-mobile .coin-shop-overlay,
+html.is-mobile #stream-studio-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  z-index: 1300 !important;
+}
+
+/* Внутрішні вікна модалок не ширші за екран. */
+html.is-mobile .modal-games-overlay > *,
+html.is-mobile .coin-reward-overlay > *,
+html.is-mobile .premium-modal-overlay > *,
+html.is-mobile .coin-shop-overlay > * {
+  max-width: 94vw !important;
+  box-sizing: border-box !important;
+}
+
+/* Коли відкрито чат/дзвінок/студію (responsive.js ставить .overlay-open на body) —
+   ховаємо нижню панель і FAB, щоб вони не перекривали поле вводу. */
+html.is-mobile body.overlay-open #mobile-tabbar,
+html.is-mobile body.overlay-open #mobile-fab {
+  display: none !important;
+}
+
+/* Поле вводу повідомлень у чаті притискаємо донизу екрана. */
+html.is-mobile #chat-window .messages-container,
+html.is-mobile .chat-overlay-container .messages-container {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 /* Інпути >=16px, щоб iOS не зумив при фокусі. */
@@ -251,4 +344,218 @@ html.is-mobile #create-post-panel.open {
   z-index: 1105 !important;
   max-height: 85vh !important;
   overflow-y: auto !important;
+}
+
+/* Горизонтальні стрічки (рекомендації, фільтри, історії) — плавний свайп. */
+html.is-mobile .filter-chips-container,
+html.is-mobile .streams-filter,
+html.is-mobile #recommendations-strip,
+html.is-mobile .games-strip,
+html.is-mobile .stories-row {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  flex-wrap: nowrap !important;
+  scrollbar-width: none;
+}
+html.is-mobile .filter-chips-container::-webkit-scrollbar,
+html.is-mobile .streams-filter::-webkit-scrollbar {
+  display: none;
+}
+
+/* Іконки подарунків над постом не повинні розпихати картку. */
+html.is-mobile .post-gifts-side,
+html.is-mobile .post-gifts-row {
+  flex-wrap: wrap !important;
+  max-width: 100% !important;
+}
+
+/* Сітки (ігри, стріми) — у 1–2 колонки замість фіксованих. */
+html.is-mobile .streams-grid,
+html.is-mobile .media-grid,
+html.is-mobile .games-grid {
+  grid-template-columns: 1fr 1fr !important;
+  display: grid !important;
+  gap: 10px !important;
+}
+
+
+/* ============================================================
+   ТЕЛЕФОН — ПРОФІЛЬ (profile.html)
+   Десктопний профіль зібраний на абсолютному позиціонуванні.
+   На телефоні перетворюємо все на вертикальний потік.
+   ============================================================ */
+html.is-mobile body {
+  height: auto !important;
+  overflow-y: auto !important;
+}
+html.is-mobile .profile-container {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: auto !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 64px 12px 24px 12px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+html.is-mobile .profile-container > *,
+html.is-mobile .right-sidebar-container,
+html.is-mobile .user-stats-plate,
+html.is-mobile .black-block,
+html.is-mobile .light-card,
+html.is-mobile #avatar-container,
+html.is-mobile .blog-btn-wrapper,
+html.is-mobile .micro-level-container,
+html.is-mobile #games-main-wrapper,
+html.is-mobile .games-integration-panel,
+html.is-mobile .user-name-wrapper,
+html.is-mobile .user-handle-text,
+html.is-mobile #userBioDisplay,
+html.is-mobile #userHandle,
+html.is-mobile .user-description-wrapper,
+html.is-mobile .profile-sidebar-card,
+html.is-mobile .roblox-profile-section,
+html.is-mobile .gifts-wide-block,
+html.is-mobile .empty-wide-block,
+html.is-mobile .profile-actions-container {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box !important;
+}
+html.is-mobile .black-block,
+html.is-mobile .light-card        { order: 1; }
+html.is-mobile #avatar-container  { order: 2; }
+html.is-mobile .user-name-wrapper { order: 3; }
+html.is-mobile #userHandle,
+html.is-mobile .user-handle-text  { order: 4; }
+html.is-mobile .micro-level-container { order: 5; }
+html.is-mobile #userBioDisplay    { order: 6; }
+html.is-mobile .blog-btn-wrapper  { order: 7; }
+html.is-mobile .profile-actions-container { order: 8; }
+html.is-mobile #games-main-wrapper,
+html.is-mobile .games-integration-panel { order: 9; }
+html.is-mobile .roblox-profile-section  { order: 10; }
+html.is-mobile .profile-sidebar-card { order: 11; }
+html.is-mobile .gifts-wide-block  { order: 12; }
+html.is-mobile .empty-wide-block  { order: 13; }
+html.is-mobile .user-stats-plate  { order: 14; }
+html.is-mobile .right-sidebar-container { order: 15; }
+html.is-mobile .black-block,
+html.is-mobile .light-card {
+  height: 150px !important;
+  border-radius: 16px !important;
+  margin-bottom: 60px !important;
+}
+html.is-mobile #avatar-container {
+  width: 96px !important;
+  height: 96px !important;
+  margin: -110px auto 8px auto !important;
+  z-index: 5 !important;
+}
+html.is-mobile .transparent-square {
+  top: -8px !important;
+  left: -8px !important;
+  width: 112px !important;
+  height: 112px !important;
+}
+html.is-mobile #status-dot {
+  right: 6px !important;
+  bottom: 6px !important;
+}
+html.is-mobile .user-name-wrapper,
+html.is-mobile #userHandle,
+html.is-mobile .user-handle-text {
+  text-align: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+}
+html.is-mobile #userHandle,
+html.is-mobile .user-handle-text {
+  font-size: 13px !important;
+  color: rgba(255,255,255,0.5) !important;
+}
+html.is-mobile #userBioDisplay {
+  height: auto !important;
+  min-height: 0 !important;
+  text-align: center !important;
+  padding: 0 8px !important;
+}
+html.is-mobile #userFlags {
+  justify-content: center !important;
+  margin: 6px 0 0 0 !important;
+}
+html.is-mobile .micro-level-container {
+  display: flex !important;
+  justify-content: center !important;
+  margin: 8px auto !important;
+}
+html.is-mobile .blog-btn-wrapper {
+  max-width: 320px !important;
+  margin: 8px auto !important;
+  justify-content: center !important;
+}
+html.is-mobile .profile-actions-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  justify-content: center !important;
+  max-width: 360px !important;
+  margin: 8px auto !important;
+}
+html.is-mobile .games-integration-panel,
+html.is-mobile #games-main-wrapper,
+html.is-mobile .roblox-profile-section,
+html.is-mobile .profile-sidebar-card,
+html.is-mobile .gifts-wide-block,
+html.is-mobile .empty-wide-block {
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 8px 0 !important;
+  border-radius: 16px !important;
+}
+html.is-mobile .profile-sidebar-card {
+  padding: 16px !important;
+}
+html.is-mobile .games-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+}
+html.is-mobile .user-stats-plate,
+html.is-mobile .right-sidebar-container {
+  background: transparent !important;
+}
+html.is-mobile .settings-gear-float,
+html.is-mobile .games-settings-btn {
+  z-index: 1001 !important;
+}
+html.is-mobile .settings-overlay.active,
+html.is-mobile #settingsOverlay.active {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+html.is-mobile #settingsModal,
+html.is-mobile .settings-modal {
+  width: 96vw !important;
+  max-width: 96vw !important;
+  max-height: 92vh !important;
+  border-radius: 16px !important;
+}
+html.is-mobile .back-home-btn {
+  position: fixed !important;
+  top: 64px !important;
+  left: 12px !important;
+  z-index: 1001 !important;
 }
