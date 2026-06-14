@@ -1,37 +1,254 @@
-/* responsive.css — доповнення до масштабування полотна (responsive.js).
- * Вмикається класом .is-compact на <html>, який ставить responsive.js
- * на планшетах і телефонах. Десктоп цими правилами не зачіпається. */
+/* responsive.css — адаптив.
+ * .is-compact  → планшет: масштабоване полотно (responsive.js керує viewport).
+ * .is-mobile   → телефон: справжній одноколонковий layout + нижня навігація.
+ * Десктоп не зачіпається. */
 
-/* Гарантуємо, що "полотно" не стискається вужче за дизайнерську ширину,
- * інакше центровані (left:50%) та абсолютні (left:1188px) елементи з'їдуть. */
+/* ============================================================
+   ПЛАНШЕТ (.is-compact) — лише дрібні дотикові поліпшення,
+   саме масштабування робить viewport із responsive.js.
+   ============================================================ */
 html.is-compact,
 html.is-compact body {
   min-width: 1820px;
   overflow-x: hidden;
 }
-
-/* Прибираємо випадковий горизонтальний скрол від тіней/блюрів за краями. */
-html.is-compact body {
-  position: relative;
-}
-
-/* На дотикових екранах трохи збільшуємо зони натискання ключових кнопок,
- * щоб у зменшеному масштабі по них було легше влучати пальцем. */
 html.is-compact .nav-container-vertical .nav-button {
   padding-top: 28px;
   padding-bottom: 28px;
 }
-
-html.is-compact .side-panel-post-btn,
-html.is-compact .profile-avatar-btn,
-html.is-compact .coins-display-container,
-html.is-compact .back-home-btn {
-  touch-action: manipulation;
-}
-
-/* Плавніша інерційна прокрутка контенту на iOS/Android. */
 html.is-compact .main-content-block,
 html.is-compact .sidebar-sections-container,
 html.is-compact .messages-container {
   -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   ТЕЛЕФОН (.is-mobile) — повний мобільний layout
+   ============================================================ */
+
+/* Дозволяємо вертикальну прокрутку всієї сторінки. */
+html.is-mobile,
+html.is-mobile body {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  background-size: cover !important;
+}
+
+/* Плаваючі градієнти-плями робимо легшими, щоб не з'їдали продуктивність. */
+html.is-mobile body::before,
+html.is-mobile body::after {
+  opacity: 0.35 !important;
+}
+
+/* ---------- ВЕРХНЯ ПАНЕЛЬ ---------- */
+html.is-mobile .top-bar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  transform: none !important;
+  border-radius: 0 0 16px 16px !important;
+  height: 56px !important;
+  padding: 0 12px !important;
+  z-index: 1000 !important;
+}
+
+/* Прибираємо перемикач мови/теми з топбара на телефоні — мало місця. */
+html.is-mobile .top-bar-left {
+  gap: 6px !important;
+}
+html.is-mobile .lang-switcher,
+html.is-mobile .theme-switcher {
+  transform: scale(0.85);
+  transform-origin: left center;
+}
+html.is-mobile .top-bar-center {
+  position: static !important;
+  transform: none !important;
+  margin: 0 auto !important;
+}
+html.is-mobile .header-logo {
+  height: 28px !important;
+  max-height: 28px !important;
+}
+html.is-mobile .top-bar-right {
+  gap: 8px !important;
+}
+html.is-mobile .premium-top-btn span {
+  display: none; /* лишаємо тільки іконку зірки */
+}
+html.is-mobile .premium-top-btn {
+  padding: 8px !important;
+}
+
+/* ---------- ХОВАЄМО ДЕСКТОПНУ БОКОВУ ПАНЕЛЬ ---------- */
+/* Навігація переїжджає в нижню панель (#mobile-tabbar, будує responsive.js),
+   кнопка "Додати пост" — у плаваючу #mobile-fab. */
+html.is-mobile .side-panel-top,
+html.is-mobile .side-panel-post-btn,
+html.is-mobile #main-sidebar,
+html.is-mobile .side-panel-block {
+  display: none !important;
+}
+
+/* Чати/канали (.side-panel-bottom) на телефоні ховаємо за замовчуванням —
+   доступ до них додамо окремо (як вкладку), щоб не громадити стрічку. */
+html.is-mobile .side-panel-bottom {
+  display: none !important;
+}
+
+/* ---------- ОСНОВНИЙ КОНТЕНТ НА ВСЮ ШИРИНУ ---------- */
+html.is-mobile .main-content-block {
+  position: static !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: calc(100vh - 56px - 64px) !important;
+  left: 0 !important;
+  top: 0 !important;
+  margin: 0 !important;
+  /* 56px під топбар, 64px під нижню панель + safe-area iPhone */
+  padding: 68px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(29, 17, 21, 0.55) !important;
+  overflow: visible !important;
+}
+
+/* Пости/картки — в один стовпець, на всю ширину. */
+html.is-mobile .post-card,
+html.is-mobile .feed-post,
+html.is-mobile .request-card,
+html.is-mobile .blog-post,
+html.is-mobile .tab-content > * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Медіа всередині постів не вилазить за екран. */
+html.is-mobile .main-content-block img,
+html.is-mobile .main-content-block video {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Заголовки вкладок трохи компактніші. */
+html.is-mobile .tab-content {
+  width: 100% !important;
+}
+
+/* ---------- НИЖНЯ ПАНЕЛЬ НАВІГАЦІЇ (будує responsive.js) ---------- */
+#mobile-tabbar { display: none; }
+
+html.is-mobile #mobile-tabbar {
+  display: flex;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(29, 17, 21, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(240, 4, 127, 0.25);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  z-index: 1002;
+  justify-content: space-around;
+  align-items: center;
+}
+
+html.is-mobile #mobile-tabbar .mtab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-family: 'Geologica', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+html.is-mobile #mobile-tabbar .mtab svg {
+  width: 22px;
+  height: 22px;
+}
+html.is-mobile #mobile-tabbar .mtab.active {
+  color: #f0047f;
+}
+html.is-mobile #mobile-tabbar .mtab.active svg {
+  filter: drop-shadow(0 0 6px rgba(240, 4, 127, 0.6));
+}
+
+/* ---------- ПЛАВАЮЧА КНОПКА "ДОДАТИ ПОСТ" ---------- */
+#mobile-fab { display: none; }
+
+html.is-mobile #mobile-fab {
+  display: flex;
+  position: fixed;
+  right: 16px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #f0047f, #c0036a);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(240, 4, 127, 0.5);
+  cursor: pointer;
+  z-index: 1003;
+  -webkit-tap-highlight-color: transparent;
+}
+html.is-mobile #mobile-fab svg {
+  width: 26px;
+  height: 26px;
+}
+html.is-mobile #mobile-fab:active {
+  transform: scale(0.92);
+}
+
+/* ---------- МОДАЛКИ / ОВЕРЛЕЇ НА ВЕСЬ ЕКРАН ---------- */
+html.is-mobile .chat-overlay-container {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  z-index: 1100 !important;
+}
+
+/* Інпути >=16px, щоб iOS не зумив при фокусі. */
+html.is-mobile input,
+html.is-mobile textarea,
+html.is-mobile select {
+  font-size: 16px !important;
+}
+
+/* Редактор створення поста — знизу, над нижньою панеллю. */
+html.is-mobile #create-post-panel.open {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 18px 18px 0 0 !important;
+  z-index: 1105 !important;
+  max-height: 85vh !important;
+  overflow-y: auto !important;
 }
