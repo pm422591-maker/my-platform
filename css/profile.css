@@ -3659,10 +3659,7 @@ video, .transparent-square {
 .gifts-wide-block {
     position: absolute;
     width: 530px;
-    min-height: 120px;
-    max-height: 200px;            /* фіксована висота — далі скрол */
-    overflow-y: auto;             /* вертикальна прокрутка */
-    overflow-x: hidden;
+    height: 168px;                /* фіксована висота — блок не змінює розмір */
     left: 1220px;
     top: 500px;
     box-sizing: border-box;
@@ -3676,6 +3673,8 @@ video, .transparent-square {
     align-items: center;
     justify-items: center;
     align-content: start;
+    overflow-y: auto;             /* зайві ряди — прокрутка */
+    overflow-x: hidden;
     background: linear-gradient(135deg, rgba(240,4,127,0.10), rgba(138,43,226,0.06));
     border: 1px solid rgba(240, 4, 127, 0.35);
     box-shadow: 0 8px 28px rgba(0,0,0,0.28), inset 0 0 22px rgba(240,4,127,0.08);

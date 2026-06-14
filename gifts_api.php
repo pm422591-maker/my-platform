@@ -81,8 +81,8 @@ if ($action === 'get_showcase') {
 if ($action === 'set_showcase') {
     if ($me <= 0) { echo json_encode(['success' => false, 'message' => 'Не авторизовано']); exit; }
     $icons = isset($body['icons']) && is_array($body['icons']) ? $body['icons'] : [];
-    // максимум 5 у вітрині
-    $icons = array_slice($icons, 0, 5);
+    // максимум 20 у вітрині
+    $icons = array_slice($icons, 0, 20);
     try {
         $pdo->prepare("DELETE FROM profile_showcase_gifts WHERE user_id = ?")->execute([$me]);
         $pos = 0;

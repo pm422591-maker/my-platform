@@ -2735,8 +2735,8 @@ window.toggleGiftPick = function(el) {
         el.style.boxShadow = 'none';
         if (check) check.style.display = 'none';
     } else {
-        if (window._giftPickerSelected.length >= 5) {
-            alert('Можна обрати максимум 5 подарунків для вітрини');
+        if (window._giftPickerSelected.length >= 20) {
+            alert('Можна обрати максимум 20 подарунків для вітрини');
             return;
         }
         window._giftPickerSelected.push(icon);
