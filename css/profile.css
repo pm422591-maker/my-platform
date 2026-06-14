@@ -3864,9 +3864,9 @@ video, .transparent-square {
 /* 1. КОНТЕЙНЕР (керує положенням на сторінці) */
 .profile-actions-container {
     position: absolute !important;
-    top: 430px !important;       /* Рівень рядка з ім'ям, правий бік */
-    left: auto !important;
-    right: 150px !important;
+    top: 415px !important;       /* Рівень рядка з ім'ям */
+    left: 880px !important;      /* Правий край лівої картки (банера) */
+    right: auto !important;
     z-index: 999;
     
     display: flex !important;
