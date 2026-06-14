@@ -3656,11 +3656,13 @@ video, .transparent-square {
     background: rgba(20, 20, 24, 0.7) !important;
 }
 
-/* === ГОЛОВНИЙ КОНТЕЙНЕР === */
 .gifts-wide-block {
     position: absolute;
     width: 530px;
     min-height: 120px;
+    max-height: 200px;            /* фіксована висота — далі скрол */
+    overflow-y: auto;             /* вертикальна прокрутка */
+    overflow-x: hidden;
     left: 1220px;
     top: 500px;
     box-sizing: border-box;
@@ -3668,17 +3670,23 @@ video, .transparent-square {
     margin-bottom: 15px;
     border-radius: 18px;
     z-index: 9;
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;   /* було space-between */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);   /* 4 в ряд */
     gap: 16px;
-    /* Скляний неоновий блок у стилі сайту */
+    align-items: center;
+    justify-items: center;
+    align-content: start;
     background: linear-gradient(135deg, rgba(240,4,127,0.10), rgba(138,43,226,0.06));
     border: 1px solid rgba(240, 4, 127, 0.35);
     box-shadow: 0 8px 28px rgba(0,0,0,0.28), inset 0 0 22px rgba(240,4,127,0.08);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    overflow: visible;
+}
+.gifts-wide-block::-webkit-scrollbar { width: 5px; }
+.gifts-wide-block::-webkit-scrollbar-track { background: transparent; }
+.gifts-wide-block::-webkit-scrollbar-thumb {
+    background: rgba(240,4,127,0.5);
+    border-radius: 4px;
 }
 /* Підписи з блока подарунків прибрані */
 .gifts-wide-block::before,
