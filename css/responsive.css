@@ -182,6 +182,76 @@ html.is-mobile .main-content-block video {
   height: auto !important;
 }
 
+/* ---------- КОМПАКТНА СТРІЧКА НА ТЕЛЕФОНІ ---------- */
+html.is-mobile .user-post-card {
+  padding: 14px !important;
+  margin-bottom: 12px !important;
+  border-radius: 16px !important;
+}
+html.is-mobile .post-header-info img[style*="border-radius:50%"],
+html.is-mobile .post-header-info img[style*="border-radius: 50%"] {
+  width: 36px !important;
+  height: 36px !important;
+  border-width: 1.5px !important;
+}
+html.is-mobile .post-header-info {
+  margin-bottom: 10px !important;
+}
+html.is-mobile .post-actions {
+  gap: 18px !important;
+  margin-top: 12px !important;
+  padding-top: 12px !important;
+}
+html.is-mobile .post-gift-side-item {
+  width: 26px !important;
+  height: 26px !important;
+}
+html.is-mobile .post-gift-side-count {
+  font-size: 8px !important;
+  padding: 0 3px !important;
+}
+html.is-mobile .post-gift-side-more {
+  height: 20px !important;
+  min-width: 22px !important;
+  font-size: 11px !important;
+}
+html.is-mobile .post-content {
+  font-size: 13px !important;
+}
+html.is-mobile .post-action-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Верхній ряд історій/рекомендацій — менші кружечки + свайп. */
+html.is-mobile .recommendation-avatar,
+html.is-mobile .rec-avatar,
+html.is-mobile .story-avatar,
+html.is-mobile .recommendation-item img,
+html.is-mobile .stories-row img,
+html.is-mobile .recs-list img,
+html.is-mobile .history-list img,
+html.is-mobile .recs-block img,
+html.is-mobile .games-mini-list img {
+  width: 52px !important;
+  height: 52px !important;
+}
+html.is-mobile .recs-list,
+html.is-mobile .history-list,
+html.is-mobile .games-mini-list {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  gap: 10px !important;
+}
+html.is-mobile .recs-list > *,
+html.is-mobile .games-mini-list > *,
+html.is-mobile .recommendation-item,
+html.is-mobile .story-item {
+  flex: 0 0 auto !important;
+}
+
 /* Заголовки вкладок трохи компактніші. */
 html.is-mobile .tab-content {
   width: 100% !important;
@@ -362,11 +432,17 @@ html.is-mobile .streams-filter::-webkit-scrollbar {
   display: none;
 }
 
-/* Іконки подарунків над постом не повинні розпихати картку. */
+/* Іконки подарунків над постом — компактний статичний ряд. */
 html.is-mobile .post-gifts-side,
 html.is-mobile .post-gifts-row {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
   flex-wrap: wrap !important;
   max-width: 100% !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  margin: 0 0 8px 0 !important;
 }
 
 /* Сітки (ігри, стріми) — у 1–2 колонки замість фіксованих. */
