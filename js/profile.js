@@ -2630,8 +2630,10 @@ async function updateProfileGifts() {
     const addBtn = document.getElementById('gift-add-neon');
     if (!row) return;
 
-    // Плюсик показуємо лише на власному профілі
-    if (addBtn) addBtn.style.display = isOwnProfileView() ? 'flex' : 'none';
+    // Плюсики показуємо лише на власному профілі
+    document.querySelectorAll('.gift-add-neon').forEach(b => {
+        b.style.display = isOwnProfileView() ? 'flex' : 'none';
+    });
 
     const uid = getProfileViewedUserId();
     const url = uid ? `gifts_api.php?action=get_showcase&user_id=${encodeURIComponent(uid)}&t=${Date.now()}`

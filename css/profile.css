@@ -3679,32 +3679,11 @@ video, .transparent-square {
     -webkit-backdrop-filter: blur(8px);
     overflow: visible;
 }
-/* Світлова смужка зверху для "неонового" акценту */
-.gifts-wide-block::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 18px; right: 18px;
-    height: 2px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, transparent, #f0047f, #ff6ac1, transparent);
-    box-shadow: 0 0 12px rgba(240,4,127,0.8);
-    opacity: 0.9;
-}
-/* Підпис-заголовок зліва */
+/* Підписи з блока подарунків прибрані */
+.gifts-wide-block::before,
 .gifts-wide-block::after {
-    content: "🎁 ПОДАРУНКИ";
-    position: absolute;
-    top: -11px; left: 22px;
-    font-family: 'Geologica', sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    color: #ff80bf;
-    background: #2a0f1d;
-    padding: 2px 10px;
-    border-radius: 50px;
-    border: 1px solid rgba(240,4,127,0.4);
-    box-shadow: 0 0 10px rgba(240,4,127,0.4);
+    content: none !important;
+    display: none !important;
 }
 
 /* Ряд закріплених у вітрині подарунків */
@@ -3716,13 +3695,9 @@ video, .transparent-square {
     flex: 1;
     min-height: 64px;
 }
-/* Порожній стан (коли подарунків ще немає) */
+/* Порожній стан без підпису */
 .gift-showcase-row:empty::before {
-    content: "Тут зʼявляться твої подарунки";
-    color: rgba(255,255,255,0.4);
-    font-family: 'Geologica', sans-serif;
-    font-size: 13px;
-    font-style: italic;
+    content: none;
 }
 .gift-showcase-item {
     position: relative;
@@ -3870,7 +3845,7 @@ video, .transparent-square {
 .profile-actions-container {
     position: absolute !important;
     top: 415px !important;       /* Рівень рядка з ім'ям */
-    left: 880px !important;      /* Правий край лівої картки (банера) */
+    left: 920px !important;      /* Правий край лівої картки (банера) */
     right: auto !important;
     z-index: 999;
     
