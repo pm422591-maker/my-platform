@@ -3659,7 +3659,7 @@ video, .transparent-square {
 .gifts-wide-block {
     position: absolute;
     width: 530px;
-    height: 168px;                /* фіксована висота — блок не змінює розмір */
+    height: 92px;
     left: 1220px;
     top: 500px;
     box-sizing: border-box;
