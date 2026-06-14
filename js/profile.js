@@ -551,28 +551,55 @@ async function loadUserData() {
     }
 }
 
+            const isOwnerGames = (data.is_own_profile === true || data.is_own_profile === "true");
+            const gamesSettingsBtn = document.getElementById('edit-games-btn');
+
             if (isRobloxLinked || isSteamLinked) {
                 
                 if (selectedItems.length > 0) {
                     displayRobloxData({ stats: selectedItems });
                 } else if (container) {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 20px; color: #888;">
-                            Акаунт підключено! <br> Натисніть на ⚙️, щоб вибрати ігри для профілю.
-                        </div>`;
+                    if (isOwnerGames) {
+                        // Власник підключив акаунт, але ще не обрав ігри
+                        container.innerHTML = `
+                            <div class="games-empty-state">
+                                <span class="games-empty-text">Натисніть на ⚙️, щоб обрати ігри для профілю</span>
+                            </div>`;
+                    } else {
+                        // Гість дивиться: акаунт є, але ігор немає — нічого зайвого
+                        container.innerHTML = `
+                            <div class="games-empty-state">
+                                <span class="games-empty-text muted">Користувач ще не додав ігор</span>
+                            </div>`;
+                    }
                 }
                 
                 // Зберігаємо локально про всяк випадок
                 localStorage.setItem('roblox_user', JSON.stringify({id: data.roblox_id, stats: selectedItems}));
 
             } else {
-                // ❌ КОРИСТУВАЧ НЕ ПІДКЛЮЧИВ НІ STEAM, НІ ROBLOX
+                // КОРИСТУВАЧ НЕ ПІДКЛЮЧИВ НІ STEAM, НІ ROBLOX
                 if (container) {
-                    container.innerHTML = `
-                        <div style="display: flex; flex-direction: column; align-items: center; padding: 30px 0;">
-                            <span style="color: #666; margin-bottom: 12px; font-size: 13px;">Підключіть свій Roblox або Steam, щоб показати досягнення</span>
-                        </div>`;
+                    if (isOwnerGames) {
+                        // Власник ще жодного разу не авторизувався — проста, неяскрава підказка
+                        container.innerHTML = `
+                            <div class="games-empty-state">
+                                <span class="games-empty-text muted">Авторизуйтесь через Roblox або Steam, щоб показати свої ігри</span>
+                            </div>`;
+                    } else {
+                        // Гість дивиться чужий профіль без підключених акаунтів —
+                        // жодних написів про підключення, просто порожньо
+                        container.innerHTML = `
+                            <div class="games-empty-state">
+                                <span class="games-empty-text muted">Користувач ще не додав ігор</span>
+                            </div>`;
+                    }
                 }
+            }
+
+            // Шестерню (налаштування ігор) показуємо ТІЛЬКИ власнику профілю
+            if (gamesSettingsBtn) {
+                gamesSettingsBtn.style.setProperty('display', isOwnerGames ? 'block' : 'none', 'important');
             }
             // --- ГОЛОВНЕ ВИПРАВЛЕННЯ ---
             const fixPath = (path, defaultImg) => {

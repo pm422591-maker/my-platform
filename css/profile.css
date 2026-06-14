@@ -3845,14 +3845,15 @@ video, .transparent-square {
 .profile-actions-container {
     position: absolute !important;
     top: 415px !important;       /* Рівень рядка з ім'ям */
-    left: 940px !important;      /* Правий край лівої картки (банера) */
+    left: 110px !important;      /* Лівий край контенту (як у банера/аватара) */
     right: auto !important;
     z-index: 999;
     
     display: flex !important;
     flex-direction: row !important; 
-    flex-wrap: wrap !important;
-    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
     gap: 10px !important;
     
     width: auto !important;
@@ -4182,6 +4183,36 @@ video, .transparent-square {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;                 /* Відстань між картками ігор */
+}
+
+/* === ПОРОЖНІЙ СТАН (немає ігор / не авторизовано) === */
+.games-empty-state {
+    width: 100%;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 20px;
+    text-align: center;
+    border: 1px dashed rgba(255, 255, 255, 0.10);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.games-empty-text {
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.2px;
+    color: rgba(243, 216, 229, 0.55);
+    font-family: 'Geologica', sans-serif;
+    max-width: 360px;
+}
+
+.games-empty-text.muted {
+    color: rgba(243, 216, 229, 0.38);
+    font-weight: 400;
 }
 
 /* === ДИЗАЙН КАРТОК ІГОР (Як на Frame 22) === */
