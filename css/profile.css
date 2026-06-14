@@ -2983,8 +2983,8 @@ body::after {
 /* Переконайся, що сам квадрат не має фону */
 .transparent-square {
     position: absolute !important;
-    width: 155px !important; /* 120 + 5 + 5 */
-    height: 155px !important;
+    width: 130px !important; /* 120 + 5 + 5 */
+    height: 130px !important;
     top: -10px !important;
     left: -7px !important;
     z-index: 9999 !important; /* Максимальний пріоритет */
