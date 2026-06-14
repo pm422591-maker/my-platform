@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SYNCORA</title>
-    <link rel="stylesheet" href="css/profile.css?v=20260614b">
+    <link rel="stylesheet" href="css/profile.css?v=20260614c">
     <style>
         /* Запобігає стрибкам контенту при завантаженні */
         .user-name-wrapper, .user-bio-display { min-height: 20px; }
@@ -561,10 +561,10 @@
                     oninput="smPreviewGradient()">
                 </label>
                 <div id="gradient-preview-box"
-                  style="flex:1; min-width:120px; height:44px; border-radius:12px; background:linear-gradient(135deg,#3D1329,#F0047F); border:1px solid rgba(255,255,255,0.1);"></div>
+                  style="flex:1; min-width:120px; height:44px; border-radius:12px; background:#3D1329; border:1px solid rgba(255,255,255,0.1);"></div>
                 <label style="display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; color:rgba(255,255,255,0.4);">
                   Правий
-                  <input type="color" id="color-right" value="#F0047F"
+                  <input type="color" id="color-right" value="#3D1329"
                     style="width:44px; height:44px; border:none; border-radius:50%; cursor:pointer; background:none; padding:0;"
                     oninput="smPreviewGradient()">
                 </label>
@@ -1018,14 +1018,14 @@ async function smSaveEmail() {
 
 function smPreviewGradient() {
   const l = document.getElementById('color-left')  ? document.getElementById('color-left').value  : '#3D1329';
-  const r = document.getElementById('color-right') ? document.getElementById('color-right').value : '#F0047F';
+  const r = document.getElementById('color-right') ? document.getElementById('color-right').value : '#3D1329';
   const box = document.getElementById('gradient-preview-box');
   if (box) box.style.background = `linear-gradient(135deg, ${l}, ${r})`;
 }
 
 async function smSaveGradient() {
   const l = document.getElementById('color-left')  ? document.getElementById('color-left').value  : '#3D1329';
-  const r = document.getElementById('color-right') ? document.getElementById('color-right').value : '#F0047F';
+  const r = document.getElementById('color-right') ? document.getElementById('color-right').value : '#3D1329';
 
   try {
     const res  = await fetch('update_gradient.php', {
@@ -1054,18 +1054,39 @@ async function smSaveGradient() {
   } catch(e) { smShowToast('Помилка зʼєднання'); }
 }
 
-// Стандартні кольори профілю (темно-рожевий → рожевий, як у home)
+// Оригінальний колір блоків, заданий у CSS (матове скло #3D1329 @ 60%)
 const SM_DEFAULT_GRAD_LEFT  = '#3D1329';
-const SM_DEFAULT_GRAD_RIGHT = '#F0047F';
+const SM_DEFAULT_GRAD_RIGHT = '#3D1329';
+const SM_ORIGINAL_BLOCK_COLOR = 'rgba(61, 19, 41, 0.6)';
 
-// Скинути градієнт до стандартних кольорів і одразу зберегти
+// Скинути до стандартного кольору блоків (як у коді) і зберегти
 async function smResetGradient() {
   const inputL = document.getElementById('color-left');
   const inputR = document.getElementById('color-right');
   if (inputL) inputL.value = SM_DEFAULT_GRAD_LEFT;
   if (inputR) inputR.value = SM_DEFAULT_GRAD_RIGHT;
   smPreviewGradient();
-  await smSaveGradient();
+
+  // Повертаємо живим блокам їх оригінальний колір зі стилів
+  ['.fade-rectangle', '.roblox-profile-section', '.profile-sidebar-card'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.style.setProperty('background', SM_ORIGINAL_BLOCK_COLOR, 'important');
+  });
+  const bioBlock = document.getElementById('userBioDisplay');
+  if (bioBlock) bioBlock.style.setProperty('background', SM_ORIGINAL_BLOCK_COLOR, 'important');
+
+  // Зберігаємо стандартний колір на сервері, щоб після перезавантаження теж лишався
+  try {
+    const res = await fetch('update_gradient.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color_left: SM_DEFAULT_GRAD_LEFT, color_right: SM_DEFAULT_GRAD_RIGHT }),
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (data.success) smShowToast('Колір скинуто до стандартного ✓');
+    else smShowToast('Помилка: ' + (data.message || 'невідома'));
+  } catch(e) { smShowToast('Помилка зʼєднання'); }
 }
 
 // Close on overlay click
@@ -1255,7 +1276,7 @@ document.addEventListener('keydown', function(e) {
 })();
 </script>
 
-    <script src="js/profile.js?v=20260614h"></script>
+    <script src="js/profile.js?v=20260614i"></script>
 
 <!-- ========== PREMIUM MODAL (profile.html) ========== -->
 <div id="profile-premium-modal" style="display:none; position:fixed; inset:0; z-index:9999999; align-items:center; justify-content:center; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px); flex-direction:column;">

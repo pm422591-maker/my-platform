@@ -852,33 +852,42 @@ if (isOwner) {
             // ===========================
 // 6. ГРАДІЄНТ (Колонки №18 та №19)
 // ===========================
-const gradLeft = data.grad_color_left || '#3D1329'; 
-const gradRight = data.grad_color_right || '#F0047F';
-const currentGrad = `linear-gradient(135deg, ${gradLeft}, ${gradRight})`;
+// Оригінальний колір блоків, який заданий у CSS (матове скло #3D1329 @ 60%).
+// Якщо користувач НЕ зберігав свій градієнт — нічого не чіпаємо,
+// блоки лишаються зі своїм стандартним кольором з коду.
+const SM_ORIGINAL_BLOCK_COLOR = 'rgba(61, 19, 41, 0.6)';
+const savedL = (data.grad_color_left  || '').toLowerCase();
+const savedR = (data.grad_color_right || '').toLowerCase();
+// Кастомний градієнт є лише якщо обидва кольори збережені І це не стандартний #3d1329/#3d1329
+const isDefaultPair = (savedL === '#3d1329' && savedR === '#3d1329');
+const hasCustomGrad = !!(savedL && savedR) && !isDefaultPair;
 
-// 1. Оновлюємо фон нового блоку fade-rectangle
-const fadeRect = document.querySelector('.fade-rectangle');
-if (fadeRect) {
-    fadeRect.style.setProperty('background', currentGrad, 'important');
-}
+const gradLeft  = data.grad_color_left  || '#3D1329';
+const gradRight = data.grad_color_right || '#3D1329';
+// Якщо є кастомний градієнт — застосовуємо його, інакше лишаємо оригінальний колір CSS
+const currentGrad = hasCustomGrad
+    ? `linear-gradient(135deg, ${gradLeft}, ${gradRight})`
+    : SM_ORIGINAL_BLOCK_COLOR;
 
-// 2. Оновлюємо фон для блоку біографії
-const bioDisplayBlock = document.getElementById('userBioDisplay');
-if (bioDisplayBlock) {
-    bioDisplayBlock.style.setProperty('background', currentGrad, 'important');
-}
+if (hasCustomGrad) {
+    // 1. Фон блоку fade-rectangle
+    const fadeRect = document.querySelector('.fade-rectangle');
+    if (fadeRect) fadeRect.style.setProperty('background', currentGrad, 'important');
 
-// 3. Оновлюємо фон секції ігор
-const gamesSection = document.querySelector('.roblox-profile-section');
-if (gamesSection) {
-    gamesSection.style.setProperty('background', currentGrad, 'important');
-}
+    // 2. Фон блоку біографії
+    const bioDisplayBlock = document.getElementById('userBioDisplay');
+    if (bioDisplayBlock) bioDisplayBlock.style.setProperty('background', currentGrad, 'important');
 
-// 4. Оновлюємо фон бічної панелі (ВИПРАВЛЕНО ІМ'Я ЗМІННОЇ)
-const sidebarCard = document.querySelector('.profile-sidebar-card');
-if (sidebarCard) {
-    sidebarCard.style.setProperty('background', currentGrad, 'important');
+    // 3. Фон секції ігор
+    const gamesSection = document.querySelector('.roblox-profile-section');
+    if (gamesSection) gamesSection.style.setProperty('background', currentGrad, 'important');
+
+    // 4. Фон бічної панелі
+    const sidebarCard = document.querySelector('.profile-sidebar-card');
+    if (sidebarCard) sidebarCard.style.setProperty('background', currentGrad, 'important');
 }
+// Якщо hasCustomGrad === false — нічого не переоприділяємо,
+// CSS сам покаже стандартний rgba(61, 19, 41, 0.6).
             // --- НОВА ЧАСТИНА: Оновлюємо інтерфейс налаштувань ---
 
             // 2. Знаходимо елементи з твого HTML
