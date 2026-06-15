@@ -107,5 +107,11 @@ try {
 
 } catch (Exception $e) {
     error_log('report.php error: ' . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Помилка сервера. Спробуйте пізніше.']);
+    // ТИМЧАСОВО: показуємо реальну причину для діагностики.
+    // Прибрати після виправлення!
+    echo json_encode([
+        'success' => false,
+        'message' => 'Помилка сервера. Спробуйте пізніше.',
+        'debug'   => $e->getMessage(),
+    ]);
 }
