@@ -445,29 +445,25 @@
                 <div class="sm-field-label">Пароль</div>
                 <div class="sm-field-hint">Змінюйте пароль регулярно для безпеки</div>
               </div>
-              <button class="sm-inline-btn accent">Змінити пароль</button>
+              <button class="sm-inline-btn accent" onclick="openPasswordModal()">Змінити пароль</button>
             </div>
             <div class="sm-field">
               <div class="sm-field-label-wrap">
                 <div class="sm-field-label">Двофакторна автентифікація</div>
                 <div class="sm-sec-status">
-                  <div class="sm-sec-dot off"></div>
-                  <span style="color:rgba(255,255,255,0.3);">Вимкнено</span>
+                  <div class="sm-sec-dot off" id="sm-2fa-dot"></div>
+                  <span id="sm-2fa-status" style="color:rgba(255,255,255,0.3);">Вимкнено</span>
                 </div>
               </div>
-              <button class="sm-inline-btn">Увімкнути 2FA</button>
+              <button class="sm-inline-btn" id="sm-2fa-btn" onclick="toggle2FA()">Увімкнути 2FA</button>
             </div>
           </div>
 
           <div class="sm-section-title">Підключені пристрої</div>
-          <div class="sm-card">
+          <div class="sm-card" id="sm-sessions-list">
             <div class="sm-field">
               <div class="sm-field-label-wrap">
-                <div class="sm-field-label">Windows · Chrome</div>
-                <div class="sm-field-hint">Поточна сесія</div>
-              </div>
-              <div class="sm-sec-status">
-                <div class="sm-sec-dot on"></div>
+                <div class="sm-field-hint">Завантаження сесій...</div>
               </div>
             </div>
           </div>
@@ -1846,6 +1842,75 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <script src="js/account_status_banner.js"></script>
+<!-- ===== МОДАЛКИ БЕЗПЕКИ ===== -->
+<div class="sec-modal-overlay" id="sec-password-modal">
+  <div class="sec-modal">
+    <button class="sec-modal-close" onclick="closeSecModal('sec-password-modal')">&times;</button>
+    <h3>Зміна пароля</h3>
+    <p class="sec-modal-sub">Введи новий пароль. Ми надішлемо лист на твою пошту для підтвердження зміни.</p>
+    <input type="password" id="sec-new-password" class="sec-input" placeholder="Новий пароль (мін. 6 символів)" autocomplete="new-password">
+    <input type="password" id="sec-new-password2" class="sec-input" placeholder="Повтори новий пароль" autocomplete="new-password">
+    <div class="sec-modal-msg" id="sec-password-msg"></div>
+    <button class="sec-modal-btn" id="sec-password-submit" onclick="requestPasswordChange()">Надіслати лист підтвердження</button>
+  </div>
+</div>
+
+<div class="sec-modal-overlay" id="sec-2fa-modal">
+  <div class="sec-modal">
+    <button class="sec-modal-close" onclick="closeSecModal('sec-2fa-modal')">&times;</button>
+    <h3>Двофакторна автентифікація</h3>
+    <p class="sec-modal-sub">Придумай 4-значний PIN-код. Він знадобиться при вході в акаунт.</p>
+    <div class="sec-pin-row">
+      <input type="text" inputmode="numeric" maxlength="1" class="sec-pin-box">
+      <input type="text" inputmode="numeric" maxlength="1" class="sec-pin-box">
+      <input type="text" inputmode="numeric" maxlength="1" class="sec-pin-box">
+      <input type="text" inputmode="numeric" maxlength="1" class="sec-pin-box">
+    </div>
+    <div class="sec-modal-msg" id="sec-2fa-msg"></div>
+    <button class="sec-modal-btn" id="sec-2fa-submit" onclick="confirm2FA()">Увімкнути</button>
+  </div>
+</div>
+
+<div class="sec-modal-overlay" id="sec-session-modal">
+  <div class="sec-modal">
+    <button class="sec-modal-close" onclick="closeSecModal('sec-session-modal')">&times;</button>
+    <h3>Деталі сесії</h3>
+    <div id="sec-session-details"></div>
+    <button class="sec-modal-btn danger" id="sec-session-delete" onclick="deleteCurrentDetailSession()">Завершити сесію</button>
+  </div>
+</div>
+
+<style>
+.sec-modal-overlay { position: fixed; inset: 0; background: rgba(10,0,8,0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 100000; display: none; align-items: center; justify-content: center; }
+.sec-modal-overlay.active { display: flex; }
+.sec-modal { background: rgba(29,0,22,0.95); border: 1px solid rgba(255,37,187,0.3); border-radius: 20px; padding: 32px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 0 40px rgba(255,37,187,0.25); font-family: 'Geologica', sans-serif; animation: secPop 0.25s ease; }
+@keyframes secPop { from { transform: translateY(14px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
+.sec-modal h3 { color: #fff; margin: 0 0 6px; font-size: 19px; font-weight: 800; }
+.sec-modal-sub { color: rgba(255,255,255,0.5); font-size: 13px; line-height: 1.5; margin: 0 0 20px; }
+.sec-modal-close { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.06); border: none; color: #aaa; font-size: 20px; cursor: pointer; transition: all 0.2s; }
+.sec-modal-close:hover { background: #FF25BB; color: #fff; transform: rotate(90deg); }
+.sec-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,37,187,0.25); border-radius: 12px; padding: 13px 16px; color: #fff; font-size: 14px; margin-bottom: 12px; outline: none; font-family: 'Geologica', sans-serif; transition: border-color 0.2s, box-shadow 0.2s; }
+.sec-input:focus { border-color: #FF25BB; box-shadow: 0 0 12px rgba(255,37,187,0.3); }
+.sec-input::placeholder { color: rgba(255,255,255,0.35); }
+.sec-pin-row { display: flex; gap: 12px; justify-content: center; margin: 8px 0 18px; }
+.sec-pin-box { width: 56px; height: 64px; text-align: center; font-size: 28px; font-weight: 800; color: #fff; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,37,187,0.3); border-radius: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+.sec-pin-box:focus { border-color: #FF25BB; box-shadow: 0 0 14px rgba(255,37,187,0.4); }
+.sec-modal-btn { width: 100%; background: linear-gradient(135deg, #FF25BB, #b0356a); color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; font-family: 'Geologica', sans-serif; transition: transform 0.18s, box-shadow 0.18s, filter 0.18s; box-shadow: 0 0 18px rgba(255,37,187,0.35); }
+.sec-modal-btn:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(255,37,187,0.55); filter: brightness(1.06); }
+.sec-modal-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+.sec-modal-btn.danger { background: linear-gradient(135deg, #ff3b3b, #a01010); box-shadow: 0 0 18px rgba(255,59,59,0.35); margin-top: 16px; }
+.sec-modal-btn.danger:hover { box-shadow: 0 0 28px rgba(255,59,59,0.55); }
+.sec-modal-msg { font-size: 13px; min-height: 18px; margin-bottom: 12px; text-align: center; }
+.sec-modal-msg.error { color: #ff7a7a; }
+.sec-modal-msg.ok { color: #6dffa8; }
+.sec-detail-row { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 13px; }
+.sec-detail-row:last-of-type { border-bottom: none; }
+.sec-detail-key { color: rgba(255,255,255,0.45); }
+.sec-detail-val { color: #fff; font-weight: 600; text-align: right; }
+.sm-session-row { cursor: pointer; }
+.sm-session-current-badge { font-size: 9px; font-weight: 800; letter-spacing: 1px; color: #50ff8c; background: rgba(80,255,140,0.12); padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+</style>
+<script src="js/security.js?v=1"></script>
 </body>
 
 </html>
