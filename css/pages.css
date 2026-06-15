@@ -1,0 +1,247 @@
+/* ============================================================
+   pages.css — стилі для інформаційних сторінок Syncora
+   (Про сайт, Безпека, Правила, Підтримка)
+   Розово-неонова тема під дизайн сайту.
+   ============================================================ */
+
+:root{
+    --sy-pink:        #FF25BB;
+    --sy-pink-2:      #F70087;
+    --sy-pink-soft:   #E8AFD0;
+    --sy-bg:          #14000d;
+    --sy-bg-2:        #1f0014;
+    --sy-card:        rgba(40, 0, 24, .55);
+    --sy-border:      rgba(255, 37, 187, .28);
+    --sy-text:        #f3e6ee;
+    --sy-text-dim:    #c79bb4;
+}
+
+*{box-sizing:border-box;}
+
+html{scroll-behavior:smooth;}
+
+body.sy-page{
+    margin:0;
+    min-height:100vh;
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+    color:var(--sy-text);
+    background:
+        radial-gradient(circle at 15% 10%, rgba(240,4,127,.32), transparent 45%),
+        radial-gradient(circle at 85% 90%, rgba(255,37,187,.20), transparent 50%),
+        linear-gradient(160deg, #1f0014 0%, #14000d 60%, #0c0008 100%);
+    background-attachment:fixed;
+    position:relative;
+    overflow-x:hidden;
+}
+
+/* ── Водяний знак-чортик у кутку ── */
+body.sy-page::after{
+    content:'';
+    position:fixed;
+    right:-60px; bottom:-40px;
+    width:420px; height:420px;
+    background:url('img/mini-logo.png') no-repeat center/contain;
+    opacity:.06;
+    filter:drop-shadow(0 0 30px rgba(255,37,187,.5));
+    transform:rotate(-8deg);
+    pointer-events:none;
+    z-index:0;
+}
+
+/* ── Верхня панель ── */
+.sy-nav{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; gap:20px;
+    padding:16px 28px;
+    background:rgba(20,0,13,.72);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--sy-border);
+}
+.sy-nav .sy-brand{
+    display:flex; align-items:center; gap:10px;
+    text-decoration:none; color:var(--sy-text); font-weight:700; font-size:18px;
+    letter-spacing:1px;
+}
+.sy-nav .sy-brand img{width:34px; height:34px; filter:drop-shadow(0 0 8px rgba(255,37,187,.7));}
+.sy-nav .sy-brand span{
+    background:linear-gradient(90deg,#FF25BB,#F70087);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.sy-nav .sy-links{margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;}
+.sy-nav .sy-links a{
+    color:var(--sy-text-dim); text-decoration:none; font-size:14px; font-weight:600;
+    padding:8px 14px; border-radius:10px; transition:.16s;
+}
+.sy-nav .sy-links a:hover{color:#fff; background:rgba(255,37,187,.16);}
+.sy-nav .sy-links a.active{
+    color:#fff; background:rgba(255,37,187,.22);
+    box-shadow:0 0 0 1px rgba(255,37,187,.4);
+}
+
+/* ── Контейнер контенту ── */
+.sy-wrap{
+    position:relative; z-index:1;
+    max-width:920px; margin:0 auto; padding:48px 24px 80px;
+}
+
+/* ── Hero ── */
+.sy-hero{
+    text-align:center; margin-bottom:48px;
+    padding:40px 24px;
+    border:1px solid var(--sy-border);
+    border-radius:24px;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(240,4,127,.22), transparent 70%),
+        var(--sy-card);
+    box-shadow:0 0 50px rgba(240,4,127,.18);
+}
+.sy-hero img.sy-hero-logo{
+    width:88px; height:88px; margin-bottom:16px;
+    filter:drop-shadow(0 0 18px rgba(255,37,187,.8));
+}
+.sy-hero h1{
+    margin:0 0 10px; font-size:38px; font-weight:700; letter-spacing:.5px;
+    background:linear-gradient(90deg,#FF25BB 0%,#F70087 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:0 0 30px rgba(255,37,187,.3);
+}
+.sy-hero p{margin:0 auto; max-width:640px; font-size:16px; line-height:1.7; color:var(--sy-text-dim);}
+
+/* ── Секції ── */
+.sy-section{
+    margin-bottom:28px;
+    padding:26px 28px;
+    border:1px solid var(--sy-border);
+    border-radius:18px;
+    background:var(--sy-card);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    transition:.2s;
+}
+.sy-section:hover{border-color:rgba(255,37,187,.5); box-shadow:0 0 28px rgba(240,4,127,.16);}
+.sy-section h2{
+    margin:0 0 14px; font-size:22px; font-weight:700;
+    display:flex; align-items:center; gap:10px; color:#fff;
+}
+.sy-section h2 .sy-ic{
+    font-size:22px; filter:drop-shadow(0 0 8px rgba(255,37,187,.6));
+}
+.sy-section h3{
+    margin:22px 0 8px; font-size:16px; font-weight:700; color:var(--sy-pink-soft);
+}
+.sy-section p{margin:0 0 12px; font-size:15px; line-height:1.7; color:var(--sy-text);}
+.sy-section ul, .sy-section ol{margin:0 0 12px; padding-left:22px;}
+.sy-section li{margin-bottom:9px; font-size:15px; line-height:1.65;}
+.sy-section li::marker{color:var(--sy-pink);}
+.sy-section a{color:var(--sy-pink); text-decoration:none; border-bottom:1px dashed rgba(255,37,187,.5);}
+.sy-section a:hover{color:#fff;}
+.sy-section strong{color:#fff;}
+
+/* ── Картки-фічі ── */
+.sy-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px; margin-top:8px;
+}
+.sy-feature{
+    padding:18px; border-radius:14px;
+    border:1px solid var(--sy-border);
+    background:rgba(255,255,255,.025);
+    transition:.18s;
+}
+.sy-feature:hover{transform:translateY(-3px); border-color:rgba(255,37,187,.55);}
+.sy-feature .sy-emoji{font-size:26px; display:block; margin-bottom:8px;}
+.sy-feature h4{margin:0 0 6px; font-size:15px; color:#fff; font-weight:700;}
+.sy-feature p{margin:0; font-size:13.5px; line-height:1.55; color:var(--sy-text-dim);}
+
+/* ── Правила: пронумеровані картки ── */
+.sy-rule{
+    display:flex; gap:16px; align-items:flex-start;
+    padding:16px 18px; margin-bottom:12px;
+    border:1px solid var(--sy-border); border-radius:14px;
+    background:rgba(255,255,255,.02);
+    transition:.18s;
+}
+.sy-rule:hover{border-color:rgba(255,37,187,.5); background:rgba(240,4,127,.07);}
+.sy-rule .sy-num{
+    flex-shrink:0; width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:15px; color:#fff;
+    background:linear-gradient(135deg,#FF25BB,#F70087);
+    box-shadow:0 4px 12px rgba(240,4,127,.45);
+}
+.sy-rule .sy-rule-body h4{margin:4px 0 5px; font-size:15.5px; color:#fff;}
+.sy-rule .sy-rule-body p{margin:0; font-size:14px; line-height:1.6; color:var(--sy-text-dim);}
+
+/* ── Бейджі санкцій ── */
+.sy-badge{
+    display:inline-block; padding:3px 10px; border-radius:20px;
+    font-size:12px; font-weight:700; margin:2px 4px 2px 0;
+}
+.sy-badge.warn{background:rgba(255,188,0,.18); color:#ffbc00; border:1px solid rgba(255,188,0,.4);}
+.sy-badge.restrict{background:rgba(255,69,0,.18); color:#ff8a4d; border:1px solid rgba(255,69,0,.4);}
+.sy-badge.ban{background:rgba(255,26,149,.18); color:#ff4d8d; border:1px solid rgba(240,4,127,.5);}
+
+/* ── FAQ (деталі) ── */
+.sy-faq{
+    border:1px solid var(--sy-border); border-radius:14px;
+    margin-bottom:10px; overflow:hidden; background:rgba(255,255,255,.02);
+}
+.sy-faq summary{
+    cursor:pointer; padding:15px 18px; font-weight:600; font-size:15px; color:#fff;
+    list-style:none; display:flex; align-items:center; justify-content:space-between;
+    transition:.15s;
+}
+.sy-faq summary::-webkit-details-marker{display:none;}
+.sy-faq summary::after{content:'+'; font-size:20px; color:var(--sy-pink); transition:.2s;}
+.sy-faq[open] summary::after{transform:rotate(45deg);}
+.sy-faq summary:hover{background:rgba(255,37,187,.10);}
+.sy-faq .sy-faq-body{padding:0 18px 16px; font-size:14px; line-height:1.65; color:var(--sy-text-dim);}
+
+/* ── Кнопки ── */
+.sy-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 22px; border-radius:12px;
+    font-size:15px; font-weight:700; text-decoration:none; cursor:pointer;
+    border:none; transition:.16s;
+}
+.sy-btn.primary{
+    background:linear-gradient(135deg,#FF25BB,#F70087); color:#fff;
+    box-shadow:0 6px 18px rgba(240,4,127,.45);
+}
+.sy-btn.primary:hover{filter:brightness(1.08); box-shadow:0 8px 24px rgba(240,4,127,.6);}
+.sy-btn.ghost{
+    background:rgba(255,255,255,.06); color:var(--sy-text);
+    border:1px solid var(--sy-border);
+}
+.sy-btn.ghost:hover{background:rgba(255,37,187,.16); color:#fff;}
+
+.sy-cta{text-align:center; margin-top:36px;}
+
+/* ── Контакти ── */
+.sy-contact-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;
+}
+.sy-contact{
+    padding:18px; border-radius:14px; text-align:center;
+    border:1px solid var(--sy-border); background:rgba(255,255,255,.025);
+}
+.sy-contact .sy-emoji{font-size:28px; display:block; margin-bottom:8px;}
+.sy-contact h4{margin:0 0 4px; color:#fff; font-size:15px;}
+.sy-contact p{margin:0; font-size:13.5px; color:var(--sy-text-dim);}
+
+/* ── Футер ── */
+.sy-footer{
+    position:relative; z-index:1;
+    text-align:center; padding:30px 20px 40px;
+    color:var(--sy-text-dim); font-size:13px;
+    border-top:1px solid var(--sy-border);
+}
+.sy-footer a{color:var(--sy-pink); text-decoration:none;}
+
+/* ── Адаптив ── */
+@media (max-width:600px){
+    .sy-hero h1{font-size:28px;}
+    .sy-nav{padding:12px 16px;}
+    .sy-nav .sy-links a{padding:6px 10px; font-size:13px;}
+    body.sy-page::after{width:280px; height:280px;}
+    .sy-wrap{padding:32px 16px 60px;}
+}
