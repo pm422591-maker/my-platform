@@ -1084,24 +1084,26 @@ body::after {
 .search-container {
     display: flex;
     align-items: center;
+    gap: 10px;
     background: rgba(29, 0, 22, 0.6);
     border: 1px solid rgba(255, 37, 187, 0.3);
     border-radius: 15px;
     width: 100%;
-    max-width: 420px;
-    margin-top: 20px;
-    padding: 0 16px;
+    max-width: 440px;
+    margin: 22px auto 0;
+    padding: 0 18px;
     box-sizing: border-box;
     transition: all 0.3s ease;
 }
 .search-container:focus-within {
     background: rgba(29, 0, 22, 0.9);
     border-color: #FF25BB;
-    box-shadow: 0 0 15px rgba(255, 37, 187, 0.35);
+    box-shadow: 0 0 18px rgba(255, 37, 187, 0.4);
 }
 
 #game-search-input {
-    flex-grow: 1;
+    flex: 1 1 auto;
+    min-width: 0;
     background: transparent;
     color: #fff;
     border: none;
@@ -1120,7 +1122,6 @@ body::after {
     width: 18px;
     height: 18px;
     color: rgba(223, 176, 199, 0.6);
-    margin-left: 10px;
     flex-shrink: 0;
     transition: color 0.3s ease;
 }
