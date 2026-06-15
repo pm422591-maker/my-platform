@@ -1826,8 +1826,9 @@ document.addEventListener('keydown', function(e) {
   position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; z-index: 1000001; opacity: 0;
   transition: opacity 0.3s;
+  pointer-events: none; /* поки невидимий — не перехоплює кліки по сторінці */
 }
-.badge-reward-overlay.show { opacity: 1; }
+.badge-reward-overlay.show { opacity: 1; pointer-events: auto; }
 .badge-reward-card {
   position: relative; width: 320px; max-width: 86vw; text-align: center;
   background: linear-gradient(160deg, rgba(40,8,30,0.98), rgba(20,4,16,0.98));
