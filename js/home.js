@@ -8365,35 +8365,19 @@ document.addEventListener('click', function(event) {
 // type: 'post' | 'comment' | 'account'
 window.submitReport = async function(type, targetId, opts) {
     opts = opts || {};
-    const REASONS = {
-        spam:        'Спам або реклама',
-        harassment:  'Образи / цькування',
-        hate:        'Мова ворожнечі',
-        nudity:      'Відвертий контент 18+',
-        violence:    'Насильство або погрози',
-        scam:        'Шахрайство / обман',
-        impersonation:'Видавання себе за іншого',
-        other:       'Інше'
-    };
-    // Просте меню вибору підстави
-    const keys = Object.keys(REASONS);
-    let promptText = "Оберіть підставу скарги (введіть номер):\n";
-    keys.forEach((k, i) => { promptText += `${i + 1}. ${REASONS[k]}\n`; });
-    const pick = prompt(promptText, "1");
-    if (pick === null) return; // скасовано
-    const idx = parseInt(pick, 10) - 1;
-    const reasonCode = (idx >= 0 && idx < keys.length) ? keys[idx] : 'other';
 
-    let reasonText = '';
-    if (reasonCode === 'other' || true) {
-        reasonText = prompt("Опишіть, що саме порушено (необов'язково):", "") || '';
-    }
+    const labels = { post: 'пост', comment: 'коментар', account: 'акаунт' };
+    const targetLabel = opts.label || labels[type] || '';
+
+    // Гарне модальне вікно замість prompt
+    const choice = await window.openReportModal({ targetLabel, targetType: type });
+    if (!choice) return; // користувач закрив / скасував
 
     const payload = {
         target_type: type,
         target_id:   Number(targetId),
-        reason_code: reasonCode,
-        reason_text: reasonText,
+        reason_code: choice.reasonCode,
+        reason_text: choice.reasonText,
         target_url:  opts.url || (location.origin + location.pathname + (type === 'post' ? ('#post-' + targetId) : ''))
     };
 
@@ -8405,9 +8389,12 @@ window.submitReport = async function(type, targetId, opts) {
             body: JSON.stringify(payload)
         });
         const d = await r.json();
-        alert(d.message || (d.success ? 'Скаргу надіслано. Дякуємо!' : 'Не вдалося надіслати скаргу'));
+        window.showReportToast(
+            d.message || (d.success ? 'Скаргу надіслано. Дякуємо!' : 'Не вдалося надіслати скаргу'),
+            !!d.success
+        );
     } catch (e) {
-        alert('Помилка мережі. Спробуйте пізніше.');
+        window.showReportToast('Помилка мережі. Спробуйте пізніше.', false);
     }
 };
 
