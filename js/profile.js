@@ -1101,6 +1101,12 @@ window.linkPlatform = function(platform) {
         window.startSteamAuth();
     } else if (platform === 'Roblox') {
         window.startRobloxAuth();
+    } else if (platform === 'Epic Games' || platform === 'Epic') {
+        if (typeof window.startEpicAuth === 'function') {
+            window.startEpicAuth();
+        } else {
+            alert("Підключення Epic Games ще не налаштовано на сервері.");
+        }
     } else {
         console.warn("❌ Невідома платформа:", platform);
     }
@@ -3183,11 +3189,11 @@ window.checkSteamGamesOwnership = async function(steamId) {
 window.updateIntegrationsTab = function(state) {
     const platforms = [
         { key: 'steam',  statusId: 'sm-steam-status',  label: 'Steam',
-          connect: function(){ const b = document.getElementById('btn-steam-auth'); if (b) b.click(); } },
+          connect: function(){ if (typeof window.startSteamAuth === 'function') window.startSteamAuth(); } },
         { key: 'roblox', statusId: 'sm-roblox-status', label: 'Roblox',
           connect: function(){ if (typeof window.startRobloxAuth === 'function') window.startRobloxAuth(); } },
-        { key: 'epic',   statusId: 'sm-epic-status',   label: 'Epic Games',
-          connect: function(){ if (typeof window.linkPlatform === 'function') window.linkPlatform('Epic Games'); } },
+        { key: 'epic',   statusId: 'sm-epic-status',   label: 'Epic Games', disabled: true,
+          connect: function(){ /* Epic OAuth ще не налаштовано */ } },
     ];
 
     platforms.forEach(function(p) {
@@ -3197,6 +3203,19 @@ window.updateIntegrationsTab = function(state) {
         if (!row) return;
         const btn = row.querySelector('.sm-connect-btn');
         if (!btn) return;
+
+        // Платформа без бекенду (Epic): лишаємо кнопку неактивною, не чіпаємо.
+        if (p.disabled) {
+            statusEl.textContent = 'Не підключено';
+            statusEl.classList.remove('connected');
+            btn.textContent = 'Скоро';
+            btn.classList.remove('connected-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.45';
+            btn.style.cursor = 'not-allowed';
+            btn.onclick = null;
+            return;
+        }
 
         const connected = !!(state && state[p.key]);
 

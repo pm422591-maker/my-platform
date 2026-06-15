@@ -486,7 +486,7 @@
                 <div class="sm-platform-name">Steam</div>
                 <div class="sm-platform-status" id="sm-steam-status">Не підключено</div>
               </div>
-              <button class="sm-connect-btn" id="btn-steam-auth-sm" onclick="var b = document.getElementById('btn-steam-auth'); if(b) b.click();">Підключити</button>
+              <button class="sm-connect-btn" id="btn-steam-auth-sm" onclick="if(typeof window.startSteamAuth==='function'){window.startSteamAuth();}else{alert('Помилка: скрипт Steam не завантажено.');}">Підключити</button>
             </div>
             <div class="sm-platform-row">
               <div class="sm-platform-icon roblox">
@@ -506,7 +506,7 @@
                 <div class="sm-platform-name">Epic Games</div>
                 <div class="sm-platform-status" id="sm-epic-status">Не підключено</div>
               </div>
-              <button class="sm-connect-btn" onclick="if(typeof linkPlatform === 'function') linkPlatform('Epic Games')">Підключити</button>
+              <button class="sm-connect-btn" disabled title="Підключення Epic Games буде додано пізніше" style="opacity:0.45; cursor:not-allowed;">Скоро</button>
             </div>
           </div>
         </div>
