@@ -92,6 +92,30 @@ try {
         $stmt1->execute([$inputName, $email, $hashedPassword]);
         $userId = (int)$pdo->lastInsertId();
 
+        // ── Стартова нагорода: безкоштовний бейдж 'vip' + монети ──
+        // Гарантуємо наявність потрібних колонок (схема могла бути старою).
+        try {
+            $cols = $pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('coins', $cols)) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN coins INT NOT NULL DEFAULT 0");
+            }
+            if (!in_array('owned_badges', $cols)) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN owned_badges TEXT NULL");
+            }
+            if (!in_array('badges', $cols)) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN badges TEXT NULL");
+            }
+            // Видаємо стартовий безкоштовний бейдж + 100 монет
+            $startCoins  = 100;
+            $startBadge  = 'vip';
+            $pdo->prepare(
+                "UPDATE users SET coins = coins + ?, owned_badges = ?, badges = ? WHERE id = ?"
+            )->execute([$startCoins, $startBadge, $startBadge, $userId]);
+        } catch (Exception $rewardErr) {
+            // Якщо нагорода не нарахувалась — реєстрацію все одно не валимо
+            error_log('[register starter reward] ' . $rewardErr->getMessage());
+        }
+
         // uid обрізаємо до 255 символів
         $uid = substr($uid, 0, 255);
         $stmt2 = $pdo->prepare("INSERT INTO user_auth (user_id, provider, provider_key) VALUES (?, ?, ?)");

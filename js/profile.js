@@ -720,12 +720,22 @@ window.smSyncUserInfo = smSyncUserInfo;
                 
                 // Оновлюємо прев'ю в налаштуваннях
                 const settingsBanner = document.getElementById('settings-banner-img');
-                if (settingsBanner) settingsBanner.src = bannerSrc;
+                const bannerEmpty = document.getElementById('sm-banner-empty');
+                const hasBanner = !!(rawBanner && String(rawBanner).length > 3);
+                if (settingsBanner) {
+                    settingsBanner.src = bannerSrc;
+                    settingsBanner.style.display = 'block';
+                }
+                if (bannerEmpty) bannerEmpty.style.display = hasBanner ? 'none' : 'flex';
+                if (settingsBanner && !hasBanner) settingsBanner.style.display = 'none';
             }
 
             // 3. ФОН САЙТУ (background_url)
             let rawBg = data.background_url;
-            if (rawBg && rawBg.length > 3) {
+            const settingsBg = document.getElementById('settings-background-img');
+            const bgEmpty = document.getElementById('sm-bg-empty');
+            const hasBg = !!(rawBg && String(rawBg).length > 3);
+            if (hasBg) {
                 let siteBgPath = fixPath(rawBg, 'default_bg.png');
                 const finalBgUrl = siteBgPath + '?t=' + timestamp;
                 
@@ -736,6 +746,22 @@ window.smSyncUserInfo = smSyncUserInfo;
                     backgroundAttachment: 'fixed',    // Щоб фон не рухався при скролі (паралакс ефект для GIF)
                     backgroundRepeat: 'no-repeat'
                 });
+                if (settingsBg) { settingsBg.src = finalBgUrl; settingsBg.style.display = 'block'; }
+                if (bgEmpty) bgEmpty.style.display = 'none';
+            } else {
+                if (settingsBg) settingsBg.style.display = 'none';
+                if (bgEmpty) bgEmpty.style.display = 'flex';
+            }
+
+            // 3c. Дані для системи бейджів (тільки для власного профілю)
+            if (data.is_own_profile) {
+                window.__badgeOwned = (data.owned_badges || '')
+                    .split(',').map(s => s.trim()).filter(Boolean);
+                if (!window.__badgeOwned.includes('vip')) window.__badgeOwned.push('vip');
+                window.__badgeProgress = {
+                    comments: parseInt(data.comments_count || 0, 10),
+                    posts: parseInt(data.posts_count || 0, 10)
+                };
             }
 
             // ===========================
@@ -2489,6 +2515,7 @@ const badgeImages = {
 
 // Клік по бейджу (вибір/скасування)
 function openBadgesModal() {
+    refreshBadgeStates();
     document.getElementById('badges-modal').style.display = 'flex';
 }
 
@@ -2496,8 +2523,66 @@ function closeBadgesModal() {
     document.getElementById('badges-modal').style.display = 'none';
 }
 
+// Оновлює замки / прогрес / стан "виконано" у модалці бейджів
+function refreshBadgeStates() {
+    const owned = window.__badgeOwned || ['vip'];
+    const progress = window.__badgeProgress || { comments: 0, posts: 0 };
+
+    document.querySelectorAll('.badge-item').forEach(item => {
+        const badge = item.getAttribute('data-badge');
+        const isOwned = owned.includes(badge);
+        const isLockedByDefault = item.getAttribute('data-locked') === '1';
+
+        // Якщо бейдж уже отримано — він розблокований
+        if (isOwned) {
+            item.classList.remove('locked');
+            const lockIcon = item.querySelector('.badge-lock-icon');
+            if (lockIcon) lockIcon.style.display = 'none';
+        } else if (isLockedByDefault) {
+            item.classList.add('locked');
+            const lockIcon = item.querySelector('.badge-lock-icon');
+            if (lockIcon) lockIcon.style.display = 'block';
+        }
+
+        // Прогрес у тултіпі
+        const taskType = item.getAttribute('data-task');
+        const goal = parseInt(item.getAttribute('data-goal') || '0', 10);
+        if (taskType && goal > 0) {
+            const have = Math.min(progress[taskType] || 0, goal);
+            const pct = Math.round((have / goal) * 100);
+            const fill = item.querySelector('.badge-tt-fill');
+            const prog = item.querySelector('.badge-tt-prog');
+            const claimBtn = item.querySelector('.badge-tt-claim');
+            if (fill) fill.style.width = pct + '%';
+            if (prog) prog.textContent = `${progress[taskType] || 0} / ${goal}`;
+            if (claimBtn) {
+                if (isOwned) {
+                    claimBtn.textContent = 'Отримано ✓';
+                    claimBtn.disabled = true;
+                    item.classList.add('completed');
+                } else if ((progress[taskType] || 0) >= goal) {
+                    claimBtn.textContent = 'Забрати';
+                    claimBtn.disabled = false;
+                } else {
+                    claimBtn.textContent = 'Ще не виконано';
+                    claimBtn.disabled = true;
+                }
+            }
+        }
+    });
+}
+
 // 3. Вибір бейджа (Клік по картинці)
 function toggleBadge(element) {
+    const badge = element.getAttribute('data-badge');
+    const owned = window.__badgeOwned || ['vip'];
+
+    // Залочений і не отриманий — обрати не можна
+    if (element.classList.contains('locked') && !owned.includes(badge)) {
+        showSmallToast('🔒 Спершу виконайте завдання, щоб відкрити цей бейдж');
+        return;
+    }
+
     // Перевіряємо, чи вибраний елемент (за кольором рамки)
     const isSelected = (element.style.borderColor === 'rgb(255, 69, 0)' || element.style.borderColor === '#ff4500');
 
@@ -2522,6 +2607,104 @@ function toggleBadge(element) {
         // Виділяємо
         element.style.borderColor = '#ff4500';
         element.style.background = '#331a15';
+    }
+}
+
+// Забрати відкритий бейдж (перевірка завдання — на сервері)
+async function claimBadge(badge, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Перевірка...'; }
+    try {
+        const res = await fetch('claim_badge.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ badge })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            if (!window.__badgeOwned) window.__badgeOwned = ['vip'];
+            if (!window.__badgeOwned.includes(badge)) window.__badgeOwned.push(badge);
+            refreshBadgeStates();
+            showBadgeReward(badge, data.title || 'Новий бейдж');
+        } else {
+            showSmallToast('Завдання ще не виконано: ' + (data.progress ?? 0) + '/' + (data.goal ?? '?'));
+            if (btn) { btn.disabled = true; btn.textContent = 'Ще не виконано'; }
+        }
+    } catch (e) {
+        console.error('claimBadge error', e);
+        showSmallToast('Помилка з\'єднання');
+        if (btn) { btn.disabled = false; btn.textContent = 'Забрати'; }
+    }
+}
+
+// Красиве сповіщення про відкриття бейджа
+let __rewardPendingBadge = null;
+function showBadgeReward(badge, title) {
+    __rewardPendingBadge = badge;
+    const overlay = document.getElementById('badge-reward-overlay');
+    const img = document.getElementById('badge-reward-img');
+    const titleEl = document.getElementById('badge-reward-title');
+    if (!overlay) return;
+
+    if (img) img.src = (typeof badgeImages !== 'undefined' && badgeImages[badge]) || 'img/badge 1.png';
+    if (titleEl) titleEl.textContent = title;
+
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    fireConfetti(overlay.querySelector('.badge-reward-card'));
+}
+
+function closeBadgeReward(addToProfile) {
+    const overlay = document.getElementById('badge-reward-overlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+        setTimeout(() => { overlay.style.display = 'none'; }, 300);
+    }
+
+    if (addToProfile && __rewardPendingBadge) {
+        // Підсвічуємо бейдж у модалці як обраний
+        const item = document.querySelector(`.badge-item[data-badge="${__rewardPendingBadge}"]`);
+        if (item) {
+            item.style.borderColor = '#ff4500';
+            item.style.background = '#331a15';
+        }
+        // Зберігаємо вибір (додасть бейдж у профіль)
+        if (typeof saveBadgesSelection === 'function') saveBadgesSelection();
+    }
+    __rewardPendingBadge = null;
+}
+
+// Невеликий тост (для бейджів)
+function showSmallToast(text) {
+    const container = document.getElementById('toast-container');
+    if (!container) { alert(text); return; }
+    const t = document.createElement('div');
+    t.className = 'notif-toast-pop';
+    t.style.cssText = 'background:rgba(20,4,16,0.95);border:1px solid rgba(240,4,127,0.4);padding:12px 16px;border-radius:12px;color:#fff;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+    t.textContent = text;
+    container.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(40px)'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+// Конфеті для сповіщення
+function fireConfetti(host) {
+    if (!host) return;
+    const colors = ['#f0047f', '#FF25BB', '#50ff8c', '#ffbc00', '#ffffff'];
+    for (let i = 0; i < 26; i++) {
+        const c = document.createElement('div');
+        c.className = 'badge-confetti';
+        c.style.background = colors[i % colors.length];
+        c.style.left = (10 + Math.random() * 80) + '%';
+        host.appendChild(c);
+        const dx = (Math.random() * 2 - 1) * 120;
+        const dy = 200 + Math.random() * 160;
+        const rot = (Math.random() * 2 - 1) * 720;
+        c.animate([
+            { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+            { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 0 }
+        ], { duration: 900 + Math.random() * 600, easing: 'cubic-bezier(0.2,0.6,0.3,1)' });
+        setTimeout(() => c.remove(), 1600);
     }
 }
 

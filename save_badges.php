@@ -44,7 +44,26 @@ try {
 
     // 5. Перетворення масиву в рядок (vip,admin,verified)
     // Очищаємо дані від зайвого сміття
-    $cleanBadges = array_map('trim', $badges);
+    $cleanBadges = array_values(array_filter(array_map('trim', $badges), fn($b) => $b !== ''));
+
+    // 5b. Дозволяємо відображати ЛИШЕ ті бейджі, якими користувач реально володіє.
+    // 'vip' — стартовий безкоштовний бейдж, він завжди дозволений.
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_COLUMN);
+        $ownedStr = '';
+        if (in_array('owned_badges', $cols)) {
+            $st = $pdo->prepare("SELECT owned_badges FROM users WHERE id = ?");
+            $st->execute([$_SESSION['user_id']]);
+            $ownedStr = (string)$st->fetchColumn();
+        }
+        $ownedArr = array_filter(array_map('trim', explode(',', $ownedStr)));
+        $ownedArr[] = 'vip'; // стартовий бейдж завжди доступний
+        $cleanBadges = array_values(array_intersect($cleanBadges, $ownedArr));
+    } catch (Exception $e) {
+        // якщо колонки немає — лишаємо тільки стартовий
+        $cleanBadges = array_values(array_intersect($cleanBadges, ['vip']));
+    }
+
     $badgesString = implode(',', $cleanBadges);
     
     // Якщо рядок пустий - записуємо NULL

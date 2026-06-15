@@ -27,7 +27,7 @@ try {
                    'avatar_frame', 'created_at', 'bio', 'country_code', 'languages_icons',
                    'secondary_email', 'grad_color_left', 'grad_color_right',
                    'status_start_hour', 'status_end_hour', 'status_last_updated',
-                   'badges', 'roblox_id', 'roblox_data', 'roblox_inventory',
+                   'badges', 'owned_badges', 'coins', 'roblox_id', 'roblox_data', 'roblox_inventory',
                    'steam_id', 'epic_id', 'premium_until'];
 
         $existing = [];
@@ -73,6 +73,20 @@ try {
             $stmtR->execute([$targetId]);
             $reputation = $stmtR->fetchColumn();
 
+            // 3b. Прогрес для завдань бейджів: кількість постів і коментарів
+            $postsCount = 0;
+            $commentsCount = 0;
+            try {
+                $sp = $pdo->prepare("SELECT COUNT(*) FROM posts WHERE user_id = ?");
+                $sp->execute([$targetId]);
+                $postsCount = (int)$sp->fetchColumn();
+            } catch (Exception $e) { /* таблиці може не бути */ }
+            try {
+                $sc = $pdo->prepare("SELECT COUNT(*) FROM comments WHERE user_id = ?");
+                $sc->execute([$targetId]);
+                $commentsCount = (int)$sc->fetchColumn();
+            } catch (Exception $e) { /* таблиці може не бути */ }
+
             // 4. Чи підписаний поточний глядач на цей профіль (для кнопки)
             $isFollowing = false;
             if ($currentUserId && !$isOwnProfile) {
@@ -89,6 +103,8 @@ try {
                 'followers_count' => $followersCount, // Цифра для UI
                 'following_count' => $followingCount, // Цифра для UI
                 'reputation'     => $reputation,     // Цифра для UI
+                'posts_count'    => $postsCount,     // Прогрес для завдань бейджів
+                'comments_count' => $commentsCount,  // Прогрес для завдань бейджів
                 'username'           => $res['username'],
                 'user'               => $res['user'],
                 'created_at'         => $res['created_at'],
@@ -106,6 +122,8 @@ try {
                 'status_end_hour'    => $res['status_end_hour'],
                 'status_last_updated' => $res['status_last_updated'],
                 "badges"             => $res['badges'],
+                "owned_badges"       => $res['owned_badges'] ?? '',
+                "coins"              => isset($res['coins']) ? (int)$res['coins'] : 0,
                 "roblox_id"   => $res['roblox_id'], 
                 "roblox_data" => $res['roblox_data'],
                 'roblox_inventory'   => $res['roblox_inventory'],
