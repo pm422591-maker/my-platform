@@ -17,7 +17,7 @@ if (!function_exists('smtp_config')) {
             'secure'     => 'tls',            // 587 = tls, 465 = ssl
             'user'       => 'syncora12@gmail.com',
             // ⬇️ ВСТАВ СЮДИ ПАРОЛЬ ДОДАТКА GMAIL (16 символів)
-            'pass'       => str_replace(' ', '', 'PASTE_APP_PASSWORD_HERE'),
+            'pass' => str_replace(' ', '', 'abcdefghijklmnop'),
             'from_email' => 'syncora12@gmail.com',
             'from_name'  => 'Syncora',
         ];
