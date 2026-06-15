@@ -754,14 +754,18 @@ window.smSyncUserInfo = smSyncUserInfo;
             }
 
             // 3c. Дані для системи бейджів (тільки для власного профілю)
-            if (data.is_own_profile) {
-                window.__badgeOwned = (data.owned_badges || '')
-                    .split(',').map(s => s.trim()).filter(Boolean);
-                if (!window.__badgeOwned.includes('vip')) window.__badgeOwned.push('vip');
-                window.__badgeProgress = {
-                    comments: parseInt(data.comments_count || 0, 10),
-                    posts: parseInt(data.posts_count || 0, 10)
-                };
+            try {
+                if (data.is_own_profile) {
+                    window.__badgeOwned = String(data.owned_badges || '')
+                        .split(',').map(s => s.trim()).filter(Boolean);
+                    if (!window.__badgeOwned.includes('vip')) window.__badgeOwned.push('vip');
+                    window.__badgeProgress = {
+                        comments: parseInt(data.comments_count || 0, 10) || 0,
+                        posts: parseInt(data.posts_count || 0, 10) || 0
+                    };
+                }
+            } catch (badgeErr) {
+                console.warn('Badge data init skipped:', badgeErr);
             }
 
             // ===========================
