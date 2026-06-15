@@ -83,7 +83,8 @@ try {
       </div>
     </div>";
 
-    $sent = sec_send_mail($user['email'], 'Підтвердження зміни пароля — Syncora', $body);
+    $mailErr = '';
+    $sent = sec_send_mail($user['email'], 'Підтвердження зміни пароля — Syncora', $body, $mailErr);
 
     if ($sent) {
         // Маскуємо email для відповіді
@@ -91,7 +92,11 @@ try {
         $masked = substr($parts[0], 0, 2) . '***@' . ($parts[1] ?? '');
         echo json_encode(['success' => true, 'message' => "Лист надіслано на {$masked}. Перевір пошту."]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Не вдалося надіслати лист. Спробуй пізніше.']);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Не вдалося надіслати лист.',
+            'detail'  => $mailErr   // конкретна причина (для діагностики)
+        ]);
     }
 
 } catch (Exception $e) {

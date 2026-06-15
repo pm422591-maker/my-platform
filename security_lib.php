@@ -57,21 +57,15 @@ if (!function_exists('sec_ensure_schema')) {
     }
 }
 
-// ── Надсилання листа через стандартний PHP mail()
+// ── Надсилання листа через SMTP (Gmail). Повертає текст помилки у $errOut.
+require_once __DIR__ . '/smtp_config.php';
+require_once __DIR__ . '/smtp_mailer.php';
+
 if (!function_exists('sec_send_mail')) {
-    function sec_send_mail(string $to, string $subject, string $htmlBody): bool {
-        $from = 'no-reply@syncora.cyou';
-        $headers   = [];
-        $headers[] = 'MIME-Version: 1.0';
-        $headers[] = 'Content-Type: text/html; charset=UTF-8';
-        $headers[] = 'From: Syncora <' . $from . '>';
-        $headers[] = 'Reply-To: ' . $from;
-        $headers[] = 'X-Mailer: PHP/' . phpversion();
-
-        // Кодуємо тему в UTF-8 (щоб кирилиця не ламалась)
-        $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
-
-        return @mail($to, $encodedSubject, $htmlBody, implode("\r\n", $headers), '-f' . $from);
+    function sec_send_mail(string $to, string $subject, string $htmlBody, ?string &$errOut = null): bool {
+        $res = smtp_send_mail($to, '', $subject, $htmlBody);
+        $errOut = $res['error'] ?? '';
+        return $res['ok'] === true;
     }
 }
 

@@ -51,7 +51,8 @@ async function requestPasswordChange() {
       setSecMsg('sec-password-msg', data.message, 'ok');
       btn.textContent = 'Лист надіслано ✓';
     } else {
-      setSecMsg('sec-password-msg', data.message || 'Помилка.', 'error');
+      const detail = data.detail ? ' ' + data.detail : '';
+      setSecMsg('sec-password-msg', (data.message || 'Помилка.') + detail, 'error');
       btn.disabled = false;
       btn.textContent = 'Надіслати лист підтвердження';
     }
