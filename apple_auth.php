@@ -23,7 +23,7 @@ $user = getenv('DB_USER') ?: 'appuser';
 $pass = getenv('DB_PASS') ?: '';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password);
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'DB connection failed: ' . $e->getMessage()]);

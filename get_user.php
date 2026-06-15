@@ -28,7 +28,7 @@ try {
                    'secondary_email', 'grad_color_left', 'grad_color_right',
                    'status_start_hour', 'status_end_hour', 'status_last_updated',
                    'badges', 'roblox_id', 'roblox_data', 'roblox_inventory',
-                   'steam_id', 'premium_until'];
+                   'steam_id', 'epic_id', 'premium_until'];
 
         $existing = [];
         foreach ($pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_ASSOC) as $c) {
@@ -110,6 +110,7 @@ try {
                 "roblox_data" => $res['roblox_data'],
                 'roblox_inventory'   => $res['roblox_inventory'],
                 "steam_id" => $res['steam_id'],
+                "epic_id" => $res['epic_id'],
                 "premium_until" => $res['premium_until'],
                 "is_premium" => ($res['premium_until'] && new DateTime($res['premium_until']) > new DateTime()),
                 "viewer_is_admin" => (function() use ($pdo, $currentUserId) {

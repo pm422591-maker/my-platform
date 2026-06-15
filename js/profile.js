@@ -569,6 +569,15 @@ async function loadUserData() {
             const isSteamLinked = data.steam_id && data.steam_id !== "null";
             window.isRobloxConnected = Boolean(isRobloxLinked);
 
+            // === ОНОВЛЮЄМО ВКЛАДКУ "ІНТЕГРАЦІЇ" (статус + кнопка відключити) ===
+            if (data.is_own_profile) {
+                updateIntegrationsTab({
+                    steam:  isSteamLinked,
+                    roblox: isRobloxLinked,
+                    epic:   (data.epic_id && data.epic_id !== "null")
+                });
+            }
+
             // ВИПРАВЛЕННЯ: sync викликаємо ЗАВЖДИ для свого профілю, коли Roblox підключено.
             // Умова "length === 0" була хибна — userInventoryFromDB вже заповнений зі старого запису БД,
             // тому sync ніколи не оновлювався. Тепер sync запускається завжди, щоб підтягнути актуальні
@@ -3162,5 +3171,104 @@ window.checkSteamGamesOwnership = async function(steamId) {
         }
     } catch (err) {
         console.error("Помилка перевірки Steam:", err);
+    }
+};
+
+// =====================================================================
+//  ІНТЕГРАЦІЇ: статус підключення + кнопка "Відключити акаунт"
+// =====================================================================
+
+// Оновлює вкладку "Інтеграції": для кожної платформи показує
+// позначку "Підключено" і замінює кнопку "Підключити" на "Відключити".
+window.updateIntegrationsTab = function(state) {
+    const platforms = [
+        { key: 'steam',  statusId: 'sm-steam-status',  label: 'Steam',
+          connect: function(){ const b = document.getElementById('btn-steam-auth'); if (b) b.click(); } },
+        { key: 'roblox', statusId: 'sm-roblox-status', label: 'Roblox',
+          connect: function(){ if (typeof window.startRobloxAuth === 'function') window.startRobloxAuth(); } },
+        { key: 'epic',   statusId: 'sm-epic-status',   label: 'Epic Games',
+          connect: function(){ if (typeof window.linkPlatform === 'function') window.linkPlatform('Epic Games'); } },
+    ];
+
+    platforms.forEach(function(p) {
+        const statusEl = document.getElementById(p.statusId);
+        if (!statusEl) return;
+        const row = statusEl.closest('.sm-platform-row');
+        if (!row) return;
+        const btn = row.querySelector('.sm-connect-btn');
+        if (!btn) return;
+
+        const connected = !!(state && state[p.key]);
+
+        if (connected) {
+            // Позначка "Підключено"
+            statusEl.textContent = 'Підключено';
+            statusEl.classList.add('connected');
+
+            // Кнопка перетворюється на "Відключити"
+            btn.textContent = 'Відключити';
+            btn.classList.add('connected-btn');
+            btn.onclick = function() { window.unlinkPlatform(p.key, p.label); };
+        } else {
+            statusEl.textContent = 'Не підключено';
+            statusEl.classList.remove('connected');
+
+            btn.textContent = 'Підключити';
+            btn.classList.remove('connected-btn');
+            btn.onclick = p.connect;
+        }
+    });
+};
+
+// Відключає акаунт і стирає всі дані користувача по цій грі/платформі.
+window.unlinkPlatform = async function(platformKey, label) {
+    const ok = confirm(
+        'Відключити ' + (label || platformKey) + '?\n\n' +
+        'Усі ваші дані по цій грі (ID, інвентар, вибрані ігри) будуть стерті.'
+    );
+    if (!ok) return;
+
+    try {
+        const res = await fetch('unlink_platform.php', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ platform: platformKey })
+        });
+        const data = await res.json();
+
+        if (data && data.success) {
+            // Скидаємо локальні прапорці
+            if (platformKey === 'roblox') {
+                window.isRobloxConnected = false;
+                localStorage.removeItem('roblox_user');
+            }
+            if (platformKey === 'steam') {
+                window.isSteamConnected = false;
+            }
+
+            // Миттєво оновлюємо UI (без перезавантаження)
+            const partial = {};
+            partial[platformKey] = false;
+            const cur = {
+                steam:  window.isSteamConnected === true,
+                roblox: window.isRobloxConnected === true,
+                epic:   false
+            };
+            cur[platformKey] = false;
+            window.updateIntegrationsTab(cur);
+
+            // Перезавантажуємо профіль, щоб прибрати ігри/досягнення
+            if (typeof loadUserData === 'function') {
+                loadUserData();
+            }
+
+            alert((label || platformKey) + ' відключено. Дані стерто.');
+        } else {
+            alert('Помилка: ' + (data && data.message ? data.message : 'не вдалося відключити'));
+        }
+    } catch (err) {
+        console.error('Помилка відключення:', err);
+        alert('Помилка зв\'язку з сервером.');
     }
 };
