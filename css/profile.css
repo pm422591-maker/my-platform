@@ -4628,3 +4628,15 @@ video, .transparent-square {
     flex: 0 0 32px !important;
     padding: 0 !important;
 }
+.badge-reward-overlay {
+    display: none;            /* скрыт, пока JS не покажет */
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.8);
+    align-items: center;
+    justify-content: center;
+}
+.badge-reward-overlay.show {
+    display: flex;
+}
