@@ -56,20 +56,21 @@ try {
         if (!$row) { echo json_encode(['success' => false, 'message' => 'Користувача не знайдено']); exit; }
         $snapshot = 'Акаунт: @' . $row['username'];
     } elseif ($targetType === 'post') {
-        $s = $pdo->prepare("SELECT user_id, content FROM posts WHERE id = ? LIMIT 1");
+        $s = $pdo->prepare("SELECT user_id, title, body FROM posts WHERE id = ? LIMIT 1");
         $s->execute([$targetId]);
         $row = $s->fetch();
         if ($row) {
             $targetUserId = (int)$row['user_id'];
-            $snapshot = mb_substr((string)($row['content'] ?? ''), 0, 500);
+            $text = trim((string)($row['title'] ?? '') . ' ' . (string)($row['body'] ?? ''));
+            $snapshot = mb_substr($text, 0, 500);
         }
     } elseif ($targetType === 'comment') {
-        $s = $pdo->prepare("SELECT user_id, content FROM comments WHERE id = ? LIMIT 1");
+        $s = $pdo->prepare("SELECT user_id, body FROM comments WHERE id = ? LIMIT 1");
         $s->execute([$targetId]);
         $row = $s->fetch();
         if ($row) {
             $targetUserId = (int)$row['user_id'];
-            $snapshot = mb_substr((string)($row['content'] ?? ''), 0, 500);
+            $snapshot = mb_substr((string)($row['body'] ?? ''), 0, 500);
         }
     }
 
@@ -107,11 +108,5 @@ try {
 
 } catch (Exception $e) {
     error_log('report.php error: ' . $e->getMessage());
-    // ТИМЧАСОВО: показуємо реальну причину для діагностики.
-    // Прибрати після виправлення!
-    echo json_encode([
-        'success' => false,
-        'message' => 'Помилка сервера. Спробуйте пізніше.',
-        'debug'   => $e->getMessage(),
-    ]);
+    echo json_encode(['success' => false, 'message' => 'Помилка сервера. Спробуйте пізніше.']);
 }

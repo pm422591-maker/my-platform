@@ -8389,9 +8389,8 @@ window.submitReport = async function(type, targetId, opts) {
             body: JSON.stringify(payload)
         });
         const d = await r.json();
-        if (d.debug) console.error('report.php debug:', d.debug);
         window.showReportToast(
-            (d.debug ? d.debug : (d.message || (d.success ? 'Скаргу надіслано. Дякуємо!' : 'Не вдалося надіслати скаргу'))),
+            d.message || (d.success ? 'Скаргу надіслано. Дякуємо!' : 'Не вдалося надіслати скаргу'),
             !!d.success
         );
     } catch (e) {
