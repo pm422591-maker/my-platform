@@ -1491,7 +1491,8 @@ window.toggleModeSelection = function(gameName, mode, isSelecting) {
                 game: gameName,
                 id: mode.id,
                 name: mode.name,
-                img: mode.img
+                img: mode.img,
+                owned: true
             });
         }
     } else {
@@ -2996,7 +2997,7 @@ function displayRobloxData(data) {
 
     const groups = {};
     data.stats.forEach(item => {
-    if (item.owned !== true) return; // ← ДОДАЙ ЦЕ
+    if (item.owned === false) return; // показуємо все, крім явно невласних
     if (!groups[item.game]) groups[item.game] = [];
     groups[item.game].push(item);
 });

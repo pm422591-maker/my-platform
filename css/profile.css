@@ -955,9 +955,9 @@ body::after {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.8); /* Трохи світліший чорний для розмиття */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: radial-gradient(circle at 50% 30%, rgba(55,26,40,0.55), rgba(0,0,0,0.82));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     z-index: 99999;
     display: none; /* Включається через клас .active в JS */
     justify-content: center;
@@ -966,105 +966,157 @@ body::after {
 
 .modal-games-overlay.active {
     display: flex;
+    animation: gamesOverlayFade 0.25s ease;
+}
+
+@keyframes gamesOverlayFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 /* --- ГОЛОВНИЙ БЛОК МОДАЛКИ --- */
 .modal-games-content {
     width: 95%;
-    max-width: 1200px;         /* Широке вікно як на макеті */
-    height: 85vh;              /* Висота */
-    background: #371A28;       /* Темно-бордовий фон з макета */
-    border-radius: 24px;
-    border: none;              /* Прибираємо сіру рамку */
-    padding: 30px;
+    max-width: 1100px;
+    height: 85vh;
+    background:
+        radial-gradient(120% 80% at 50% -10%, rgba(247,0,135,0.18), transparent 55%),
+        linear-gradient(160deg, #43202F 0%, #371A28 55%, #2A121E 100%);
+    border-radius: 28px;
+    border: 1px solid rgba(230,174,201,0.14);
+    padding: 32px;
     display: flex;
     flex-direction: column;
     position: relative;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
     box-sizing: border-box;
+    animation: gamesModalPop 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes gamesModalPop {
+    from { transform: translateY(18px) scale(0.97); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 /* --- СІТКА КАРТОК --- */
 .media-grid {
     display: grid;
-    /* Зменшив мінімальну ширину, щоб влізло більше колонок, як на фото (по 7-8 штук) */
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 18px;
     overflow-y: auto;
-    padding: 10px 5px;
-    margin-top: 20px;
+    padding: 14px 6px;
+    margin-top: 22px;
+    align-content: start;
 }
 
 /* Стилізуємо скролбар сітки під рожевий дизайн */
 .media-grid::-webkit-scrollbar { width: 6px; }
 .media-grid::-webkit-scrollbar-track { background: transparent; }
-.media-grid::-webkit-scrollbar-thumb { background: #E6AEC9; border-radius: 4px; }
+.media-grid::-webkit-scrollbar-thumb { background: rgba(230,174,201,0.45); border-radius: 4px; }
+.media-grid::-webkit-scrollbar-thumb:hover { background: #E6AEC9; }
 
 /* --- КАРТКА ГРИ --- */
 .media-card {
-    background: #E6AEC9;       /* Світло-рожевий фон картки */
-    border: 2px solid transparent; /* Прозора рамка для майбутнього виділення */
-    border-radius: 12px;
-    padding: 8px;              /* Внутрішній відступ від країв до картинки */
+    position: relative;
+    background: linear-gradient(165deg, #F2C3D8 0%, #E6AEC9 100%);
+    border: 2px solid transparent;
+    border-radius: 16px;
+    padding: 10px;
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease, border-color 0.2s ease, background 0.2s ease;
     box-sizing: border-box;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
 }
 
 .media-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transform: translateY(-6px);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.32), 0 0 0 3px rgba(247,0,135,0.18);
 }
 
-/* Стан, коли картка вибрана (замінив зелений на яскраво-рожевий) */
+/* Стан, коли картка вибрана */
 .media-card.selected {
-    border-color: #F70087;     /* Яскраво-рожева рамка */
-    background: #F0B8D6;       /* Трохи світліший фон при виділенні */
-    transform: scale(1.02);
+    border-color: #F70087;
+    background: linear-gradient(165deg, #FFD0E6 0%, #F0B8D6 100%);
+    box-shadow: 0 10px 26px rgba(247,0,135,0.4), 0 0 0 4px rgba(247,0,135,0.22);
+    transform: translateY(-3px) scale(1.02);
+}
+
+/* Галочка на вибраній картці */
+.media-card.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #F70087;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(247,0,135,0.5);
+    animation: gamesCheckPop 0.2s ease;
+}
+
+@keyframes gamesCheckPop {
+    from { transform: scale(0); }
+    to   { transform: scale(1); }
 }
 
 /* --- ЕЛЕМЕНТИ ВСЕРЕДИНІ КАРТКИ (Картинка та текст) --- */
-/* (Додав ці правила, щоб картинка була квадратною, а текст чорним, як на макеті) */
 .media-card img {
     width: 100%;
-    aspect-ratio: 1 / 1;       /* Робить картинку ідеальним квадратом */
+    aspect-ratio: 1 / 1;
     object-fit: cover;
-    border-radius: 8px;
-    background: #2A121E;       /* Темна заглушка, поки картинка вантажиться */
-    margin-bottom: 8px;
+    border-radius: 11px;
+    background: #2A121E;
+    margin-bottom: 10px;
 }
 
 .media-card span {
-    color: #1A1A1A;            /* Темний текст "GTA 5" */
+    color: #2A121E;
     font-weight: 800;
     font-size: 14px;
-    font-family: sans-serif;
+    font-family: 'Geologica', sans-serif;
     text-align: center;
 }
 
 .media-img-container {
     width: 100%;
     aspect-ratio: 1/1;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    margin-bottom: 8px; /* Отступ до текста */
+    margin-bottom: 10px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
 }
 
 .media-img-container img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.media-card:hover .media-img-container img {
+    transform: scale(1.06);
 }
 
 .media-title {
-    color: white;
+    color: #2A121E;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     text-align: center;
     width: 100%;
+    font-family: 'Geologica', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Контейнер всей интеграции */
@@ -1073,8 +1125,10 @@ body::after {
 .modal-games-header {
     display: flex;
     flex-direction: column;
-    margin-bottom: 25px; /* Відступ до карток ігор */
+    margin-bottom: 14px;
     width: 100%;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(230,174,201,0.14);
 }
 
 .modal-header-top {
@@ -1086,30 +1140,34 @@ body::after {
 
 /* Заголовок "Оберіть гру" */
 #modal-games-main-title {
-    color: #E6AEC9; /* Світло-рожевий колір тексту */
-    font-size: 24px;
+    color: #F6D8E6;
+    font-size: 26px;
     font-weight: 800;
     margin: 0;
-    font-family: sans-serif;
+    font-family: 'Geologica', sans-serif;
+    letter-spacing: 0.3px;
 }
 
 /* Кнопка закриття (Хрестик) */
 .modal-close-btn {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background-color: #E6AEC9; /* Світло-рожевий фон */
-    border: none;
-    color: #371A28; /* Темний хрестик */
+    background-color: rgba(230,174,201,0.14);
+    border: 1px solid rgba(230,174,201,0.22);
+    color: #E6AEC9;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.2s, color 0.2s;
 }
 
 .modal-close-btn:hover {
-    transform: scale(1.05);
+    transform: rotate(90deg);
+    background-color: #F70087;
+    color: #fff;
+    border-color: #F70087;
 }
 
 .modal-close-btn svg {
@@ -1121,46 +1179,99 @@ body::after {
 .search-container {
     display: flex;
     align-items: center;
-    background-color: #E6AEC9; 
-    border-radius: 8px;
+    background-color: rgba(255,255,255,0.06);
+    border: 1px solid rgba(230,174,201,0.18);
+    border-radius: 12px;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     margin-top: 20px;
-    padding: 0 15px; /* Робить рівні відступи по 15px зліва і справа */
+    padding: 0 16px;
     box-sizing: border-box;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.search-container:focus-within {
+    border-color: rgba(247,0,135,0.55);
+    background-color: rgba(255,255,255,0.09);
+    box-shadow: 0 0 0 3px rgba(247,0,135,0.12);
 }
 
 /* Текстове поле */
 #game-search-input {
-    flex-grow: 1; /* Змушує поле зайняти весь простір, відштовхуючи лупу вправо */
+    flex-grow: 1;
     background: transparent;
-    color: #1A1A1A; 
+    color: #FBE6EF;
     border: none;
-    padding: 12px 0; 
+    padding: 13px 0;
     font-size: 14px;
     font-weight: 500;
-    outline: none; 
+    outline: none;
+    font-family: 'Geologica', sans-serif;
 }
 
 #game-search-input::placeholder {
-    color: rgba(55, 26, 40, 0.6); 
+    color: rgba(230,174,201,0.55);
 }
 
 /* Іконка лупи */
 .search-icon {
     width: 18px;
     height: 18px;
-    color: #1A1A1A;
-    margin-left: 10px; /* Не дає довгому тексту "наїхати" на лупу */
-    flex-shrink: 0;    /* Забороняє лупі сплющуватись */
-    left: 350px !important;
+    color: rgba(230,174,201,0.7);
+    margin-left: 10px;
+    flex-shrink: 0;
 }
-/* Кнопка "Назад" (якщо вона коли-небудь з'явиться) */
+/* Кнопка "Назад" */
 .back-btn {
-    background: #E6AEC9 !important;
-    border: none !important;
-    color: #1A1A1A !important;
+    background: rgba(230,174,201,0.14) !important;
+    border: 1px solid rgba(230,174,201,0.22) !important;
+    border-radius: 10px !important;
+    color: #E6AEC9 !important;
     font-weight: 700 !important;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.back-btn:hover {
+    background: #F70087 !important;
+    color: #fff !important;
+}
+.back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Кнопка "Підтвердити вибір" */
+.games-confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #F70087 0%, #C00069 100%);
+    color: #fff;
+    border: none;
+    padding: 13px 46px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.4px;
+    font-family: 'Geologica', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 8px 22px rgba(247,0,135,0.38);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.games-confirm-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(247,0,135,0.5);
+    filter: brightness(1.06);
+}
+.games-confirm-btn:active {
+    transform: translateY(0);
 }
 .settings-gear-float {
     position: absolute;
