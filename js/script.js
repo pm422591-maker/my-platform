@@ -93,11 +93,15 @@ if (result.success) {
     localStorage.setItem('user_name', result.username);
     if(result.avatar) localStorage.setItem('user_avatar', result.avatar);
     if(result.banner) localStorage.setItem('user_banner', result.banner);
-    // Обучение и квиз показываем ТОЛЬКО новым (только что созданным) пользователям
+    // Обучение и квиз — ТОЛЬКО для новых (только что созданных) аккаунтов.
+    // Дублируем сигнал в URL (?welcome=1) на случай, если sessionStorage
+    // заблокирован браузером (Tracking Prevention и т.п.).
     if (result.is_new) {
-        sessionStorage.setItem('syncora_new_login', '1');
+        try { sessionStorage.setItem('syncora_new_login', '1'); } catch (e) {}
+        window.location.href = "home.html?welcome=1";
+    } else {
+        window.location.href = "home.html";
     }
-    window.location.href = "home.html";
             } else {
                 alert("Помилка: " + result.message);
             }
@@ -142,7 +146,7 @@ if (formLogin) {
                 if(result.avatar) localStorage.setItem('user_avatar', result.avatar);
                 if(result.banner) localStorage.setItem('user_banner', result.banner);
                 // DO NOT clear tutorial/quiz here — DB is the source of truth for returning users
-                // Вход существующего юзера НЕ запускает обучение (флаг не ставим)
+                // Вход существующего юзера НЕ запускает обучение (флаг не ставим).
                 // Адмін одразу потрапляє в панель модерації замість стрічки
                 window.location.href = result.is_admin ? "admin.html" : "home.html";
             } else {

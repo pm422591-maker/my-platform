@@ -683,7 +683,8 @@ function finishTutorial() {
   markTutorialDone();
   cleanupTutorialDOM();
 
-  if (!quizDone()) {
+  // Для нового акаунта показуємо квіз завжди; інакше — лише якщо ще не пройдено.
+  if (_forceQuizForNewUser || !quizDone()) {
     setTimeout(showQuizPrompt, 400);
   }
 }
@@ -937,24 +938,52 @@ async function checkAndStartTutorial() {
   startTutorial();
 }
 
+// Запуск онбордингу для НОВОГО акаунта: туторіал, а після нього —
+// гарантовано квіз (навіть якщо в БД залишився старий quiz_done).
+let _forceQuizForNewUser = false;
+function startTutorialForNewUser() {
+  _forceQuizForNewUser = true;
+  startTutorial();
+}
+
 // Show welcome screen then run tutorial.
 // Welcome screen only shows for brand-new registrations.
 // Falls back gracefully if sessionStorage is blocked (Tracking Prevention).
 function maybeShowWelcomeAndStart() {
   const username = safeGet('user_name') || 'Гравець';
 
-  // Try to read sessionStorage (may be blocked by Tracking Prevention)
+  // Сигнал «новий акаунт» може прийти двома шляхами:
+  //  1) sessionStorage (може бути заблокований Tracking Prevention);
+  //  2) URL-параметр ?welcome=1 (надійний фолбек, переживає редірект).
   let isNewRegistration = false;
   try {
-    isNewRegistration = sessionStorage.getItem('syncora_new_login') === '1';
-    if (isNewRegistration) sessionStorage.removeItem('syncora_new_login');
+    if (sessionStorage.getItem('syncora_new_login') === '1') {
+      isNewRegistration = true;
+      sessionStorage.removeItem('syncora_new_login');
+    }
   } catch (e) {
-    isNewRegistration = false;
+    // sessionStorage недоступний — покладаємось на URL-параметр нижче
+  }
+
+  // Перевірка URL ?welcome=1
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('welcome') === '1') {
+      isNewRegistration = true;
+      // Прибираємо параметр з адреси, щоб онбординг не показався повторно при перезавантаженні
+      params.delete('welcome');
+      const newQuery = params.toString();
+      const newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '') + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  } catch (e) {
+    // URLSearchParams/history недоступні — ігноруємо
   }
 
   if (isNewRegistration) {
-    // Brand new registration: show welcome screen then tutorial
-    showWelcomeScreen(username, checkAndStartTutorial);
+    // Новий акаунт: показуємо привітання → туторіал → квіз БЕЗУМОВНО,
+    // не звіряючись із БД (інакше старі прапорці могли б подавити онбординг).
+    showWelcomeScreen(username, startTutorialForNewUser);
     return;
   }
 
