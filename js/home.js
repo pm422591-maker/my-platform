@@ -1654,9 +1654,9 @@ window.switchTab = function(tabName) {
     // Оновлюємо глобальну змінну, щоб publishPost знав, де ми знаходимось
     window.currentLudoraPage = tabName;
 
-    // Скрываем все вкладки
+    // Скрываем все вкладки (через !important, бо чат/створення показані з !important)
     document.querySelectorAll('.tab-content').forEach(el => {
-        el.style.display = 'none';
+        el.style.setProperty('display', 'none', 'important');
         el.classList.remove('active');
     });
 
@@ -1665,19 +1665,19 @@ window.switchTab = function(tabName) {
         btn.classList.remove('active-tab');
     });
 
+    const topFilterBar = document.getElementById('top-game-filter');
     if (topFilterBar) {
-    // ЗАМІНИ 'blog' на те ID вкладки, яке використовується у твоєму коді!
-    if (tabName === 'blog') {
-        topFilterBar.style.display = 'none'; // Ховаємо пошук і фільтри
-    } else {
-        topFilterBar.style.display = 'flex'; // Повертаємо (бо в HTML у тебе display: flex)
+        if (tabName === 'blog') {
+            topFilterBar.style.display = 'none'; // Ховаємо пошук і фільтри
+        } else {
+            topFilterBar.style.display = 'flex'; // Повертаємо (бо в HTML у тебе display: flex)
+        }
     }
-}
 
-    // Показываем нужную вкладку
+    // Показываем нужную вкладку (через !important)
     const targetContent = document.getElementById(tabName + '-content');
     if (targetContent) {
-        targetContent.style.display = 'block';
+        targetContent.style.setProperty('display', 'block', 'important');
         targetContent.classList.add('active');
     }
 
@@ -1686,15 +1686,6 @@ window.switchTab = function(tabName) {
     if (tabName === 'feed' && buttons[0]) buttons[0].classList.add('active-tab');
     if (tabName === 'requests' && buttons[1]) buttons[1].classList.add('active-tab');
     if (tabName === 'blog' && buttons[2]) buttons[2].classList.add('active-tab');
-
-    const topFilterBar = document.getElementById('top-game-filter');
-    if (topFilterBar) {
-        if (tabName === 'blog') { 
-            topFilterBar.style.display = 'none'; 
-        } else {
-            topFilterBar.style.display = 'flex'; 
-        }
-    }
 };
 // 2. Проверка ссылки при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
@@ -1730,10 +1721,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.currentTab = tabName;
         window.currentLudoraPage = tabName;
 
-        // Ховаємо всі блоки контенту
+        // Ховаємо всі блоки контенту (через !important, бо чат/створення показані з !important)
         document.querySelectorAll('.tab-content').forEach(el => {
-            el.style.display = 'none';
             el.classList.remove('active');
+            el.style.setProperty('display', 'none', 'important');
         });
 
         // Прибираємо підсвічування головних кнопок
@@ -1746,10 +1737,10 @@ document.addEventListener('DOMContentLoaded', () => {
             item.style.background = 'transparent';
         });
 
-        // Показуємо потрібний контент
+        // Показуємо потрібний контент (через !important, щоб перебити приховування)
         const target = document.getElementById(tabName + '-content');
         if (target) {
-            target.style.display = 'block';
+            target.style.setProperty('display', 'block', 'important');
             setTimeout(() => target.classList.add('active'), 10);
         }
 
@@ -1758,15 +1749,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tabName === 'requests') document.getElementById('btn-requests')?.classList.add('active-tab');
         if (tabName === 'blog') document.getElementById('btn-blog')?.classList.add('active-tab');
         
-        // Перевіряємо, чи відкритий чат, і якщо так — ховаємо його
-        const chatWin = document.getElementById('chat-window');
-        if (chatWin && chatWin.style.display === 'flex') {
-             chatWin.style.display = 'none';
-             const postPanel = document.getElementById('create-post-panel');
-             if (postPanel) postPanel.style.display = 'block';
-        }
+        // Чат і екран створення вже приховані циклом вище.
+        // Просто повертаємо панель публікації постів та скрол.
+        const postPanel = document.getElementById('create-post-panel');
+        if (postPanel) postPanel.style.display = 'block';
 
         // Відновлюємо скролінг
+        const chatWin = document.getElementById('chat-window');
         if (chatWin && chatWin.parentElement) {
             chatWin.parentElement.style.overflow = 'auto';
         }
@@ -2980,7 +2969,17 @@ window.openChatUI = function(userId, userName, userAvatar) {
     }
 
     // 2. Керування видимістю вкладок
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    // 🛡️ Скидаємо стан попереднього (групового) чату, щоб особистий чат
+    //    не "успадкував" групову шапку/поле вводу та не накладався.
+    if (window.currentGroupChat && typeof window.resetGroupChatUI === 'function') {
+        window.resetGroupChatUI();
+    }
+    window.currentGroupChat = null;
+    // Ховаємо ВСІ overlay-екрани (включно з екраном створення та іншим відкритим чатом)
+    // через !important, інакше залишки display:none !important від setLudoraPage
+    // не дають коректно перемикатися, і екрани накладаються один на одного.
+    if (typeof window.hideAllOverlays === 'function') window.hideAllOverlays();
+    document.querySelectorAll('.tab-content').forEach(el => el.style.setProperty('display', 'none', 'important'));
     const postPanel = document.getElementById('create-post-panel');
     if (postPanel) postPanel.style.display = 'none';
 
@@ -2997,8 +2996,8 @@ window.openChatUI = function(userId, userName, userAvatar) {
         parentBox.style.overflow = 'hidden';   
     }
 
-    // Показуємо сам чат
-    chatWin.style.display = 'flex';
+    // Показуємо сам чат (через !important, щоб перебити приховування .tab-content)
+    chatWin.style.setProperty('display', 'flex', 'important');
 
     // 3. Завантаження шпалер для зони повідомлень
     const msgContainer = document.getElementById('chat-messages');
@@ -4180,7 +4179,7 @@ window.toggleBlockUI = function(isBlocked, userId, userName) {
 window.closeChat = function() {
     const chatWin = document.getElementById('chat-window');
     if (chatWin) {
-        chatWin.style.display = 'none';
+        chatWin.style.setProperty('display', 'none', 'important');
         // Повертаємо скрол батьківському блоку!
         if (chatWin.parentElement) {
             chatWin.parentElement.style.overflow = 'auto'; 
@@ -8723,7 +8722,22 @@ window.deletePost = async function(postId) {
 };
 window.setLudoraPage = function(tabName, blogOwnerId) {
     window.currentLudoraPage = tabName;
+    window.currentTab = tabName; // синхронізуємо, щоб closeChat повертав правильну вкладку
     document.body.setAttribute('data-active-tab', tabName);
+
+    // 🛡️ Якщо ми переходимо на звичайну вкладку, а був відкритий груповий чат —
+    //    скидаємо його стан (таймери/шапку), щоб нічого не лишалося "поверх".
+    if (window.currentGroupChat && typeof window.resetGroupChatUI === 'function') {
+        window.resetGroupChatUI();
+    }
+    window.currentGroupChat = null;
+
+    // Повертаємо панель публікації постів та скрол контейнера чату
+    const _postPanel = document.getElementById('create-post-panel');
+    if (_postPanel) _postPanel.style.display = 'block';
+    const _chatWin = document.getElementById('chat-window');
+    if (_chatWin && _chatWin.parentElement) _chatWin.parentElement.style.overflow = 'auto';
+    document.querySelectorAll('.chat-item').forEach(item => item.style.background = 'transparent');
 
     // 🛡️ Власник блогу: якщо відкриваємо блог, фіксуємо чий він.
     // Явно переданий ID (перехід з чужого профілю) → чужий блог;
@@ -10742,6 +10756,24 @@ window.openCreateFlow = function(type) {
     window.creationFlowType = type === 'channel' ? 'channel' : 'group';
     const screen = document.getElementById('chat-creation-screen');
     if (!screen) return;
+
+    // 🛡️ Закриваємо будь-який відкритий чат (особистий чи груповий),
+    //    щоб екран створення відкривався ПОВЕРХ, а не доводилося виходити в стрічку.
+    const chatWin = document.getElementById('chat-window');
+    if (chatWin && getComputedStyle(chatWin).display !== 'none') {
+        if (typeof window.closeChat === 'function') {
+            window.closeChat();
+        } else {
+            chatWin.style.setProperty('display', 'none', 'important');
+        }
+    }
+    // Ховаємо решту overlay та вкладок, щоб нічого не накладалося
+    document.querySelectorAll('.tab-content').forEach(el => {
+        if (el !== screen) el.style.setProperty('display', 'none', 'important');
+    });
+    const postPanel = document.getElementById('create-post-panel');
+    if (postPanel) postPanel.style.display = 'none';
+
     const header = document.getElementById('creation-screen-header');
     const title = document.getElementById('creation-screen-title');
     const input = document.getElementById('creation-name-input');
@@ -10753,7 +10785,7 @@ window.openCreateFlow = function(type) {
     }
     const parentBox = screen.parentElement;
     if (parentBox) { parentBox.style.position = 'relative'; parentBox.style.overflow = 'hidden'; }
-    screen.style.display = 'flex';
+    screen.style.setProperty('display', 'flex', 'important');
     screen.style.flexDirection = 'column';
     setTimeout(() => input && input.focus(), 100);
     if (input && !input.hasAttribute('data-enter-bound')) {
@@ -10765,8 +10797,14 @@ window.openCreateFlow = function(type) {
 window.closeChatCreation = function() {
     const screen = document.getElementById('chat-creation-screen');
     if (screen) {
-        screen.style.display = 'none';
+        screen.style.setProperty('display', 'none', 'important');
         if (screen.parentElement) screen.parentElement.style.overflow = 'auto';
+    }
+    // Повертаємося на поточну вкладку (наприклад, стрічку), щоб не лишався порожній екран
+    if (typeof window.performSwitch === 'function') {
+        window.performSwitch(window.currentTab || window.currentLudoraPage || 'feed');
+    } else if (typeof window.setLudoraPage === 'function') {
+        window.setLudoraPage(window.currentLudoraPage || 'feed');
     }
 };
 
@@ -10780,7 +10818,13 @@ window.submitChatCreation = async function() {
     try {
         const data = await groupApiPost({ action: 'create', name, type: window.creationFlowType });
         if (!data.success) throw new Error(data.message || 'Помилка створення');
-        window.closeChatCreation();
+        // Ховаємо екран створення напряму (без повернення в стрічку),
+        // бо одразу відкриваємо новостворений чат поверх.
+        const screen = document.getElementById('chat-creation-screen');
+        if (screen) {
+            screen.style.setProperty('display', 'none', 'important');
+            if (screen.parentElement) screen.parentElement.style.overflow = 'auto';
+        }
         await window.loadMyGroupChats();
         if (data.group) window.openGroupChat(data.group);
     } catch (e) { alert('Не вдалося створити: ' + e.message); }
@@ -10834,7 +10878,8 @@ window.openGroupChat = function(g) {
     window.lastGroupMsgId = 0;
     window.groupReactionsMap = {};
 
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-content').forEach(el => el.style.setProperty('display', 'none', 'important'));
+    if (typeof window.hideAllOverlays === 'function') window.hideAllOverlays();
     const postPanel = document.getElementById('create-post-panel');
     if (postPanel) postPanel.style.display = 'none';
     document.querySelectorAll('.chat-item').forEach(item => item.style.background = 'transparent');
@@ -10845,7 +10890,7 @@ window.openGroupChat = function(g) {
     if (!chatWin) return;
     const parentBox = chatWin.parentElement;
     if (parentBox) { parentBox.style.position = 'relative'; parentBox.style.overflow = 'hidden'; }
-    chatWin.style.display = 'flex';
+    chatWin.style.setProperty('display', 'flex', 'important');
 
     const targetName = document.getElementById('chat-target-name');
     const targetAvatar = document.getElementById('chat-target-avatar');
@@ -12171,35 +12216,55 @@ window.deleteGroup = async function() {
 };
 
 // === 12. ЗАКРИТТЯ ЧАТУ ===
+
+// 🧩 Скидання UI групового чату (таймери, шапка, поле вводу, спливаючі панелі).
+// Викликається і при закритті чату, і при перемиканні на особистий чат / вкладку,
+// щоб груповий стан не "успадковувався" і не накладався поверх.
+window.resetGroupChatUI = function() {
+    if (window.groupPollTimer) { clearInterval(window.groupPollTimer); window.groupPollTimer = null; }
+    if (window.groupHeaderGuard) { clearInterval(window.groupHeaderGuard); window.groupHeaderGuard = null; }
+    if (window.groupVoiceRecorder && window.groupVoiceRecorder.state === 'recording') {
+        try { window.groupVoiceRecorder.stop(); } catch (e) {}
+    }
+    window.currentGroupChat = null;
+    window.currentGroupInfo = null;
+    window.lastGroupMsgId = 0;
+    window.groupReactionsMap = {};
+    document.getElementById('group-settings-panel')?.remove();
+    document.getElementById('group-invite-modal')?.remove();
+    document.getElementById('group-forward-modal')?.remove();
+    document.getElementById('chat-emoji-picker')?.remove();
+    document.querySelectorAll('.reaction-bar, .role-popover, .msg-context-menu').forEach(b => b.remove());
+    if (typeof window.cancelEditGroupMessage === 'function') window.cancelEditGroupMessage();
+    document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = '');
+    ['group-header-bell', 'group-header-gear', 'group-header-discuss'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    const targetAvatar = document.getElementById('chat-target-avatar');
+    if (targetAvatar) targetAvatar.style.display = '';
+    const input = document.getElementById('msg-input');
+    if (input) { input.style.display = 'block'; input.placeholder = 'Напишіть повідомлення...'; }
+    const sendBtn = document.getElementById('send-btn');
+    if (sendBtn) sendBtn.style.display = 'block';
+};
+
+// 🧹 Ховає ВСІ overlay-екрани (чат і екран створення) через !important.
+// Потрібно, щоб різні екрани ніколи не накладалися один на одного.
+window.hideAllOverlays = function() {
+    ['chat-window', 'chat-creation-screen'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.setProperty('display', 'none', 'important');
+            if (el.parentElement) el.parentElement.style.overflow = 'auto';
+        }
+    });
+};
+
 (function hookGroupClose() {
     const originalClose = window.closeChat;
     window.closeChat = function() {
-        if (window.groupPollTimer) { clearInterval(window.groupPollTimer); window.groupPollTimer = null; }
-        if (window.groupHeaderGuard) { clearInterval(window.groupHeaderGuard); window.groupHeaderGuard = null; }
-        if (window.groupVoiceRecorder && window.groupVoiceRecorder.state === 'recording') {
-            try { window.groupVoiceRecorder.stop(); } catch (e) {}
-        }
-        window.currentGroupChat = null;
-        window.currentGroupInfo = null;
-        window.lastGroupMsgId = 0;
-        window.groupReactionsMap = {};
-        document.getElementById('group-settings-panel')?.remove();
-        document.getElementById('group-invite-modal')?.remove();
-        document.getElementById('group-forward-modal')?.remove();
-        document.getElementById('chat-emoji-picker')?.remove();
-        document.querySelectorAll('.reaction-bar, .role-popover, .msg-context-menu').forEach(b => b.remove());
-        window.cancelEditGroupMessage();
-        document.querySelectorAll('.chat-header-icons svg').forEach(svg => svg.style.display = '');
-        ['group-header-bell', 'group-header-gear', 'group-header-discuss'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        });
-        const targetAvatar = document.getElementById('chat-target-avatar');
-        if (targetAvatar) targetAvatar.style.display = '';
-        const input = document.getElementById('msg-input');
-        if (input) { input.style.display = 'block'; input.placeholder = 'Напишіть повідомлення...'; }
-        const sendBtn = document.getElementById('send-btn');
-        if (sendBtn) sendBtn.style.display = 'block';
+        window.resetGroupChatUI();
         return originalClose.apply(this, arguments);
     };
 })();

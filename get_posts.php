@@ -47,6 +47,25 @@ try {
     $filter_level = isset($_GET['filter_level']) ? $_GET['filter_level'] : 'any';
     $filter_lang = isset($_GET['filter_lang']) ? $_GET['filter_lang'] : 'any';
 
+    // 🛡️ ФІЛЬТР ІГОР: заглушені та видалені ігри.
+    // Пости тегуються назвою гри в колонці posts.group_name.
+    // Якщо користувач заглушив або видалив гру зі своєї панелі — її назва
+    // потрапляє в hidden_feed_games, і такі пости НЕ показуються в стрічці/заявках.
+    // (Загальні пости з group_name = 'all' або порожнім завжди видимі.)
+    $hidden_games = [];
+    if ($user_id > 0 && ($post_type === 'feed' || $post_type === 'requests')) {
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS hidden_feed_games (
+                user_id INT NOT NULL,
+                game_name VARCHAR(190) NOT NULL,
+                PRIMARY KEY (user_id, game_name)
+            ) DEFAULT CHARSET=utf8mb4");
+            $hg = $pdo->prepare("SELECT game_name FROM hidden_feed_games WHERE user_id = ?");
+            $hg->execute([$user_id]);
+            $hidden_games = $hg->fetchAll(PDO::FETCH_COLUMN, 0) ?: [];
+        } catch (Exception $e) { $hidden_games = []; }
+    }
+
     // Базовий запит без сортування і лімітів
     $query = "
     SELECT p.*,
@@ -79,6 +98,17 @@ try {
         }
     }
 
+    // 🛡️ Виключаємо пости заглушених/видалених ігор (за назвою гри в group_name).
+    // Загальні пости (group_name = 'all' або порожні) ніколи не ховаємо.
+    $hg_placeholders = [];
+    if (!empty($hidden_games)) {
+        foreach ($hidden_games as $i => $g) {
+            $hg_placeholders[":hg$i"] = $g;
+        }
+        $inList = implode(', ', array_keys($hg_placeholders));
+        $query .= " AND (p.group_name IS NULL OR p.group_name = '' OR p.group_name = 'all' OR p.group_name NOT IN ($inList))";
+    }
+
     // Додаємо сортування та пагінацію в кінці
     $query .= " ORDER BY p.created_at DESC LIMIT :limit OFFSET :offset";
 
@@ -101,6 +131,11 @@ try {
         if ($filter_comm !== 'any') $stmt->bindValue(':f_comm', $filter_comm, PDO::PARAM_STR);
         if ($filter_level !== 'any') $stmt->bindValue(':f_level', $filter_level, PDO::PARAM_STR);
         if ($filter_lang !== 'any') $stmt->bindValue(':f_lang', $filter_lang, PDO::PARAM_STR);
+    }
+
+    // 🛡️ Прив'язуємо назви заглушених/видалених ігор
+    foreach ($hg_placeholders as $ph => $val) {
+        $stmt->bindValue($ph, $val, PDO::PARAM_STR);
     }
 
     $stmt->execute();
