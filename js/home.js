@@ -454,6 +454,42 @@ window.publishPost = async function(event) {
     const userAvatarEl = document.querySelector('.current-user-avatar');
     let cleanAvatarToSave = userAvatarEl ? userAvatarEl.src : 'img/default_avatar.png';
 
+    // ── ФОТО: завантажуємо картинку на сервер ДО публікації поста.
+    // save_post.php не зберігає Base64 — лише URL. Тому спочатку віддаємо файл
+    // на upload_post_image.php і отримуємо назад готовий URL у uploads/posts/.
+    let uploadedImageUrl = "";
+    const hasPhoto = previewImg && previewImg.style.display !== 'none' && previewImg.src;
+    if (hasPhoto) {
+        const src = previewImg.src;
+        if (src.startsWith('data:')) {
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "Завантаження фото..."; }
+            try {
+                const upRes = await fetch('upload_post_image.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ image: src })
+                });
+                const upData = await upRes.json();
+                if (upData.success && upData.url) {
+                    uploadedImageUrl = upData.url;
+                } else {
+                    alert("Не вдалося завантажити фото: " + (upData.error || 'невідома помилка'));
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = "Опублікувати"; }
+                    return;
+                }
+            } catch (e) {
+                console.error("Помилка завантаження фото:", e);
+                alert("Не вдалося завантажити фото. Спробуйте ще раз.");
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = "Опублікувати"; }
+                return;
+            }
+        } else {
+            // Вже готовий URL (наприклад повторна публікація) — використовуємо як є
+            uploadedImageUrl = src;
+        }
+    }
+
     const requestsTab = document.getElementById('requests-content');
     const isRequestsOpen = requestsTab && (requestsTab.classList.contains('active') || requestsTab.style.display === 'block');
     const exactPostType = isRequestsOpen ? 'requests' : 'feed';
@@ -468,7 +504,7 @@ window.publishPost = async function(event) {
     const postData = {
         author: userNick.trim(),
         avatar: cleanAvatarToSave,
-        image: (previewImg && previewImg.style.display !== 'none') ? previewImg.src : "",
+        image: uploadedImageUrl,
         title: "", 
         body: bodyInput.value.trim(),
         
@@ -722,10 +758,12 @@ async function loadAllPosts(reset = false, forceReload = false) {
 
             // --- 4. ЛОГІКА ФОТО ---
             let imgHTML = '';
-            if (post.post_image && post.post_image.length > 50) {
+            const _img = (post.post_image || '').trim();
+            const _imgIsValid = _img !== '' && _img.toLowerCase() !== 'null' && _img.toLowerCase() !== 'undefined';
+            if (_imgIsValid) {
                 imgHTML = `
                 <div class="post-media-container" style="margin-top:15px; border-radius:12px; overflow:hidden;  display: flex; justify-content: center; align-items: center; max-height: 400px;">
-                    <img src="${post.post_image}" style="max-width: 100%; max-height: 400px; object-fit: contain; display: block; border-radius: 12px;">
+                    <img src="${_img}" loading="lazy" onerror="this.closest('.post-media-container').style.display='none';" style="max-width: 100%; max-height: 400px; object-fit: contain; display: block; border-radius: 12px;">
                 </div>`;
             }
 
@@ -1135,6 +1173,27 @@ function updatePostCommentCount(postId) {
         }
     }
 }
+
+// ✨ Точне оновлення лічильника коментарів на кнопці поста.
+// Працює з реальним елементом #comment-count-btn-<id>, який є в шаблоні поста.
+window.bumpCommentCount = function(postId, delta) {
+    const cleanId = String(postId).replace('post-', '');
+    const badge = document.getElementById(`comment-count-btn-${cleanId}`);
+    if (badge) {
+        const current = parseInt(badge.innerText, 10) || 0;
+        const next = Math.max(0, current + delta);
+        badge.innerText = next;
+    }
+};
+
+// Перерахунок лічильника напряму зі списку коментарів (надійніше за +/-1).
+window.setCommentCountFromList = function(postId, comments) {
+    const cleanId = String(postId).replace('post-', '');
+    const badge = document.getElementById(`comment-count-btn-${cleanId}`);
+    if (badge && Array.isArray(comments)) {
+        badge.innerText = comments.length;
+    }
+};
 
 
 // 6. ОСТАЛЬНОЕ (ВЫБОР ИГР, ГОЛОСОВАНИЕ)
@@ -2007,6 +2066,11 @@ async function loadInlineComments(postId, sortType = 'new') {
         // Відправляємо запит із параметром sort
         const response = await fetch(`get_comments.php?post_id=${cleanPostId}&sort=${sortType}`, { credentials: 'include' });
         const comments = await response.json();
+
+        // ✨ Тримаємо лічильник на кнопці поста синхронним із реальною кількістю
+        if (typeof window.setCommentCountFromList === 'function') {
+            window.setCommentCountFromList(cleanPostId, Array.isArray(comments) ? comments : []);
+        }
         
         let currentUserName = document.querySelector('.user-nick')?.innerText || document.getElementById('userName')?.innerText || localStorage.getItem('user_name') || "Gamer";
         let currentUserNickLow = currentUserName.trim().toLowerCase();
@@ -2175,17 +2239,43 @@ window.initReply = function(postId, commentId, authorName) {
 
     // Зберігаємо ID батьківського коментаря для цього поста
     window.replyToId[postId] = commentId;
+    if (window.replyStates) window.replyStates[postId] = commentId;
 
     // Додаємо візуальну підказку в поле вводу
     input.placeholder = `Відповідь для ${authorName}...`;
+    input.setAttribute('data-placeholder', `Відповідь для ${authorName}...`);
+
+    // ✨ Показуємо чіп "Відповідь для … ✕" з можливістю скасувати
+    const safeName = String(authorName).replace(/"/g, '&quot;');
+    let chip = document.getElementById(`reply-chip-${postId}`);
+    if (!chip) {
+        chip = document.createElement('div');
+        chip.id = `reply-chip-${postId}`;
+        chip.style.cssText = 'display:flex; align-items:center; gap:8px; margin:6px 0; padding:5px 10px; background:rgba(240,4,127,0.12); border:1px solid rgba(240,4,127,0.4); border-radius:10px; font-size:12px; color:#f0047f; width:fit-content;';
+        if (input.parentNode) input.parentNode.insertBefore(chip, input);
+    }
+    chip.innerHTML = `↪ Відповідь для <b>${safeName}</b> <span onclick="window.cancelReply('${postId}')" style="cursor:pointer; font-weight:bold; margin-left:4px;">✕</span>`;
+
     input.focus();
     
     // Прокручуємо до поля вводу, якщо воно далеко
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
-// ==========================================
-// 5. ДІЇ З КОМЕНТАРЯМИ
-// ==========================================
+
+// ✨ Скасування режиму відповіді — повертаємо звичайний коментар
+window.cancelReply = function(postId) {
+    const cleanId = String(postId).replace('post-', '');
+    if (window.replyToId) window.replyToId[cleanId] = 0;
+    if (window.replyStates) window.replyStates[cleanId] = 0;
+    const chip = document.getElementById(`reply-chip-${cleanId}`);
+    if (chip) chip.remove();
+    const input = document.getElementById(`inline-comment-input-${cleanId}`);
+    if (input) {
+        input.placeholder = 'Напишіть коментар...';
+        input.setAttribute('data-placeholder', 'Напишіть коментар...');
+        input.focus();
+    }
+};
 
 window.likeComment = function(btnElement) {
     if (btnElement.style.color === 'rgb(76, 175, 80)') {
@@ -2215,9 +2305,9 @@ window.replyToComment = function(postId, commentId, authorName) {
     }
 };
 
-window.reportComment = function(commentId) {
-    alert("Скаргу на цей коментар успішно відправлено модераторам!");
-};
+// ⚠️ Реальна реалізація reportComment визначена нижче (через справжнє модальне
+// вікно скарги window.submitReport('comment', ...)). Старий заглушковий alert прибрано,
+// щоб скарги на коментарі дійсно надсилались модераторам.
 window.submitInlineComment = async function(postId) {
     const cleanId = postId.toString().replace('post-', '');
     const inputDiv = document.getElementById(`inline-comment-input-${cleanId}`);
@@ -2258,6 +2348,15 @@ window.submitInlineComment = async function(postId) {
         if (result.success) {
             // Очищаємо поле (div)
             inputDiv.innerHTML = '';
+
+            // ✨ ФІКС: скидаємо стан "відповіді", інакше наступний звичайний коментар
+            // помилково чіплявся як reply до попереднього коментаря.
+            if (window.replyToId) window.replyToId[cleanId] = 0;
+            if (window.replyStates) window.replyStates[cleanId] = 0;
+            inputDiv.setAttribute('data-placeholder', 'Напишіть коментар...');
+            inputDiv.removeAttribute('placeholder');
+            const replyChip = document.getElementById(`reply-chip-${cleanId}`);
+            if (replyChip) replyChip.remove();
             
             // Ховаємо прев'ю великої гіфки (якщо вона була)
             const previewContainer = document.getElementById(`selected-sticker-preview-${cleanId}`);
@@ -2266,6 +2365,9 @@ window.submitInlineComment = async function(postId) {
                 previewContainer.innerHTML = '';
             }
             if (window.selectedStickers) window.selectedStickers[cleanId] = null;
+
+            // ✨ Оновлюємо лічильник коментарів на кнопці поста (+1)
+            window.bumpCommentCount(cleanId, +1);
 
             // Оновлюємо список
             loadInlineComments(cleanId);
@@ -8673,6 +8775,11 @@ window.setLudoraPage = function(tabName, blogOwnerId) {
     // 5. Отрисовываем контент для стримов
     if (tabName === 'streams' && typeof window.renderStreams === 'function') {
         window.renderStreams();
+        if (typeof window.startStreamsAutoRefresh === 'function') window.startStreamsAutoRefresh();
+    } else {
+        // Покидаємо вкладку стрімів — гасимо автооновлення і закриваємо плеєр
+        if (typeof window.stopStreamsAutoRefresh === 'function') window.stopStreamsAutoRefresh();
+        if (window.streamViewerOpen && typeof window.closeStreamViewer === 'function') window.closeStreamViewer();
     }
 
     // 6. Логика дополнительных панелей (как было у тебя)
@@ -9429,17 +9536,27 @@ const activeStreamsData = [
     { title: "Огляд нових ігор / Спілкування", streamer: "PlayUA", category: "Just Chatting", viewers: "3.1k", avatar: "img/default_avatar.png", thumb: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600", tags: ["IRL", "Українська"] }
 ];
 
+// Безпечне екранування тексту для вставки в HTML стрімів
+window.escapeStreamHTML = function(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+};
+
+// Сюди складаємо ПОВНІ дані стрімів, щоб картка знала, що відкривати
+window.streamsCache = {};
+
 window.renderStreams = async function() {
     const grid = document.getElementById('streams-grid');
     if (!grid) return;
-    
-    grid.innerHTML = ''; // Очищаем старое
 
     // 🔴 1. СПРАВЖНІ ЖИВІ СТРІМИ З СЕРВЕРА
     let liveStreams = [];
+    let serverOk = false;
     try {
         const res = await fetch('streams.php?action=list', { credentials: 'include' });
         const data = await res.json();
+        serverOk = true;
         if (data && data.success && Array.isArray(data.streams)) {
             liveStreams = data.streams.map(s => ({
                 title: s.title || 'Стрім',
@@ -9448,33 +9565,68 @@ window.renderStreams = async function() {
                 viewers: String(s.viewers || 1),
                 avatar: s.avatar || 'img/default_avatar.png',
                 thumb: s.avatar || 'img/default_avatar.png',
+                subtitle: s.subtitle || '',
                 tags: [s.subtitle].filter(Boolean),
                 isReal: true,
-                userId: s.user_id
+                userId: String(s.user_id),
+                startedAt: s.started_at || 0
             }));
         }
     } catch (e) { console.warn('Стріми: сервер недоступний, показуємо демо'); }
 
     const allStreams = [...liveStreams, ...activeStreamsData];
-    
+
+    // Кешуємо живі стріми за userId для відкриття плеєра
+    window.streamsCache = {};
+    liveStreams.forEach(s => { window.streamsCache[s.userId] = s; });
+
+    grid.innerHTML = ''; // Очищаємо старе
+
+    // ── Порожній стан: жодного живого стріму
+    if (liveStreams.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'streams-empty';
+        empty.style.cssText = 'grid-column: 1 / -1; text-align:center; padding:50px 20px; color:#aaa;';
+        empty.innerHTML = `
+            <div style="font-size:48px; margin-bottom:12px;">📡</div>
+            <h3 style="color:#fff; margin:0 0 6px; font-family:'Geologica',sans-serif;">Зараз ніхто не стрімить</h3>
+            <p style="margin:0 0 18px; font-size:14px;">Стань першим — почни свою трансляцію прямо зараз!</p>
+            <button onclick="window.openStreamStudio && window.openStreamStudio()"
+                    style="background:#f0047f; color:#fff; border:none; padding:10px 22px; border-radius:22px; font-weight:bold; cursor:pointer; font-size:14px;">
+                🔴 Почати стрім
+            </button>
+            <p style="margin-top:26px; font-size:12px; color:#666; letter-spacing:1px;">ПРИКЛАДИ ТРАНСЛЯЦІЙ</p>`;
+        grid.appendChild(empty);
+    }
+
     allStreams.forEach((stream, idx) => {
         const card = document.createElement('div');
         card.className = 'stream-card post-pop-in';
         card.style.animationDelay = `${Math.min(idx * 70, 500)}ms`;
+        card.style.cursor = 'pointer';
+
+        if (stream.isReal) {
+            card.setAttribute('onclick', `window.openStreamViewer('${window.escapeStreamHTML(stream.userId)}')`);
+        } else {
+            // Демо-картки лише ілюструють вигляд — попереджаємо, що це приклад
+            card.setAttribute('onclick', `window.showDemoStreamNotice && window.showDemoStreamNotice()`);
+            card.style.opacity = '0.85';
+        }
+
         card.innerHTML = `
             <div class="stream-thumbnail">
-                <div class="stream-live-badge ${stream.isReal ? 'live-real' : ''}">${stream.isReal ? '🔴 LIVE' : 'LIVE'}</div>
-                <img src="${stream.thumb}" loading="lazy" onerror="this.src='img/default_avatar.png'">
-                <span class="stream-viewers"><span class="red-dot"></span> ${stream.viewers}</span>
+                <div class="stream-live-badge ${stream.isReal ? 'live-real' : ''}">${stream.isReal ? '🔴 LIVE' : 'ПРИКЛАД'}</div>
+                <img src="${window.escapeStreamHTML(stream.thumb)}" loading="lazy" onerror="this.src='img/default_avatar.png'">
+                <span class="stream-viewers"><span class="red-dot"></span> ${window.escapeStreamHTML(stream.viewers)}</span>
             </div>
             <div class="stream-info">
-                <img src="${stream.avatar}" class="streamer-avatar" loading="lazy" onerror="this.src='img/default_avatar.png'">
+                <img src="${window.escapeStreamHTML(stream.avatar)}" class="streamer-avatar" loading="lazy" onerror="this.src='img/default_avatar.png'">
                 <div class="stream-text">
-                    <h4 class="stream-title">${stream.title}</h4>
-                    <span class="streamer-name">${stream.streamer}</span>
-                    <span class="stream-category">${stream.category}</span>
+                    <h4 class="stream-title">${window.escapeStreamHTML(stream.title)}</h4>
+                    <span class="streamer-name">${window.escapeStreamHTML(stream.streamer)}</span>
+                    <span class="stream-category">${window.escapeStreamHTML(stream.category)}</span>
                     <div class="stream-tags">
-                        ${stream.tags.map(t => `<span class="stream-tag">${t}</span>`).join('')}
+                        ${stream.tags.map(t => `<span class="stream-tag">${window.escapeStreamHTML(t)}</span>`).join('')}
                     </div>
                 </div>
             </div>
@@ -9482,6 +9634,175 @@ window.renderStreams = async function() {
         grid.appendChild(card);
     });
 };
+
+// Невелика нотатка для демо-карток
+window.showDemoStreamNotice = function() {
+    if (typeof window.showReportToast === 'function') {
+        window.showReportToast('Це приклад вітрини. Справжні стріми відкриваються одразу 🔴', true);
+    } else {
+        alert('Це приклад вітрини. Справжні стріми відкриваються одразу.');
+    }
+};
+
+// 🔁 Автооновлення сітки стрімів, поки відкрита вкладка
+window.streamsRefreshTimer = null;
+window.startStreamsAutoRefresh = function() {
+    window.stopStreamsAutoRefresh();
+    window.streamsRefreshTimer = setInterval(() => {
+        // Не оновлюємо, якщо відкрито плеєр (щоб не смикати) або не на вкладці стрімів
+        if (window.currentLudoraPage === 'streams' && !window.streamViewerOpen) {
+            window.renderStreams();
+        }
+    }, 15000);
+};
+window.stopStreamsAutoRefresh = function() {
+    if (window.streamsRefreshTimer) { clearInterval(window.streamsRefreshTimer); window.streamsRefreshTimer = null; }
+};
+
+// ==========================================
+// 👁️ ПЕРЕГЛЯД СТРІМУ (VIEWER) — клік по картці
+// ==========================================
+window.streamViewerOpen = false;
+window.streamViewerId = null;
+window.streamViewerPollTimer = null;
+window.streamViewerClockTimer = null;
+window.streamViewerStartTs = 0;
+
+window.openStreamViewer = async function(streamUserId) {
+    const sid = String(streamUserId);
+    const data = window.streamsCache ? window.streamsCache[sid] : null;
+    if (!data) {
+        if (typeof window.showReportToast === 'function') window.showReportToast('Стрім уже завершено', false);
+        window.renderStreams();
+        return;
+    }
+
+    window.streamViewerOpen = true;
+    window.streamViewerId = sid;
+    window.streamViewerStartTs = (data.startedAt && data.startedAt > 0) ? data.startedAt * 1000 : Date.now();
+
+    // Будуємо оверлей плеєра
+    let overlay = document.getElementById('stream-viewer-overlay');
+    if (overlay) overlay.remove();
+    overlay = document.createElement('div');
+    overlay.id = 'stream-viewer-overlay';
+    overlay.innerHTML = `
+        <div class="sv-backdrop" onclick="window.closeStreamViewer()"></div>
+        <div class="sv-modal" role="dialog" aria-modal="true">
+            <div class="sv-stage">
+                <div class="sv-live-badge"><span class="sv-dot"></span> LIVE</div>
+                <div class="sv-viewers" id="sv-viewers"><span class="sv-eye">👁️</span> <span id="sv-viewers-num">${window.escapeStreamHTML(data.viewers)}</span></div>
+                <button class="sv-close" onclick="window.closeStreamViewer()" title="Закрити">&times;</button>
+
+                <div class="sv-video-area" id="sv-video-area">
+                    <img class="sv-bg" src="${window.escapeStreamHTML(data.avatar)}" onerror="this.style.display='none'">
+                    <div class="sv-center">
+                        <div class="sv-avatar-pulse">
+                            <img src="${window.escapeStreamHTML(data.avatar)}" onerror="this.src='img/default_avatar.png'">
+                        </div>
+                        <div class="sv-connecting">📡 Підключення до трансляції…</div>
+                        <div class="sv-elapsed" id="sv-elapsed">00:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sv-info">
+                <img class="sv-streamer-ava" src="${window.escapeStreamHTML(data.avatar)}" onerror="this.src='img/default_avatar.png'">
+                <div class="sv-meta">
+                    <h3 class="sv-title">${window.escapeStreamHTML(data.title)}</h3>
+                    <div class="sv-streamer">${window.escapeStreamHTML(data.streamer)} · <span class="sv-cat">${window.escapeStreamHTML(data.category)}</span></div>
+                    ${data.subtitle ? `<div class="sv-sub">${window.escapeStreamHTML(data.subtitle)}</div>` : ''}
+                </div>
+                <button class="sv-leave" onclick="window.closeStreamViewer()">Покинути</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    // Перший join + старт пінгів присутності та лічильника часу
+    await window.pingStreamWatch();
+    window.streamViewerPollTimer = setInterval(window.pingStreamWatch, 15000);
+    window.tickStreamElapsed();
+    window.streamViewerClockTimer = setInterval(window.tickStreamElapsed, 1000);
+};
+
+// Пінг присутності глядача + оновлення лічильника глядачів
+window.pingStreamWatch = async function() {
+    if (!window.streamViewerOpen || !window.streamViewerId) return;
+    try {
+        const res = await fetch('streams.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'watch', stream_id: window.streamViewerId })
+        });
+        const data = await res.json();
+        if (data && data.success && data.stream) {
+            const num = document.getElementById('sv-viewers-num');
+            if (num) num.innerText = data.stream.viewers;
+        } else {
+            // Стрім завершився, поки ми дивились
+            const area = document.getElementById('sv-video-area');
+            if (area) {
+                area.innerHTML = `<div class="sv-ended"><div style="font-size:42px;">🏁</div><div>Трансляцію завершено</div></div>`;
+            }
+            window.stopStreamViewerTimers();
+        }
+    } catch (e) { /* мережа — мовчки пропускаємо один пінг */ }
+};
+
+window.tickStreamElapsed = function() {
+    const el = document.getElementById('sv-elapsed');
+    if (!el) return;
+    const sec = Math.max(0, Math.floor((Date.now() - window.streamViewerStartTs) / 1000));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const pad = n => String(n).padStart(2, '0');
+    el.innerText = (h > 0 ? pad(h) + ':' : '') + pad(m) + ':' + pad(s);
+};
+
+window.stopStreamViewerTimers = function() {
+    if (window.streamViewerPollTimer) { clearInterval(window.streamViewerPollTimer); window.streamViewerPollTimer = null; }
+    if (window.streamViewerClockTimer) { clearInterval(window.streamViewerClockTimer); window.streamViewerClockTimer = null; }
+};
+
+window.closeStreamViewer = async function() {
+    const leavingId = window.streamViewerId;
+    window.streamViewerOpen = false;
+    window.streamViewerId = null;
+    window.stopStreamViewerTimers();
+
+    const overlay = document.getElementById('stream-viewer-overlay');
+    if (overlay) overlay.remove();
+    document.body.style.overflow = '';
+
+    // Знімаємо присутність на сервері
+    if (leavingId) {
+        try {
+            await fetch('streams.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ action: 'leave', stream_id: leavingId })
+            });
+        } catch (e) {}
+    }
+    // Оновлюємо сітку (лічильники)
+    if (typeof window.renderStreams === 'function') window.renderStreams();
+};
+
+// Якщо користувач закриває вкладку під час перегляду — чесно виходимо
+window.addEventListener('beforeunload', () => {
+    if (window.streamViewerOpen && window.streamViewerId && navigator.sendBeacon) {
+        try {
+            navigator.sendBeacon('streams.php', new Blob(
+                [JSON.stringify({ action: 'leave', stream_id: window.streamViewerId })],
+                { type: 'application/json' }
+            ));
+        } catch (e) {}
+    }
+});
 
 // ==========================================
 // 📡 ПУБЛІКАЦІЯ СТРІМУ (GO LIVE / завершення)
