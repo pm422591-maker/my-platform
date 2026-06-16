@@ -93,9 +93,8 @@ if (result.success) {
     localStorage.setItem('user_name', result.username);
     if(result.avatar) localStorage.setItem('user_avatar', result.avatar);
     if(result.banner) localStorage.setItem('user_banner', result.banner);
-    // Обучение и квиз — ТОЛЬКО для новых (только что созданных) аккаунтов.
-    // Дублируем сигнал в URL (?welcome=1) на случай, если sessionStorage
-    // заблокирован браузером (Tracking Prevention и т.п.).
+    // Обучение и тест — ТОЛЬКО для новых аккаунтов.
+    // Сигнал дублируем: sessionStorage + URL (?welcome=1) на случай блокировки storage.
     if (result.is_new) {
         try { sessionStorage.setItem('syncora_new_login', '1'); } catch (e) {}
         window.location.href = "home.html?welcome=1";
@@ -146,7 +145,7 @@ if (formLogin) {
                 if(result.avatar) localStorage.setItem('user_avatar', result.avatar);
                 if(result.banner) localStorage.setItem('user_banner', result.banner);
                 // DO NOT clear tutorial/quiz here — DB is the source of truth for returning users
-                // Вход существующего юзера НЕ запускает обучение (флаг не ставим).
+                // Вход существующего юзера НЕ запускает обучение.
                 // Адмін одразу потрапляє в панель модерації замість стрічки
                 window.location.href = result.is_admin ? "admin.html" : "home.html";
             } else {

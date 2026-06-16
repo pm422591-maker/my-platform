@@ -680,20 +680,47 @@ function cleanupTutorialDOM() {
 }
 
 function finishTutorial() {
+  console.log('[Tutorial] finishTutorial | forceNew:', _forceNewUserOnboarding, '| quizDone:', quizDone());
   markTutorialDone();
   cleanupTutorialDOM();
 
   // Для нового акаунта показуємо квіз завжди; інакше — лише якщо ще не пройдено.
-  if (_forceQuizForNewUser || !quizDone()) {
+  if (_forceNewUserOnboarding || !quizDone()) {
     setTimeout(showQuizPrompt, 400);
   }
 }
 
 function startTutorial() {
   cleanupTutorialDOM(); // Clean before starting
-  buildTutorialDOM();
-  currentStep = 0;
-  showTutorialStep(0);
+
+  // Дочікуємось, поки зʼявляться ключові елементи інтерфейсу,
+  // інакше всі кроки "проскочать" як невидимі ще до рендеру сторінки.
+  const requiredIds = TUTORIAL_STEPS.map(s => s.targetId).filter(Boolean);
+  const allReady = () => requiredIds.every(id => {
+    const el = document.getElementById(id);
+    return el && isElementVisible(el);
+  });
+
+  let waited = 0;
+  const STEP = 200;     // перевіряємо кожні 200мс
+  const MAX = 8000;     // максимум 8с очікування
+
+  const tryStart = () => {
+    if (allReady() || waited >= MAX) {
+      if (!allReady()) {
+        console.warn('[Tutorial] Не всі елементи зʼявились за ' + MAX + 'мс, стартуємо як є.');
+      }
+      buildTutorialDOM();
+      currentStep = 0;
+      showTutorialStep(0);
+      return;
+    }
+    waited += STEP;
+    setTimeout(tryStart, STEP);
+  };
+
+  console.log('[Tutorial] Очікую готовності елементів інтерфейсу...');
+  tryStart();
 }
 
 // ─────────────────────────────────────────────
@@ -914,6 +941,11 @@ window.closeQuiz = function () {
 // ─────────────────────────────────────────────
 // ENTRY POINT
 // ─────────────────────────────────────────────
+
+// Прапорець: коли онбординг запущено для НОВОГО акаунта —
+// показуємо туторіал і квіз БЕЗУМОВНО, не звіряючись зі старими прапорцями в БД.
+let _forceNewUserOnboarding = false;
+
 async function checkAndStartTutorial() {
   const dbDone = await checkTutorialFromDB();
 
@@ -938,51 +970,54 @@ async function checkAndStartTutorial() {
   startTutorial();
 }
 
-// Запуск онбордингу для НОВОГО акаунта: туторіал, а після нього —
-// гарантовано квіз (навіть якщо в БД залишився старий quiz_done).
-let _forceQuizForNewUser = false;
+// Онбординг для НОВОГО акаунта: туторіал → гарантовано квіз.
 function startTutorialForNewUser() {
-  _forceQuizForNewUser = true;
+  console.log('[Tutorial] Новий акаунт — примусовий запуск туторіалу.');
+  _forceNewUserOnboarding = true;
   startTutorial();
 }
 
-// Show welcome screen then run tutorial.
-// Welcome screen only shows for brand-new registrations.
-// Falls back gracefully if sessionStorage is blocked (Tracking Prevention).
-function maybeShowWelcomeAndStart() {
-  const username = safeGet('user_name') || 'Гравець';
+// Визначаємо, чи це нова реєстрація: sessionStorage АБО URL ?welcome=1.
+function detectNewRegistration() {
+  let isNew = false;
 
-  // Сигнал «новий акаунт» може прийти двома шляхами:
-  //  1) sessionStorage (може бути заблокований Tracking Prevention);
-  //  2) URL-параметр ?welcome=1 (надійний фолбек, переживає редірект).
-  let isNewRegistration = false;
+  // 1) sessionStorage (може блокуватись Tracking Prevention)
   try {
     if (sessionStorage.getItem('syncora_new_login') === '1') {
-      isNewRegistration = true;
+      isNew = true;
       sessionStorage.removeItem('syncora_new_login');
     }
   } catch (e) {
-    // sessionStorage недоступний — покладаємось на URL-параметр нижче
+    console.warn('[Tutorial] sessionStorage недоступний:', e);
   }
 
-  // Перевірка URL ?welcome=1
+  // 2) URL ?welcome=1 (надійний фолбек, переживає редірект)
   try {
     const params = new URLSearchParams(window.location.search);
     if (params.get('welcome') === '1') {
-      isNewRegistration = true;
-      // Прибираємо параметр з адреси, щоб онбординг не показався повторно при перезавантаженні
+      isNew = true;
       params.delete('welcome');
-      const newQuery = params.toString();
-      const newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '') + window.location.hash;
-      window.history.replaceState({}, document.title, newUrl);
+      const q = params.toString();
+      const url = window.location.pathname + (q ? '?' + q : '') + window.location.hash;
+      window.history.replaceState({}, document.title, url);
     }
   } catch (e) {
-    // URLSearchParams/history недоступні — ігноруємо
+    console.warn('[Tutorial] URLSearchParams недоступний:', e);
   }
 
+  return isNew;
+}
+
+// Show welcome screen then run tutorial.
+function maybeShowWelcomeAndStart() {
+  const username = safeGet('user_name') || 'Гравець';
+  const isNewRegistration = detectNewRegistration();
+
+  console.log('[Tutorial] maybeShowWelcomeAndStart | новий акаунт:', isNewRegistration,
+              '| tutorialDone:', tutorialDone(), '| quizDone:', quizDone());
+
   if (isNewRegistration) {
-    // Новий акаунт: показуємо привітання → туторіал → квіз БЕЗУМОВНО,
-    // не звіряючись із БД (інакше старі прапорці могли б подавити онбординг).
+    // Новий акаунт: привітання → туторіал → квіз, без перевірки БД.
     showWelcomeScreen(username, startTutorialForNewUser);
     return;
   }
@@ -1000,13 +1035,30 @@ function maybeShowWelcomeAndStart() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  console.log('[Tutorial] tutorial.js завантажено, DOM готовий.');
+
+  // Якщо це нова реєстрація (URL ?welcome=1 або sessionStorage) — запускаємо
+  // онбординг ОДРАЗУ, не чекаючи аватар і не блокуючись на перевірці логіну.
+  let earlyNew = false;
+  try { earlyNew = new URLSearchParams(window.location.search).get('welcome') === '1'; } catch (e) {}
+  try { if (sessionStorage.getItem('syncora_new_login') === '1') earlyNew = true; } catch (e) {}
+
+  if (earlyNew) {
+    maybeShowWelcomeAndStart();
+    return;
+  }
+
   const isLoggedIn = safeGet('user_name') || document.cookie.includes('PHPSESSID');
   if (!isLoggedIn) {
-    // Wait for page to render avatar before starting
+    // Чекаємо рендер аватара, але запускаємось у будь-якому разі через таймаут.
+    let started = false;
+    const run = () => { if (!started) { started = true; maybeShowWelcomeAndStart(); } };
     setTimeout(() => {
       const avatar = document.getElementById('top-bar-avatar');
-      if (avatar) maybeShowWelcomeAndStart();
+      if (avatar) run();
     }, 2000);
+    // Аварійний запуск, якщо аватар так і не зʼявився.
+    setTimeout(run, 4000);
     return;
   }
   maybeShowWelcomeAndStart();
