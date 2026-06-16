@@ -182,6 +182,7 @@
               console.log("Дані в БД!");
               localStorage.setItem('user_name', result.username);
               localStorage.setItem('user_avatar', result.avatar);
+              if (result.is_new) sessionStorage.setItem('syncora_new_login', '1');
               window.location.replace("home.html");
           } else {
               alert("Помилка БД: " + result.message);
@@ -279,6 +280,7 @@
               localStorage.setItem('user_name',   result.username);
               localStorage.setItem('user_avatar', result.avatar  || '');
               if (result.banner) localStorage.setItem('user_banner', result.banner);
+              if (result.is_new) sessionStorage.setItem('syncora_new_login', '1');
               window.location.replace("home.html");
           } else {
               alert("Помилка: " + result.message);

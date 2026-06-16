@@ -63,6 +63,7 @@ try {
     $existingUser = $stmt->fetch();
 
     if ($existingUser) {
+        $isNew     = false;
         $userId    = $existingUser['id'];
         $finalName = $existingUser['username'];
         $avatar    = $existingUser['avatar_url'];
@@ -80,6 +81,7 @@ try {
             }
         }
     } else {
+        $isNew = true;
         $pdo->beginTransaction();
 
         $hashedPassword = password_hash(
@@ -140,6 +142,7 @@ try {
         'username' => $finalName,
         'avatar'   => $avatar,
         'banner'   => $banner,
+        'is_new'   => $isNew,
         // НЕ повертаємо email у відповіді — не потрібно клієнту
     ]);
 

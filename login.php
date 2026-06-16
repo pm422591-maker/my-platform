@@ -67,6 +67,7 @@ try {
             'avatar'   => $user['avatar_url'],
             'banner'   => $user['banner_url'],
             'is_admin' => $isAdmin,
+            'is_new'   => false,
         ]);
     } else {
         // Однакове повідомлення для відсутнього юзера і неправильного пароля

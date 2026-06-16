@@ -79,6 +79,7 @@ try {
             'username' => $existingUser['username'],
             'avatar'   => $existingUser['avatar'] ?? '',
             'banner'   => $existingUser['banner'] ?? '',
+            'is_new'   => false,
         ]);
 
     } else {
@@ -118,6 +119,7 @@ try {
             'username' => $username,
             'avatar'   => $defaultAvatar,
             'banner'   => '',
+            'is_new'   => true,
         ]);
     }
 
