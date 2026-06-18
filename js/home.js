@@ -492,7 +492,16 @@ window.publishPost = async function(event) {
 
     const requestsTab = document.getElementById('requests-content');
     const isRequestsOpen = requestsTab && (requestsTab.classList.contains('active') || requestsTab.style.display === 'block');
-    const exactPostType = isRequestsOpen ? 'requests' : 'feed';
+
+    // ❗️ ФІКС БЛОГУ: визначаємо тип поста за активною вкладкою.
+    // switchTab() пише поточну вкладку у window.currentLudoraPage ('feed' | 'requests' | 'blog').
+    // Раніше тут не було варіанту 'blog', тому пост із блогу йшов як 'feed'
+    // і не з'являвся в блозі (get_posts.php для блогу бере лише post_type = 'blog').
+    const blogTab = document.getElementById('blog-content');
+    const isBlogOpen = window.currentLudoraPage === 'blog'
+        || (blogTab && (blogTab.classList.contains('active') || blogTab.style.display === 'block'));
+
+    const exactPostType = isBlogOpen ? 'blog' : (isRequestsOpen ? 'requests' : 'feed');
 
     // Заявка В ГРУПУ потребує обраної групи
     const _isGroupRequest = (exactPostType === 'requests' && window.currentRequestMode === 'group');
